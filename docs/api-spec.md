@@ -10,7 +10,7 @@ MSA 구조 변경에 따라 각 마이크로 서비스의 상세 API 문서 및 
 
 *로컬 환경은 개별 서비스를 실행한 후 해당 포트로 접속이 가능합니다.*
 
-| 마이크로서비스 | 로컬 포트 | 라우팅 경로 (Path) | API 별 명세서 주소                                 | GitHub Repository                                                                 |
+| 마이크로서비스 | 로컬 포트 | 라우팅 경로 (Path) | API 명세서                                 | GitHub Repository                                                                 |
 | :--- | :---: | :---: |:---------------------------------------------|:----------------------------------------------------------------------------------|
 | **Auth Service** (인증/회원) | `8081` | `/auth` | [api-spec-auth](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/services/auth-service/docs/api-spec-auth.md)         | [bds-auth-service](https://github.com/KT-Cloud-2-BDS/bds_backend/tree/main/services/auth-service)                  |
 | **Chat Service** (채팅) | `8082` | `/chat` | [api-spec-chat](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/services/chat-service/docs/api-spec-chat.md)         | [bds-chat-service](https://github.com/KT-Cloud-2-BDS/bds_backend/tree/main/services/chat-service)                  |
