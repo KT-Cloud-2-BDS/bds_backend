@@ -60,7 +60,7 @@ Auth Required: **O**
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
 | `page` | Integer | N | 페이지 번호 (default: 0) |
-| `size` | Integer | N | 페이지 크기 (default: 20) |
+| `size` | Integer | N | 페이지 크기 (default: 10) |
 
 **Response Body**
 
