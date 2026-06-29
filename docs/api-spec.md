@@ -12,11 +12,11 @@ MSA 구조 변경에 따라 각 마이크로 서비스의 상세 API 문서 및 
 
 | 마이크로서비스 | 로컬 포트 | 라우팅 경로 (Path) | API 별 명세서 주소                                 | GitHub Repository                                                                 |
 | :--- | :---: | :---: |:---------------------------------------------|:----------------------------------------------------------------------------------|
-| **Auth Service** (인증/회원) | `8081` | `/auth` | `https://api.bds.com/auth/docs.html`         | [bds-auth-service](https://github.com/your-org/bds-auth-service)                  |
-| **Chat Service** (채팅) | `8082` | `/chat` | `https://api.bds.com/chat/docs.html`         | [bds-chat-service](https://github.com/your-org/bds-chat-service)                  |
-| **Notification Service** (알림) | `8083` | `/notification` | `https://api.bds.com/notification/docs.html` | [bds-notification-service](https://github.com/your-org/bds-notification-service)  |
-| **Order Service** (주문) | `8084` | `/order` | `https://api.bds.com/order/docs.html`        | [bds-order-service](https://github.com/your-org/bds-order-service)              |
-| **Payment Service** (결제) | `8085` | `/payment` | `https://api.bds.com/payment/docs.htm        
+| **Auth Service** (인증/회원) | `8081` | `/auth` | [api-spec-auth](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/services/auth-service/docs/api-spec-auth.md)         | [bds-auth-service](https://github.com/KT-Cloud-2-BDS/bds_backend/tree/main/services/auth-service)                  |
+| **Chat Service** (채팅) | `8082` | `/chat` | [api-spec-chat](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/services/chat-service/docs/api-spec-chat.md)         | [bds-chat-service](https://github.com/KT-Cloud-2-BDS/bds_backend/tree/main/services/chat-service)                  |
+| **Notification Service** (알림) | `8083` | `/notification` | [api-spec-notification](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/services/notification-service/docs/api-spec-notification.md) | [bds-notification-service](https://github.com/KT-Cloud-2-BDS/bds_backend/tree/main/services/notification-service)  |
+| **Order Service** (주문) | `8084` | `/order` | [api-spec-order](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/services/order-service/docs/api-spec-order.md)        | [bds-order-service](https://github.com/KT-Cloud-2-BDS/bds_backend/tree/main/services/order-service)              |
+| **Payment Service** (결제) | `8085` | `/payment` | [api-spec-payment](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/services/payment-service/docs/api-spec-payment.md)  |  [bds-payment-service](https://github.com/KT-Cloud-2-BDS/bds_backend/tree/main/services/payment-service)  |
 ---
 
 ## 공통 응답 포맷
