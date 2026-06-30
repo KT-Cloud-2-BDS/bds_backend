@@ -11,6 +11,8 @@
 | DELETE | /api/notifications/products/{productId} | O | 상품 알림 해지 |
 | POST | /api/notifications/promotions | O | 프로모션 알림 동의 |
 | DELETE | /api/notifications/promotions | O | 프로모션 알림 해지 |
+| POST | /api/notifications/fcm-token | O | FCM 토큰 저장 |
+| DELETE | /api/notifications/fcm-token | O | FCM 토큰 삭제 |
 
 ---
 
@@ -60,27 +62,24 @@ Auth Required: **O**
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
 | `page` | Integer | N | 페이지 번호 (default: 0) |
-| `size` | Integer | N | 페이지 크기 (default: 10) |
+| `size` | Integer | N | 페이지 크기 (default: 20) |
 
 **Response Body**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "notifications": [
-      {
-        "notificationId": 1,
-        "type": "FUNDING_START",
-        "message": "찜한 상품의 펀딩이 시작되었습니다.",
-        "targetId": 101,
-        "isRead": true,
-        "createdAt": "2026-04-21T09:00:00Z"
-      }
-    ],
-    "totalCount": 15,
-    "unreadCount": 0
-  }
+  "notifications": [
+    {
+      "notificationId": 1,
+      "type": "FUNDING_START",
+      "message": "찜한 상품의 펀딩이 시작되었습니다.",
+      "targetId": 101,
+      "isRead": true,
+      "createdAt": "2026-04-21T09:00:00Z"
+    }
+  ],
+  "totalCount": 15,
+  "unreadCount": 0
 }
 ```
 
@@ -103,10 +102,7 @@ Auth Required: **O**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "unreadCount": 3
-  }
+  "unreadCount": 3
 }
 ```
 
@@ -127,11 +123,8 @@ Auth Required: **O**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "productId": 101,
-    "subscribed": true
-  }
+  "productId": 101,
+  "subscribed": true
 }
 ```
 
@@ -151,11 +144,8 @@ Auth Required: **O**
 
 **Response Body**
 
-```json
-{
-  "success": true,
-  "data": null
-}
+```
+204 No Content
 ```
 
 **Validation / Business Rules**
@@ -176,10 +166,7 @@ Auth Required: **O**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "promotionSubscribed": true
-  }
+  "promotionSubscribed": true
 }
 ```
 
@@ -198,13 +185,58 @@ Auth Required: **O**
 
 **Response Body**
 
-```json
-{
-  "success": true,
-  "data": null
-}
+```
+204 No Content
 ```
 
 **Validation / Business Rules**
 - 동의 상태가 아닌 경우 `404 Not Found` 반환.
 - 해지 후 `PROMOTION` 타입 알림이 전달되지 않는다.
+
+---
+
+## FCM 토큰 저장
+
+```
+POST /api/notifications/fcm-token
+```
+
+Auth Required: **O**
+
+**Request Body**
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `token` | String | Y | 브라우저에서 발급된 FCM 토큰 |
+
+**Response**
+
+```
+204 No Content
+```
+
+**Validation / Business Rules**
+- 로그인 후 브라우저에서 FCM 토큰 발급 시 즉시 호출한다.
+- 동일 유저의 기존 토큰이 있으면 덮어쓴다. (브라우저마다 토큰이 다를 수 있으므로 user_id + token으로 upsert)
+- SSE Emitter가 없는 경우 이 토큰으로 FCM 알림을 발송한다.
+
+---
+
+## FCM 토큰 삭제
+
+```
+DELETE /api/notifications/fcm-token
+```
+
+Auth Required: **O**
+
+**Response**
+
+```
+204 No Content
+```
+
+**Validation / Business Rules**
+- 로그아웃 시 호출하여 해당 브라우저의 토큰을 삭제한다.
+- 삭제하지 않으면 로그아웃 후에도 FCM 알림이 전달될 수 있다.
+- 토큰이 존재하지 않는 경우 `404 Not Found` 반환.
