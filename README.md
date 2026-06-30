@@ -29,7 +29,7 @@
 
 ---
 - [API 명세서](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/docs/api-spec.md)
-- [프로젝트 개요]()
+- [프로젝트 개요](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/docs/project-overview.md)
 
 ## _Stack._
 
