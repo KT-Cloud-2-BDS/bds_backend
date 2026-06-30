@@ -1,76 +1,242 @@
-## Chat 도메인
+# 알림 도메인
 
-### 엔드포인트 목록
+## 엔드포인트 목록
 
-| method | path                                    | auth required | 설명                              |
-|--------|-----------------------------------------|---------------|---------------------------------|
-| POST   | /api/chat/rooms                         | O             | 채팅방 생성 (5-1)                    |
-| GET    | /api/chat/rooms                         | O             | 내 채팅방 목록 조회 (5-2)               |
-| GET    | /api/chat/rooms/game/{gameId}           | N             | 게임별 채팅방 조회 (5-3)                |
-| GET    | /api/chat/rooms/{roomId}                | O/N           | 채팅방 상세 조회 (5-4)                 |
-| PATCH  | /api/chat/rooms/{roomId}                | O             | 채팅방 정보 수정 name/imageUrl (5-5)   |
-| DELETE | /api/chat/rooms/{roomId}                | O             | 채팅방 삭제 (5-6, 방장만 가능)            |
-| PATCH  | /api/chat/rooms/{roomId}/archive        | O             | 채팅방 아카이브 (5-7)                  |
-| PATCH  | /api/chat/rooms/{roomId}/unarchive      | O             | 채팅방 아카이브 복원 (5-8)               |
-| POST   | /api/chat/rooms/{roomId}/join           | O             | 채팅방 입장 (5-9)                    |
-| DELETE | /api/chat/rooms/{roomId}/leave          | O             | 채팅방 나가기 (5-10)                  |
-| POST   | /api/chat/rooms/{roomId}/invite         | O             | 참여자 초대 (5-11)                   |
-| PATCH  | /api/chat/rooms/{roomId}/notification   | O             | 채팅방 알림 설정 변경 (5-12)             |
-| POST   | /api/chat/rooms/{roomId}/ban            | O             | 멤버 BAN (5-13)                   |
-| GET    | /api/chat/rooms/getMyInvites            | O             | 내 초대 목록 조회 (5-14)               |
-| POST   | /api/chat/rooms/{roomId}/reject         | O             | 초대 거부 (5-15)                    |
-| GET    | /api/chat/messages/history/{roomId}     | O             | 채팅 이력 조회 — 내가 있을 때 메시지 (5-16)   |
-| WS     | /ws/chat                                | O/N           | websocket 연결(5-17-1)            |
-| SUB    | /topic/rooms/{roomId}                   | O/N           | 구독 (5-17-2-1)                   |
-| UNSUB  | id:subscription-id                      | O/N           | 구독 취소 (5-17-2-2)                |
-| PUB    | SEND  /app/chat.send                    | O             | 메시지 전송 (5-17-3-1)               |
-| PUB    | SEND  /app/chat.read                    | O             | 읽음 상태 갱신 (5-17-3-2)             |
-| PUB    | SEND  /app/chat.typing                  | O             | 타이핑 인디케이터 (5-17-3-3)            |
-| DELETE | /api/chat/messages/{messageId}          | O             | 메시지 삭제 soft delete (5-18)       |
-| GET    | /api/chat/messages/getMessages/{roomId} | O             | 채팅방 메시지 조회 + lastRead 갱신 (5-19) |
+| method | path | auth required | 설명 |
+|--------|------|---------------|------|
+| GET | /api/notifications/connect | O | SSE 연결 (알림 구독) |
+| GET | /api/notifications | O | 알림 목록 조회 + 전체 읽음 처리 |
+| GET | /api/notifications/unread-count | O | 읽지 않은 알림 수 조회 |
+| POST | /api/notifications/products/{productId} | O | 상품 알림 등록 |
+| DELETE | /api/notifications/products/{productId} | O | 상품 알림 해지 |
+| POST | /api/notifications/promotions | O | 프로모션 알림 동의 |
+| DELETE | /api/notifications/promotions | O | 프로모션 알림 해지 |
+| POST | /api/notifications/fcm-token | O | FCM 토큰 저장 |
+| DELETE | /api/notifications/fcm-token | O | FCM 토큰 삭제 |
 
 ---
 
-### 채팅방 생성
+## SSE 연결
 
 ```
-POST /api/chat/rooms
+GET /api/notifications/connect
 ```
 
 Auth Required: **O**
 
-Request Body
+Response: `text/event-stream`
 
-| 필드           | 타입      | 필수  | 설명                                                 |
-|--------------|---------|-----|----------------------------------------------------|
-| `type`       | String  | Y   | 채팅방 유형 (`GAME` \| `DIRECT`)                        |
-| `name`       | String* | Y/N | 채팅방 표시 이름. `DIRECT` 의 경우 자동 생성되어 생략 가능. `GAME`은 필수 |
-| `imageUrl`   | String* | N   | 채팅방 프로필 이미지 URL                                    |
-| `gameId`     | Long*   | Y/N | `type=GAME` 일 때 필수                                 |
-| `inviteeIds` | Long[]* | Y/N | `DM` / 비공개 방 생성 시 함께 초대할 사용자 ID 목록                 |
+> JSON Response Body로 내려오는 것이 아니라, 연결이 유지되는 동안 서버가 아래 형식의 이벤트를 스트림으로 밀어넣는다.
 
-Response Body
+**연결 확인 이벤트** — 연결 직후 서버가 즉시 전송
+
+```
+event: connect
+data: connected
+```
+
+**알림 이벤트** — 알림 발생 시마다 전송
+
+```
+event: notification
+data: {"notificationId": 1, "type": "FUNDING_START", "message": "찜한 상품의 펀딩이 시작되었습니다.", "targetId": 101, "createdAt": "2026-04-21T09:00:00Z"}
+```
+
+**Validation / Business Rules**
+- 연결 성공 시 즉시 `connect` 이벤트를 전송한다. (프록시/브라우저 연결 유지 목적)
+- 서버 측 timeout은 30분이며, 만료 시 클라이언트가 자동 재연결을 시도한다.
+- 연결 종료(탭 닫기, 네트워크 끊김) 시 서버에서 해당 SseEmitter를 자동 제거한다.
+
+---
+
+## 알림 목록 조회
+
+```
+GET /api/notifications
+```
+
+Auth Required: **O**
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| `page` | Integer | N | 페이지 번호 (default: 0) |
+| `size` | Integer | N | 페이지 크기 (default: 20) |
+
+**Response Body**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "roomId": 201,
-    "type": "GAME",
-    "gameId": 101,
-    "name": "KIA vs 삼성 경기 채팅",
-    "imageUrl": null,
-    "createdBy": 9,
-    "createdAt": "2026-04-21T09:00:00Z"
-  }
+  "notifications": [
+    {
+      "notificationId": 1,
+      "type": "FUNDING_START",
+      "message": "찜한 상품의 펀딩이 시작되었습니다.",
+      "targetId": 101,
+      "isRead": true,
+      "createdAt": "2026-04-21T09:00:00Z"
+    }
+  ],
+  "totalCount": 15,
+  "unreadCount": 0
 }
 ```
 
-Validation / Business Rules
-
-- 인증된 사용자만 생성 가능.
-- 동일 사용자 간 `DM` 중복 생성 시 기존 방을 반환 (`DUPLICATE_DIRECT_ROOM` 대신 200 OK + 기존 방).
-- `roomId` 는 서버에서 발급, 클라이언트가 보낸 값은 무시.
-- `type=GAME` 인 경우 `gameId` 가 존재 여부를 외부 컨텍스트 호출로 검증.
+**Validation / Business Rules**
+- 목록 조회 시점에 미읽음 알림 전체를 읽음 상태로 일괄 업데이트한다.
+- `type` 값: `FUNDING_START` | `FUNDING_SUCCESS` | `FUNDING_FAIL` | `PROMOTION`
+- `targetId`: 알림과 연관된 상품 ID
 
 ---
+
+## 읽지 않은 알림 수 조회
+
+```
+GET /api/notifications/unread-count
+```
+
+Auth Required: **O**
+
+**Response Body**
+
+```json
+{
+  "unreadCount": 3
+}
+```
+
+**Validation / Business Rules**
+- 알림 아이콘 배지 표시용으로, 목록 조회 없이 카운트만 가져올 때 사용한다.
+
+---
+
+## 상품 알림 등록
+
+```
+POST /api/notifications/products/{productId}
+```
+
+Auth Required: **O**
+
+**Response Body**
+
+```json
+{
+  "productId": 101,
+  "subscribed": true
+}
+```
+
+**Validation / Business Rules**
+- 이미 등록된 상품에 재요청 시 `409 Conflict` 반환.
+- 존재하지 않는 `productId` 요청 시 `404 Not Found` 반환.
+
+---
+
+## 상품 알림 해지
+
+```
+DELETE /api/notifications/products/{productId}
+```
+
+Auth Required: **O**
+
+**Response Body**
+
+```
+204 No Content
+```
+
+**Validation / Business Rules**
+- 등록되지 않은 상품에 대한 해지 요청 시 `404 Not Found` 반환.
+- 해지 후 해당 상품의 `FUNDING_START` / `FUNDING_SUCCESS` / `FUNDING_FAIL` 알림이 전달되지 않는다.
+
+---
+
+## 프로모션 알림 동의
+
+```
+POST /api/notifications/promotions
+```
+
+Auth Required: **O**
+
+**Response Body**
+
+```json
+{
+  "promotionSubscribed": true
+}
+```
+
+**Validation / Business Rules**
+- 이미 동의 상태인 경우 `409 Conflict` 반환.
+
+---
+
+## 프로모션 알림 해지
+
+```
+DELETE /api/notifications/promotions
+```
+
+Auth Required: **O**
+
+**Response Body**
+
+```
+204 No Content
+```
+
+**Validation / Business Rules**
+- 동의 상태가 아닌 경우 `404 Not Found` 반환.
+- 해지 후 `PROMOTION` 타입 알림이 전달되지 않는다.
+
+---
+
+## FCM 토큰 저장
+
+```
+POST /api/notifications/fcm-token
+```
+
+Auth Required: **O**
+
+**Request Body**
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `token` | String | Y | 브라우저에서 발급된 FCM 토큰 |
+
+**Response**
+
+```
+204 No Content
+```
+
+**Validation / Business Rules**
+- 로그인 후 브라우저에서 FCM 토큰 발급 시 즉시 호출한다.
+- 동일 유저의 기존 토큰이 있으면 덮어쓴다. (브라우저마다 토큰이 다를 수 있으므로 user_id + token으로 upsert)
+- SSE Emitter가 없는 경우 이 토큰으로 FCM 알림을 발송한다.
+
+---
+
+## FCM 토큰 삭제
+
+```
+DELETE /api/notifications/fcm-token
+```
+
+Auth Required: **O**
+
+**Response**
+
+```
+204 No Content
+```
+
+**Validation / Business Rules**
+- 로그아웃 시 호출하여 해당 브라우저의 토큰을 삭제한다.
+- 삭제하지 않으면 로그아웃 후에도 FCM 알림이 전달될 수 있다.
+- 토큰이 존재하지 않는 경우 `404 Not Found` 반환.
