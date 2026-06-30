@@ -240,41 +240,6 @@ Validation / Business Rules
 - 삭제된 공개 채팅방의 경우 409 ROOM_ALREADY_CLOSED를 발산한다.
 ---
 
-## 공개 채팅방 사용자 BAN
-
-```
-POST /api/chat/funding/{roomId}/ban
-```
-
-Auth Required: **O**
-
-Path Variable
-
-| 필드       | 타입      | 필수 | 설명     |
-|----------|---------|---|--------|
-| `roomId` | Long*   | Y | 채팅방 id |
-
-Request Body
-
-| 필드       | 타입      | 필수 | 설명         |
-|----------|---------|---|------------|
-| `userId` | Long*   | Y | 차단할 사용자 id |
-
-Response Body
-
-```json
-{
-    "roomId": 301,
-    "bannedUserId": 44,
-    "status": "BANNED"
-}
-```
-
-
-Validation / Business Rules
-- 차단된 사용자는 채팅 메시지를 전송할 수 없다.
-- 해당 펀딩 생성자만 수행할 수 있다.
----
 
 ## 공개 채팅방 사용자 BAN
 
