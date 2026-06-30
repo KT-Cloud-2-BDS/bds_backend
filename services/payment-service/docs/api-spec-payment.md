@@ -189,30 +189,39 @@ Validation / Business Rules
 ---
 
 ### 상품 가상계좌 생성
-
+ 
 ```
 POST /api/payment/products
 ```
-
+ 
 Auth Required: **X** (상품 도메인 서버에서 호출; Kafka 적용 시 미 사용)
-
+ 
 Request Body
-
-| 필드           | 타입     | 필수 | 설명      |
-|--------------|--------|-----|---------|
-| `productId`  | Long   | Y   | 상품 ID   |
-| `goalAmount` | Long   | Y   | 목표 금액   |
-| `expiredAt`  | String | Y   | 펀딩 만료일  |
-
+ 
+| 필드                 | 타입     | 필수 | 설명        |
+|--------------------|--------|-----|-----------|
+| `productId`        | Long   | Y   | 상품 ID     |
+| `creatorMemberId`  | Long   | Y   | 창작자 ID    |
+| `goalAmount`       | Long   | Y   | 목표 금액    |
+| `expiredAt`        | String | Y   | 펀딩 만료일   |
+ 
 Response Body
-
+ 
 ```json
 {
   "productId": 100,
+  "creatorMemberId": 10,
   "goalAmount": 1000000,
   "currentAmount": 0,
   "expiredAt": "2026-06-30T23:59:59"
 }
+```
+ 
+Validation / Business Rules
+ 
+- 상품 도메인 서버에서만 호출.
+- 동일 `productId`로 중복 생성 불가.
+
 ```
 
 Validation / Business Rules
