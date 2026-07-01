@@ -1,0 +1,55 @@
+plugins {
+    id 'org.springframework.boot' version '4.1.0' apply false
+    id 'io.spring.dependency-management' version '1.1.6' apply false
+}
+
+// 전체 프로젝트 공통 설정
+allprojects {
+    group = 'com.bds'
+    version = '0.0.1-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+// 모든 서브모듈 공통 설정
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    java {
+        toolchain {
+            // 워크플로우의 java-version과 반드시 일치해야 함
+            languageVersion = JavaLanguageVersion.of(25)
+        }
+    }
+
+    // Spring Boot BOM으로 의존성 버전을 일괄 관리 (각 서비스에서 버전 명시 불필요)
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:4.1.0"
+        }
+    }
+
+    // -------------------------------------------------------
+    // 아래 의존성은 모든 서비스에 자동 적용됩니다.
+    // 각 서비스 build.gradle에 중복 선언하지 않아도 됩니다.
+    //
+    //  - spring-boot-starter-test : JUnit 5, Mockito 포함
+    //  - lombok                   : compileOnly + annotationProcessor 모두 적용
+    // -------------------------------------------------------
+    dependencies {
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+    }
+}
+
+// Spring Boot 플러그인은 실행 가능한 JAR이 필요한 서비스에만 적용
+// modules:common은 라이브러리이므로 제외
+configure(subprojects.findAll {
+    it.path.startsWith(':services') || it.path.startsWith(':platform')
+}) {
+    apply plugin: 'org.springframework.boot'
+}

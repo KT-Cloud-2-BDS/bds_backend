@@ -1,0 +1,9 @@
+// common은 라이브러리 모듈
+// 루트에서 Spring Boot 플러그인이 적용되지 않으므로 일반 JAR로 자동 빌드됨
+// Lombok, spring-boot-starter-test는 루트 build.gradle에서 자동 적용됨
+
+dependencies {
+    // 전 서비스 공통 의존성 — 필요에 따라 추가
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+}
