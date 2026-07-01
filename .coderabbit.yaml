@@ -1,0 +1,23 @@
+language: "ko-KR"
+
+reviews:
+  request_changes_workflow: false  # 코멘트만 달고 변경 요청은 하지 않음
+
+  high_level_summary: true         # PR 전체 요약 제공
+  review_status: true              # 리뷰 완료 상태 표시 (status check 생성)
+
+  auto_review:
+    enabled: true
+    drafts: false                  # Draft PR은 리뷰 제외
+    base_branches:
+      - develop
+      - main
+
+  path_filters:
+    # 아래 경로는 리뷰 제외
+    - "!docs/**"
+    - "!**/*.md"
+    - "!.github/**"
+    - "!gradle/**"
+    - "!gradlew"
+    - "!gradlew.bat"

@@ -1,0 +1,61 @@
+name: CI - auth-service
+
+# auth-service 디렉토리 변경 시에만 실행
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/auth-service/**'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'services/auth-service/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+      # TODO: auth-service DB 확정 후 추가
+      # ex) mysql, postgresql,redis 등
+      # 예시
+#    services:
+      # JWT 로그아웃 블랙리스트 처리에 사용
+#      redis:
+#        image: redis:8
+#        ports:
+#          - 6379:6379
+#        options: >-
+#          --health-cmd "redis-cli ping"
+#          --health-interval 10s
+#          --health-timeout 5s
+#          --health-retries 5
+
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/auth-service
+            modules/common
+            build.gradle
+            settings.gradle
+            gradlew
+            gradle
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Build and Test
+        run: ./gradlew :services:auth-service:clean :services:auth-service:build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-service
+          path: services/auth-service/build/libs/*[!plain].jar

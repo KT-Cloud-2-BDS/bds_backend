@@ -1,0 +1,60 @@
+name: CI - chat-service
+
+# chat-service 디렉토리 변경 시에만 실행
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/chat-service/**'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'services/chat-service/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+#    services:
+#      # 다중 인스턴스 간 메시지 Fan-out을 위한 외부 브로커
+#      rabbitmq:
+#        image: rabbitmq:3
+#        ports:
+#          - 5672:5672
+#        options: >-
+#          --health-cmd "rabbitmq-diagnostics ping"
+#          --health-interval 10s
+#          --health-timeout 5s
+#          --health-retries 5
+
+      # TODO: 채팅 메시지 영속화에 사용할 DB 확정 후 추가
+      # ex) mysql, postgresql, mongodb 등
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/chat-service
+            modules/common
+            build.gradle
+            settings.gradle
+            gradlew
+            gradle
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Build and Test
+        run: ./gradlew :services:chat-service:clean :services:chat-service:build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-service
+          path: services/chat-service/build/libs/*[!plain].jar

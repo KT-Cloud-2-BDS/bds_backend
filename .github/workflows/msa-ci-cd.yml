@@ -1,0 +1,111 @@
+name: CI - platform #CD의 경우 개발 후반기에 추가할 예정입니다.(현재는 적용되어있지 않습니다)
+
+# platform 서비스(config-service, discovery-service) 변경 시에만 실행
+# 각 microservice는 ci-{service-name}.yml 에서 개별 관리
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'platform/**'
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - 'platform/**'
+
+jobs:
+  # platform/ 하위에서 실제로 변경된 서비스만 추출해 JSON 배열로 출력한다.
+  detect-changes:
+    runs-on: ubuntu-latest
+
+    outputs:
+      services: ${{ steps.changed.outputs.services }}
+      has_changes: ${{ steps.changed.outputs.has_changes }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 전체 git 이력을 받아야 diff 비교
+          sparse-checkout: |
+            platform
+            modules/common
+            build.gradle
+            settings.gradle
+            gradlew
+            gradle
+
+      - id: changed
+        run: |
+          # PR 이벤트: base branch 전체 기준으로 diff (PR 내 커밋 전체 반영)
+          # push 이벤트: 직전 커밋 기준 diff (첫 커밋 대비 안전 처리 포함)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          else
+            CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+          fi
+
+          SERVICES=()
+
+          # platform/ 하위 서비스 목록
+          for service in config-service discovery-service
+          do
+            if echo "$CHANGED" | grep -q "^platform/$service/"; then
+              SERVICES+=("\"$service\"")
+            fi
+          done
+
+          # 후속 Job에서 matrix로 사용할 수 있도록 JSON 배열 형태로 출력
+          JSON="[$(IFS=,; echo "${SERVICES[*]}")]"
+          echo "services=$JSON" >> $GITHUB_OUTPUT
+
+          # 변경된 서비스가 하나라도 있는지 여부 (후속 Job의 실행 조건으로 사용)
+          echo "has_changes=$( [ ${#SERVICES[@]} -gt 0 ] && echo 'true' || echo 'false' )" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    needs: detect-changes
+    # 변경된 서비스가 없으면 이 Job 자체를 건너뜀
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+
+    strategy:
+      # 감지된 서비스 목록을 matrix로 확장 → 서비스별 병렬 실행
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+      # 특정 서비스 빌드 실패 시 나머지 서비스 빌드는 계속 진행
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            platform
+            modules/common
+            build.gradle
+            settings.gradle
+            gradlew
+            gradle
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          # Gradle 의존성을 캐싱해 매 빌드마다 재다운로드하지 않도록 설정
+          cache: 'gradle'
+
+      # git은 실행 권한을 보존하지 않는 경우가 있어 Linux runner에서 명시적으로 부여
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      # clean: 이전 빌드 결과물 제거 / build: 컴파일 + 테스트 + 패키징 한번에 수행
+      - name: Build and Test
+        run: ./gradlew :platform:${{ matrix.service }}:clean :platform:${{ matrix.service }}:build
+
+      # 빌드 결과 JAR을 artifact로 저장 (이후 CD Job에서 이미지 빌드 등에 재사용 가능)
+      # *[!plain].jar — Spring Boot가 생성하는 실행 불가한 plain JAR을 제외하고 fat JAR만 업로드
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}
+          path: platform/${{ matrix.service }}/build/libs/*[!plain].jar
