@@ -1,0 +1,49 @@
+name: CI - member-service
+
+# member-service 디렉토리 변경 시에만 실행
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/member-service/**'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'services/member-service/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # TODO: member-service DB 확정 후 services 블록 추가
+    # ex) mysql, postgresql 등
+    # 참고: 이메일 인증(SMTP), OAuth 2.0 소셜 로그인은 테스트 시 Mock 처리
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/member-service
+            modules/common
+            build.gradle
+            settings.gradle
+            gradlew
+            gradle
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Build and Test
+        run: ./gradlew :services:member-service:clean :services:member-service:build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: member-service
+          path: services/member-service/build/libs/*[!plain].jar

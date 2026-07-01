@@ -1,0 +1,49 @@
+name: CI - order-service
+
+# order-service 디렉토리 변경 시에만 실행
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/order-service/**'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'services/order-service/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # TODO: order-service DB 확정 후 services 블록 추가
+    # 재고 정합성 및 동시 주문 처리가 핵심이므로 트랜잭션 지원 DB 필요
+    # ex) mysql, postgresql 등
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/order-service
+            modules/common
+            build.gradle
+            settings.gradle
+            gradlew
+            gradle
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Build and Test
+        run: ./gradlew :services:order-service:clean :services:order-service:build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: order-service
+          path: services/order-service/build/libs/*[!plain].jar
