@@ -2,7 +2,7 @@
 name: "서비스 API 건의"
 about: 서비스 API 건의
 title: "[서비스 API 건의] : "
-labels: docs
+labels: document
 ---
 
 ### 1. 제안 배경 및 필요성 (Why)
