@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: order-service-test
+
+  datasource:
+    url: jdbc:tc:postgresql:18:///test_db
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  flyway:
+    enabled: false
+
+logging:
+  level:
+    com.bds: DEBUG
+    org.hibernate.SQL: DEBUG
