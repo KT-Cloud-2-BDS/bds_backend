@@ -50,7 +50,3 @@ logs/
 # ===========================
 .DS_Store
 Thumbs.db
-
-# 각 서비스 모듈 내부의 로컬 환경 변수 파일 제외
-**/services/*-service/.env
-.env
