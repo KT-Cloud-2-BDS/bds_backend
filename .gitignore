@@ -31,7 +31,7 @@ out/
 # ===========================
 # 환경변수 / 시크릿
 # ===========================
-.env
+services/member-service/.env
 .env.*
 !.env.example
 # Firebase 서비스 계정 키 (notification-service)
@@ -50,3 +50,7 @@ logs/
 # ===========================
 .DS_Store
 Thumbs.db
+
+# 각 서비스 모듈 내부의 로컬 환경 변수 파일 제외
+**/services/*-service/.env
+.env

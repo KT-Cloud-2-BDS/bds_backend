@@ -1,0 +1,23 @@
+# 개발 서버용 인프라 (postgresql)
+# 실행: docker compose -f docker-compose.dev.yml --env-file .env up -d
+services:
+  postgres:
+    image: postgres:17
+    container_name: bds-member-postgres
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - member_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  member_postgres_data:

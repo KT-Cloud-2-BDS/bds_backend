@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: bds-auth-postgres-local
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME:-auth}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5434:5432"
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data

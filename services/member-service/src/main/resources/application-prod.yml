@@ -1,0 +1,11 @@
+server:
+  port: 8086
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/bds_member_prod
+    username: postgres
+    password: prod_password
+  jpa:
+    hibernate:
+      ddl-auto: validate

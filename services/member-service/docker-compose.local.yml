@@ -1,0 +1,18 @@
+# 로컬 개발용 인프라 (postgresql)
+# 실행:  docker compose -f docker-compose.local.yml up -d
+# 종료:  docker compose -f docker-compose.local.yml down
+services:
+  postgres:
+    image: postgres:17
+    container_name: bds-member-postgres-local
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME:-bds_member}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5433:5432"
+    volumes:
+      - member_postgres_data:/var/lib/postgresql/data
+volumes:
+  member_postgres_data:
