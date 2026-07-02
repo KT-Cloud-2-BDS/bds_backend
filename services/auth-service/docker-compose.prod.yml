@@ -21,8 +21,21 @@ services:
       retries: 5
     networks:
       - bds-auth-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: bds-auth-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - auth_redis_data:/data
+    restart: unless-stopped
+    networks:
+      - bds-auth-net
+
 volumes:
   auth_postgres_data:
 networks:
   bds-auth-net:
     external: true
+  auth_redis_data:
