@@ -52,10 +52,10 @@ Slack, Notion, Github
 
 ---
 
-| **주병규 (팀장)** | **조형욱** | **손하영** | **김재성** |
-| :---: | :---: | :---: | :---: |
-| <a href="https://github.com/jnj3j3"><img src="https://avatars.githubusercontent.com/u/70316489?v=4" width="130" height="130"><br>@jnj3j3</a> | <a href="https://github.com/HyoungUkJo"><img src="https://avatars.githubusercontent.com/u/173615995?v=4" width="130" height="130"><br>@HyoungUkJo</a> | <a href="https://github.com/glosona"><img src="https://avatars.githubusercontent.com/u/80742177?v=4" width="130" height="130"><br>@glosona</a> | <a href="https://github.com/semolu99"><img src="https://avatars.githubusercontent.com/u/143804563?v=4" width="130" height="130"><br>@semolu99</a> |
-| 채팅 | 알림 | 주문 | 결제 |
+| **주병규 (팀장)** | **조형욱** | **손하영** | **김재성** | **노여진** |
+| :---: | :---: | :---: | :---: | :---: |
+| <a href="https://github.com/jnj3j3"><img src="https://avatars.githubusercontent.com/u/70316489?v=4" width="130" height="130"><br>@jnj3j3</a> | <a href="https://github.com/HyoungUkJo"><img src="https://avatars.githubusercontent.com/u/173615995?v=4" width="130" height="130"><br>@HyoungUkJo</a> | <a href="https://github.com/glosona"><img src="https://avatars.githubusercontent.com/u/80742177?v=4" width="130" height="130"><br>@glosona</a> | <a href="https://github.com/semolu99"><img src="https://avatars.githubusercontent.com/u/143804563?v=4" width="130" height="130"><br>@semolu99</a> | <a href="https://github.com/semolu99"><img src="https://avatars.githubusercontent.com/u/143804563?v=4" width="130" height="130"><br>@semolu99</a> | <a href="https://github.com/jinjinjala-ish"><img src="https://avatars.githubusercontent.com/u/180264124?v=4" width="130" height="130"><br>@jinjinjala-ish</a> |
+| 채팅 | 알림 | 주문 | 결제 | 인증 |
 
 
 ## _SW Architecture._
