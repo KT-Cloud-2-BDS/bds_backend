@@ -106,7 +106,7 @@ PR → develop 생성
         ↓
 CI 자동 실행 (변경된 서비스만)
   - sparse-checkout으로 해당 서비스 + common만 클론
-  - ./gradlew :services:{서비스명}:clean build
+  - ./gradlew :services:{서비스명}:clean :services:{서비스명}:build
   - 빌드 성공 시 JAR 아티팩트 저장
         ↓
 CI 통과 후 develop 머지 가능
@@ -124,9 +124,11 @@ CI 통과 후 develop 머지 가능
 ## 새 서비스 추가 시
 
 ### Spring Boot (Gradle) 서비스
-1. `services/{서비스명}/` 디렉토리 생성 및 `build.gradle` 작성
-2. `settings.gradle` 에 `include 'services:{서비스명}'` 추가
+1. `services/{서비스명}/` 디렉토리 생성 및 하위 Spring Boot 구조 작성
+2. `build.gradle` 작성 (아래 서비스 build.gradle 작성 규칙 참고)
 3. `.github/workflows/ci-{서비스명}.yml` 생성
+
+> `settings.gradle` 수정 불필요 — 디렉토리가 존재하면 자동으로 Gradle 빌드 대상에 포함됩니다.
 
 ### Node.js 등 Gradle을 사용하지 않는 서비스
 Gradle 멀티모듈 구조에 포함할 수 없으므로 아래와 같이 처리합니다.
@@ -212,27 +214,47 @@ jobs:
 
 ---
 
-## 루트 `build.gradle` 에서 자동 제공되는 것들
+## 서비스 build.gradle 작성 규칙
 
-아래 항목들은 루트 `build.gradle` 의 `subprojects` 블록에 이미 선언되어 있으므로
-**각 서비스 `build.gradle` 에 중복 선언할 필요 없습니다.**
+### 자동 제공 항목 (선언 불필요)
 
-| 항목 | 내용 |
+아래 항목들은 루트 `build.gradle` 또는 `modules/common`에서 자동 제공되므로
+**각 서비스 `build.gradle` 에 중복 선언하지 않습니다.**
+
+| 항목 | 출처 |
 |---|---|
-| Java 버전 | Java 25 (toolchain) |
-| Spring Boot BOM | `spring-boot-dependencies:4.1.0` — 모든 Spring 의존성 버전 자동 관리 |
-| 테스트 프레임워크 | `spring-boot-starter-test` (JUnit 5, Mockito 포함) |
-| Lombok | `compileOnly`, `annotationProcessor` 자동 적용 |
-| Spring Boot 플러그인 | `services/*`, `platform/*` 에 자동 적용 |
+| Java 25 (toolchain) | 루트 `build.gradle` |
+| Spring Boot BOM (`spring-boot-dependencies:4.1.0`) | 루트 `build.gradle` |
+| `spring-boot-starter-test` (JUnit 5, Mockito 포함) | 루트 `build.gradle` |
+| `useJUnitPlatform()` (JUnit 5 실행 설정) | 루트 `build.gradle` |
+| Lombok (`compileOnly` + `annotationProcessor`) | 루트 `build.gradle` |
+| Spring Boot 플러그인 | 루트 `build.gradle` (`services/*`, `platform/*` 자동 적용) |
+| `spring-boot-starter-web` | `modules/common` (`api` 전파) |
+| `spring-boot-starter-validation` | `modules/common` (`api` 전파) |
 
-각 서비스 `build.gradle` 에는 **해당 서비스에만 필요한 의존성**만 선언합니다.
+### 필수 선언 항목
 
 ```groovy
-// services/auth-service/build.gradle 예시
 dependencies {
-    implementation project(':modules:common')          // common 모듈 참조
+    implementation project(':modules:common')   // 반드시 포함 — web, validation 전파의 전제조건
+}
+```
+
+> `project(':modules:common')` 이 없으면 `spring-boot-starter-web`, `spring-boot-starter-validation` 이
+> 컴파일 classpath에서 사라져 `@RestController` 등 Spring MVC 어노테이션을 사용할 수 없습니다.
+
+### 작성 예시
+
+```groovy
+// services/auth-service/build.gradle
+dependencies {
+    implementation project(':modules:common')   // 필수
+
+    // 이 서비스에만 필요한 의존성만 추가
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    // Lombok, starter-test, Java 버전은 선언 불필요 (루트에서 자동 적용)
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly    'io.jsonwebtoken:jjwt-jackson:0.12.6'
 }
 ```
