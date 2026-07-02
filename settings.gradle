@@ -3,17 +3,17 @@ rootProject.name = 'bds-backend'
 // 공통 라이브러리 모듈 — 각 서비스 JAR에 포함되어 배포됨
 include 'modules:common'
 
-// 플랫폼 서비스 — sparse-checkout 환경에서 디렉토리가 존재할 때만 포함
-['config-service', 'discovery-service'].each { svc ->
-    if (file("platform/${svc}").exists()) {
-        include "platform:${svc}"
-    }
-}
+// 플랫폼 서비스 — Spring Cloud 기반 인프라 서비스
+include 'platform:config-service'
+include 'platform:discovery-service'
 
-// 마이크로서비스 — sparse-checkout 환경에서 디렉토리가 존재할 때만 포함
-// Java(Spring) 외 다른 언어를 사용하는 서비스는 이 목록에서 제외하고 해당 CI yml에서 직접 빌드
-['auth-service', 'chat-service', 'member-service', 'notification-service', 'order-service', 'payment-service'].each { svc ->
-    if (file("services/${svc}").exists()) {
-        include "services:${svc}"
-    }
-}
+// 마이크로서비스
+include 'services:auth-service'
+include 'services:chat-service'
+include 'services:member-service'
+include 'services:notification-service'
+include 'services:order-service'
+include 'services:payment-service'
+
+//! 마이크로서비스들 중 java(spring)을 사용하지 않을 경우 이를 주석처리하고 따로 잡아야 함.
+//- 공유 필요
