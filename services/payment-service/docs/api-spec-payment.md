@@ -9,10 +9,8 @@
 | POST   | /api/payment/accounts/verify            | O             | 1원 인증                                                  |
 | POST   | /api/payment/deposit                    | O             | 페이 충전                                                 |
 | POST   | /api/payment/withdraw                   | O             | 페이 출금                                                 |
-| GET    | /api/payment/history                    | O             | 개인 월렛 거래 내역 조회                                     |
+| POST   | /api/payment/products                   | X             | 상품 가상계좌 생성 (상품 도메인에서 호출; Kafka로 전달 시 미 사용) |
 | POST   | /api/payment/funding                    | X             | 펀딩 결제 (주문 도메인에서 호출; Kafka로 전달 시 미 사용)         |
-| POST   | /api/payment/funding/settlement         | X             | 펀딩 정산 요청 (주문 도메인에서 호출; 목표 달성 시)                |
-| POST   | /api/payment/funding/batch-refund       | X             | 펀딩 배치 환불 요청 (주문 도메인에서 호출; 목표 미달성 시)          |
 | POST   | /api/payment/refund                     | O             | 수동 환불                                                 |
 
 ### 가상 금융망 엔드포인트 목록
@@ -85,7 +83,7 @@ Validation / Business Rules
 - 클라이언트가 입력한 `holderName`과 가상 은행 실명 조회 결과 일치 여부 검증.
 - 불일치 시 등록 실패 처리.
 - 계좌 등록 후 1원 인증이 완료되어야 최종 등록 완료.
-- 다른 계좌를 등록을 원하는 경우 기존 계좌를 삭제하고 재 등록 진행.
+- 다른 계좌를 등록을 원하는 경우 기존 계좌를 삭제하고 재 등록 진행
 
 ---
 
@@ -150,7 +148,6 @@ Validation / Business Rules
 - Pay 서버가 가상 은행 계좌에서 출금 요청 후 성공 시 월렛 잔액 증가.
 - `tranSeqNo` 중복 검증으로 이중 충전 방지.
 - `tranSeqNo`는 UUID v7 사용.
-- 처리 완료 시 `payment_history`에 `type: DEPOSIT`으로 기록.
 
 ---
 
@@ -188,70 +185,49 @@ Validation / Business Rules
   - 존재하지 않을 경우 잔액 복원.
 - `tranSeqNo` 중복 검증으로 이중 출금 방지.
 - `tranSeqNo`는 UUID v7 사용.
-- 처리 완료 시 `payment_history`에 `type: WITHDRAWAL`으로 기록.
 
 ---
 
-### 개인 월렛 거래 내역 조회
-
+### 상품 가상계좌 생성
+ 
 ```
-GET /api/payment/history
+POST /api/payment/products
 ```
-
-Auth Required: **O**
-
-Request Body: 없음 (memberId는 JWT 헤더에서 추출)
-
-Query Parameter
-
-| 필드        | 타입     | 필수 | 설명                    |
-|-----------|--------|-----|-----------------------|
-| `from`    | Int    | N   | 조회 시작일 (ISO-8601, 예: 2026-05-01). 미지정 시 현재로부터 1개월 전 |
-| `to`      | Int    | N   | 조회 종료일 (ISO-8601). 미지정 시 현재 시각|
-| `page`    | Int    | N   | 페이지 번호 (기본값 0)      |
-| `size`    | Int    | N   | 페이지당 개수 (기본값 20)    |
-
+ 
+Auth Required: **X** (상품 도메인 서버에서 호출; Kafka 적용 시 미 사용)
+ 
+Request Body
+ 
+| 필드                 | 타입     | 필수 | 설명        |
+|--------------------|--------|-----|-----------|
+| `productId`        | Long   | Y   | 상품 ID     |
+| `creatorMemberId`  | Long   | Y   | 창작자 ID    |
+| `goalAmount`       | Long   | Y   | 목표 금액    |
+| `expiredAt`        | String | Y   | 펀딩 만료일   |
+ 
 Response Body
-
+ 
 ```json
 {
-  "content": [
-    {
-      "tranSeqNo": "018e1234-abcd-7xxx-xxxx-xxxxxxxxxxxx",
-      "type": "DEPOSIT",
-      "message": "페이 충전",
-      "amount": 10000,
-      "balanceAfter": 60000,
-      "orderId": null,
-      "productId": null,
-      "status": "SUCCESS",
-      "createdAt": "2026-06-01T10:00:00"
-    },
-    {
-      "tranSeqNo": "018e5678-abcd-7xxx-xxxx-xxxxxxxxxxxx",
-      "type": "FUNDING",
-      "message": "펀딩 결제",
-      "amount": 10000,
-      "balanceAfter": 50000,
-      "orderId": 500,
-      "productId": 100,
-      "status": "SUCCESS",
-      "createdAt": "2026-05-30T15:20:00"
-    }
-  ],
-  "page": 0,
-  "size": 20,
-  "totalElements": 2
+  "productId": 100,
+  "creatorMemberId": 10,
+  "goalAmount": 1000000,
+  "currentAmount": 0,
+  "expiredAt": "2026-06-30T23:59:59"
 }
+```
+ 
+Validation / Business Rules
+ 
+- 상품 도메인 서버에서만 호출.
+- 동일 `productId`로 중복 생성 불가.
+
 ```
 
 Validation / Business Rules
 
-- 인증된 사용자 본인의 거래 내역만 조회 가능.
-- from, to 미지정 시 기본 조회 범위는 현재 시각 기준 최근 1개월.
-- from이 to보다 늦을 경우 400 응답.
-- createdAt 기준 최신순 정렬.
-- 월렛 거래(payment_history)와 펀딩 거래(funding_payment)를 통합하여 반환.
+- 상품 도메인 서버에서만 호출.
+- 동일 `productId`로 중복 생성 불가.
 
 ---
 
@@ -265,13 +241,13 @@ Auth Required: **X** (주문 도메인 서버에서 호출; Kafka 적용 시 미
 
 Request Body
 
-| 필드            | 타입     | 필수 | 설명                               |
-|---------------|--------|-----|----------------------------------|
-| `orderId`     | Long   | Y   | 주문 ID                            |
-| `memberId`    | Long   | Y   | 후원자 ID                           |
-| `productId`   | Long   | Y   | 상품 ID                            |
-| `amount`      | Long   | Y   | 결제 금액                            |
-| `paymentType` | Enum   | Y   | 결제 유형 (`INSTANT` \| `RESERVED`)  |
+| 필드            | 타입          | 필수 | 설명                               |
+|---------------|-------------|-----|----------------------------------|
+| `orderId`     | Long        | Y   | 주문 ID                            |
+| `memberId`    | Long        | Y   | 후원자 ID                           |
+| `productId`   | Long        | Y   | 상품 ID                            |
+| `amount`      | Long        | Y   | 결제 금액                            |
+| `paymentType` | Enum        | Y   | 결제 유형 (`INSTANT` \| `RESERVED`)  |
 
 Response Body
 
@@ -289,87 +265,12 @@ Response Body
 Validation / Business Rules
 
 - 주문 도메인 서버에서만 호출.
-- 상품 목표 금액, 마감일 등 펀딩 조건은 주문 도메인이 검증한 후 요청하며, Pay 서버는 별도 검증하지 않음.
-- `INSTANT`: 월렛 잔액 즉시 차감 → `funding_payment`에 SUCCESS로 기록.
-- `RESERVED`: 결제 예약만 등록 (잔액 차감 없음) → `funding_payment`에 RESERVED로 기록.
+- `INSTANT`: 월렛 잔액 즉시 차감 → 상품 가상계좌 적립.
+- `RESERVED`: 결제 예약만 등록 (잔액 차감 없음).
 - 월렛 잔액 부족 시 결제 실패.
 - 비관적 락으로 동시성 제어.
 - `tranSeqNo` 중복 검증.
 - `tranSeqNo`는 UUID v7 사용.
-
----
-
-### 펀딩 정산 요청
-
-```
-POST /api/payment/funding/settlement
-```
-
-Auth Required: **X** (주문 도메인 서버에서 호출; 목표 달성 판단은 주문 도메인 책임)
-
-Request Body
-
-| 필드                | 타입   | 필수 | 설명       |
-|-------------------|------|-----|----------|
-| `productId`       | Long | Y   | 상품 ID    |
-| `creatorMemberId` | Long | Y   | 창작자 ID   |
-
-Response Body
-
-```json
-{
-  "productId": 100,
-  "creatorMemberId": 10,
-  "settledAmount": 1200000,
-  "settledCount": 30
-}
-```
-
-Validation / Business Rules
-
-- 주문 도메인 서버에서만 호출. 목표 달성 여부 판단은 주문 도메인 책임이며, Pay 서버는 요청받은 건에 한해 정산만 수행.
-- `productId` 기준 `funding_payment` SUCCESS/RESERVED 건 전체 조회.
-- `RESERVED` 건은 이 시점에 월렛 차감 후 정산 처리. 잔액 부족 시 해당 건 실패 처리(정산 제외).
-- 성공 건 합산하여 창작자(`creatorMemberId`) 월렛으로 이체.
-- 이체 완료 후 해당 건들 상태 SUCCESS로 확정.
-- 실패 시 보상 트랜잭션 실행.
-- 중복 요청 방지를 위해 `productId` 기준 처리 이력 확인 후 이미 정산된 상품은 재처리 거부.
-
----
-
-### 펀딩 배치 환불 요청
-
-```
-POST /api/payment/funding/batch-refund
-```
-
-Auth Required: **X** (주문 도메인 서버에서 호출; 목표 미달성 판단은 주문 도메인 책임)
-
-Request Body
-
-| 필드          | 타입   | 필수 | 설명     |
-|-------------|------|-----|--------|
-| `productId` | Long | Y   | 상품 ID  |
-
-Response Body
-
-```json
-{
-  "productId": 100,
-  "refundedCount": 15,
-  "refundedAmount": 300000
-}
-```
-
-Validation / Business Rules
-
-- 주문 도메인 서버에서만 호출. 목표 미달성 여부 판단은 주문 도메인 책임.
-- `productId` 기준 `funding_payment` 목록 조회 후 건별 환불 처리.
-- `INSTANT`: 월렛 복원.
-- `RESERVED`: 예약만 취소 (차감된 금액 없어 복원 불필요).
-- 각 건별 상태 Lock 후 REFUNDED 전환.
-- 배치 환불과 수동 환불 동시 요청 시 이중 환불 방지.
-- 실패 건 보상 트랜잭션 실행.
 
 ---
 
@@ -400,7 +301,7 @@ Response Body
 Validation / Business Rules
 
 - 인증된 사용자 본인만 환불 요청 가능.
-- 펀딩 마감 전까지만 수동 환불 가능 (마감 여부는 주문 도메인 확인 필요).
+- 펀딩 마감 전까지만 수동 환불 가능.
 - `funding_payment` 상태 Lock 후 REFUNDED 전환 → 월렛 복원.
 - 배치 환불과 수동 환불 동시 요청 시 이중 환불 방지.
 
