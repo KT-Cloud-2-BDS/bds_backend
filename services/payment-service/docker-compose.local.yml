@@ -1,0 +1,24 @@
+# 로컬 개발용 인프라 (MySQL)
+# 실행:  docker compose -f docker-compose.local.yml up -d
+# 종료:  docker compose -f docker-compose.local.yml down
+# 볼륨 포함 전체 삭제 : docker compose -f docker-compose.local.yml down -v
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: bds-payment-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-payment}
+      MYSQL_USER: ${DB_USERNAME:-payment}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-payment}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      TZ: Asia/Seoul
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+
+volumes:
+  mysql_data:
