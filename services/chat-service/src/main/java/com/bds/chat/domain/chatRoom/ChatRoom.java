@@ -19,6 +19,9 @@ public class ChatRoom {
     private LocalDateTime deletedAt;
 
     public void close() {
+        if(this.status == ChatRoomStatus.CLOSED){
+            return;
+        }
         this.status = ChatRoomStatus.CLOSED;
         this.deletedAt = LocalDateTime.now();
     }

@@ -9,5 +9,5 @@ interface FundingChatBlacklistJpaRepository extends JpaRepository<FundingChatBla
 
     boolean existsByRoom_IdAndMemberIdAndStatus(Long roomId, Long memberId, BlacklistStatus status);
 
-    Optional<FundingChatBlacklistJpaEntity> findByRoom_IdAndMemberId(Long roomId, Long memberId);
+    Optional<FundingChatBlacklistJpaEntity> findByRoom_IdAndMemberIdAndStatus(Long roomId, Long memberId, BlacklistStatus status);
 }

@@ -28,7 +28,7 @@ public class FundingChatBlacklistPersistenceAdapter implements FundingChatBlackl
 
     @Override
     public Optional<FundingChatBlacklist> findBlacklist(Long roomId, Long memberId) {
-        return jpaRepository.findByRoom_IdAndMemberId(roomId, memberId)
+        return jpaRepository.findByRoom_IdAndMemberIdAndStatus(roomId, memberId, BlacklistStatus.ACTIVE)
                 .map(mapper::toDomain);
     }
 

@@ -13,6 +13,7 @@ public class ChatMessage {
     private Long roomId;
     private Long senderId;
     private String content;
+    private MessageType type;
     private MessageStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime deletedAt;

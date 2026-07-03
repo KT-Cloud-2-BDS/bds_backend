@@ -1,7 +1,7 @@
 package com.bds.chat.infrastructure.persistence.message;
 
-import com.bds.chat.domain.message.MessageStatus;
 import com.bds.chat.domain.message.ChatMessage;
+import com.bds.chat.domain.message.MessageStatus;
 import com.bds.chat.infrastructure.persistence.chatroom.ChatRoomJpaEntity;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +14,7 @@ class ChatMessageMapper {
                 .roomId(entity.getRoom().getId())
                 .senderId(entity.getSenderId())
                 .content(entity.getContent())
+                .type(entity.getType())
                 .status(entity.getStatus())
                 .createdAt(entity.getCreatedAt())
                 .deletedAt(entity.getDeletedAt())
@@ -27,6 +28,7 @@ class ChatMessageMapper {
                 .room(roomRef)
                 .senderId(domain.getSenderId())
                 .content(domain.getContent())
+                .type(domain.getType())
                 .status(domain.getStatus() != null ? domain.getStatus() : MessageStatus.SENT)
                 .deletedAt(domain.getDeletedAt())
                 .clientId(domain.getClientId())

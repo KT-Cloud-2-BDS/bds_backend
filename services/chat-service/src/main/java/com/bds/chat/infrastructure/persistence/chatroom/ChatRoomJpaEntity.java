@@ -26,6 +26,7 @@ public class ChatRoomJpaEntity {
     @Column(nullable = false)
     private Long productId;
 
+    @Column(length = 100)
     private String title;
 
     @Enumerated(EnumType.STRING)

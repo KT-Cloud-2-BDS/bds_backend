@@ -16,8 +16,9 @@ CREATE TABLE chat_message
 (
     id         BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
     room_id    BIGINT                              NOT NULL,
-    sender_id  BIGINT                              NOT NULL,
+    sender_id  BIGINT,
     content    TEXT                                NOT NULL,
+    type       VARCHAR(20)                         NOT NULL,
     status     VARCHAR(20)                         NOT NULL,
     created_at TIMESTAMP                           NOT NULL,
     deleted_at TIMESTAMP,
@@ -58,11 +59,13 @@ CREATE TABLE funding_chat_blacklist
 );
 
 CREATE INDEX idx_chat_message_room_id ON chat_message (room_id);
-CREATE INDEX idx_chat_message_room_created ON chat_message (room_id, created_at);
+CREATE INDEX idx_chat_message_room_created ON chat_message (room_id, id);
 CREATE UNIQUE INDEX idx_chat_message_client_id ON chat_message (client_id) WHERE client_id IS NOT NULL;
 
-CREATE INDEX idx_inquiry_member_room ON inquiry_chat_member (room_id);
-CREATE INDEX idx_inquiry_member_member ON inquiry_chat_member (member_id);
 
-CREATE INDEX idx_blacklist_room ON funding_chat_blacklist (room_id);
+CREATE INDEX idx_inquiry_member_member ON inquiry_chat_member (member_id);
+ALTER TABLE inquiry_chat_member ADD CONSTRAINT uq_inquiry_member UNIQUE (member_id, room_id);
+
+
 CREATE INDEX idx_blacklist_member ON funding_chat_blacklist (member_id);
+ALTER TABLE funding_chat_blacklist ADD CONSTRAINT uq_blacklist UNIQUE (room_id, member_id);

@@ -26,6 +26,7 @@ public class FundingChatBlacklistJpaEntity {
     @Column(nullable = false)
     private Long memberId;
 
+    @Column(length = 255)
     private String reason;
 
     @Enumerated(EnumType.STRING)

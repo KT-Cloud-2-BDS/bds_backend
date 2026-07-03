@@ -18,6 +18,9 @@ public class FundingChatBlacklist {
     private LocalDateTime deletedAt;
 
     public void release() {
+        if(this.status == BlacklistStatus.RELEASED){
+            return;
+        }
         this.status = BlacklistStatus.RELEASED;
         this.deletedAt = LocalDateTime.now();
     }

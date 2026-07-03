@@ -1,6 +1,7 @@
 package com.bds.chat.infrastructure.persistence.message;
 
 import com.bds.chat.domain.message.MessageStatus;
+import com.bds.chat.domain.message.MessageType;
 import com.bds.chat.infrastructure.persistence.chatroom.ChatRoomJpaEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,11 +25,14 @@ public class ChatMessageJpaEntity {
     @JoinColumn(name = "room_id", nullable = false)
     private ChatRoomJpaEntity room;
 
-    @Column(nullable = false)
     private Long senderId;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private MessageType type;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
