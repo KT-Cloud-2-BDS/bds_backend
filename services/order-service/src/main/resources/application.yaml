@@ -28,7 +28,10 @@ management:
       show-details: when-authorized
   metrics:
     tags:
-      application: ${spring.application.name:order}
+      application: ${spring.application.name}
 
 server:
   port: ${SERVER_PORT:8080}
+
+jwt:
+  secret: ${JWT_SECRET}
