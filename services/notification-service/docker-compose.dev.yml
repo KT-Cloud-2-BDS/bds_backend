@@ -20,8 +20,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - bds-notification-net
 
   redis:
     image: redis:8
@@ -38,13 +36,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - bds-notification-net
 
 volumes:
   notification-postgres-dev-data:
   notification-redis-dev-data:
-
-networks:
-  bds-notification-net:
-    external: true
