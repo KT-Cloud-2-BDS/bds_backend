@@ -3,19 +3,22 @@ services:
     image: postgres:18
     container_name: notification-postgres
     environment:
-      POSTGRES_DB: notification_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-notification_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
-      - notification-postgres-data:/var/lib/postgresql
+      - notification-postgres-local-data:/var/lib/postgresql
 
   redis:
     image: redis:8
     container_name: notification-redis
     ports:
       - "6379:6379"
+    volumes:
+      - notification-redis-local-data:/data
 
 volumes:
-  notification-postgres-data:
+  notification-postgres-local-data:
+  notification-redis-local-data:
