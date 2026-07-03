@@ -31,8 +31,6 @@ out/
 # ===========================
 # 환경변수 / 시크릿
 # ===========================
-services/member-service/.env
-services/auth-service/.env
 .env
 .env.*
 !.env.example
