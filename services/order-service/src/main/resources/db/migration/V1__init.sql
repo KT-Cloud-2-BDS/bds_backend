@@ -44,9 +44,10 @@ CREATE TABLE reward
 CREATE TABLE "order"
 (
     id            BIGINT      NOT NULL,
+    order_no      VARCHAR(20) NOT NULL,
     member_id     BIGINT      NOT NULL,
     status        VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    amount        INT         NULL,
+    amount        BIGINT      NULL,
     cancel_reason VARCHAR(20) NULL,
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP   NULL,

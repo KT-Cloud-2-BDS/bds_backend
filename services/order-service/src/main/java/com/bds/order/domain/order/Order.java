@@ -2,10 +2,7 @@ package com.bds.order.domain.order;
 
 import com.bds.order.domain.common.BaseEntity;
 import com.bds.order.presentation.dto.OrderStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +11,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @NoArgsConstructor
+@Table(name = "`order`")
 public class Order extends BaseEntity {
     @Id
     private Long id;
@@ -23,6 +21,7 @@ public class Order extends BaseEntity {
 
     private Long memberId;
 
+    @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
     private Long amount;
