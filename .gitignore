@@ -33,6 +33,7 @@ out/
 # ===========================
 services/member-service/.env
 services/auth-service/.env
+.env
 .env.*
 !.env.example
 # Firebase 서비스 계정 키 (notification-service)
