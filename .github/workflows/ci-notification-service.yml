@@ -63,7 +63,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and Test
-        run: ./gradlew :services:notification-service:clean :services:notification-service:build
+        run: ./gradlew :services:notification-service:clean :services:notification-service:build -Dspring.profiles.active=dev
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
