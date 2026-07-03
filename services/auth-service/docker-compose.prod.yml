@@ -35,7 +35,8 @@ services:
 
 volumes:
   auth_postgres_data:
+  auth_redis_data:
+
 networks:
   bds-auth-net:
     external: true
-  auth_redis_data:

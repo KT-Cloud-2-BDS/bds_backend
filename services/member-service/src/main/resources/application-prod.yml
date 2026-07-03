@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/bds_member_prod
-    username: postgres
-    password: prod_password
+    url: jdbc:postgresql://localhost:5432/bds_member_prod
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
