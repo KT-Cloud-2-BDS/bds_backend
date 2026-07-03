@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "127.0.0.1:5434:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - auth_postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -28,7 +28,7 @@ services:
     volumes:
       - auth_redis_data:/data
     restart: unless-stopped
-    
+
 volumes:
   auth_postgres_data:
   auth_redis_data:
