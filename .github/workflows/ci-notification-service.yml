@@ -15,21 +15,30 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # TODO: notification-service DB 확정 후 추가
-    # ex) mysql, postgresql 등
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: notification_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
-    # 예시
-#    services:
-#      # SSE 미접속 유저 대상 FCM 대체 발송 및 토픽 구독 처리에 사용
-#      redis:
-#        image: redis:8
-#        ports:
-#          - 6379:6379
-#        options: >-
-#          --health-cmd "redis-cli ping"
-#          --health-interval 10s
-#          --health-timeout 5s
-#          --health-retries 5
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
 
 
