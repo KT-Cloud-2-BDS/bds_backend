@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:18
-    container_name: bds-order-dev
+    container_name: bds-order-postgres-dev
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
