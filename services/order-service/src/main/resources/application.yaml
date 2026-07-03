@@ -28,7 +28,7 @@ management:
       show-details: when-authorized
   metrics:
     tags:
-      application: ${spring.application.name:myapp}
+      application: ${spring.application.name:order}
 
 server:
   port: ${SERVER_PORT:8080}
