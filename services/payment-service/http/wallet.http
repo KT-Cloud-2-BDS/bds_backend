@@ -1,0 +1,4 @@
+### 월렛 확인
+GET localhost:8085/wallet
+X-Member-Id: 1
+###
