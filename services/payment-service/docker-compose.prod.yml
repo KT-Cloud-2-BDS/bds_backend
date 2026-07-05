@@ -1,10 +1,10 @@
-# 개발 서버용 인프라 (MySQL)
-# 실행: docker compose -f docker-compose.dev.yml --env-file .env up -d
+# 운영 서버용 인프라 (MySQL)
+# 실행: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 services:
   mysql:
     image: mysql:8.4
-    container_name: bds-payment-mysql
-    env_file: .env
+    container_name: bds-payment-mysql-prod
+    env_file: .env.prod
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
@@ -18,7 +18,9 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
-    restart: unless-stopped
+      - --slow_query_log=ON
+      - --long_query_time=2
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
