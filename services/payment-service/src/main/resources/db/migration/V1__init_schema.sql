@@ -41,7 +41,7 @@ CREATE TABLE funding_payment
     wallet_id    BIGINT      NOT NULL,
     product_id   BIGINT      NOT NULL,
     tran_seq_no  CHAR(36)    NOT NULL,
-    amount       INT         NOT NULL,
+    amount       BIGINT      NOT NULL,
     payment_type VARCHAR(20) NOT NULL,                   -- INSTANT | RESERVED
     status       VARCHAR(20) NOT NULL DEFAULT 'SUCCESS', -- SUCCESS | REFUNDED | FAILED | RESERVED
     created_at   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
