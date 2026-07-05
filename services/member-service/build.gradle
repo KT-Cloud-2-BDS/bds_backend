@@ -1,0 +1,8 @@
+dependencies {
+    // 공통 모듈 의존성 주입
+    implementation project(':modules:common')
+
+    // 회원 서비스 전용 의존성 주입
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.postgresql:postgresql'
+}
