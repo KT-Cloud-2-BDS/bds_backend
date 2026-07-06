@@ -17,7 +17,7 @@ public class OrderPersistenceAdapter implements OrderRepository {
 
     @Override
     public Order save(Order order) {
-        OrderJpaEntity entity = OrderJpaEntity.from(order);
+        OrderJpaEntity entity = orderMapper.toJpaEntity(order);
         OrderJpaEntity saved = orderJpaRepository.save(entity);
         return orderMapper.toDomain(saved);
     }
