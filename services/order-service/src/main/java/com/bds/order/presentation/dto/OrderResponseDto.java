@@ -1,6 +1,7 @@
 package com.bds.order.presentation.dto;
 
 import com.bds.order.domain.order.Order;
+import com.bds.order.domain.order.OrderStatus;
 
 import java.time.LocalDateTime;
 
