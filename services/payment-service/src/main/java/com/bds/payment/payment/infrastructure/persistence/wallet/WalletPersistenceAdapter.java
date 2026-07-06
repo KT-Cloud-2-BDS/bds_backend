@@ -1,4 +1,4 @@
-package com.bds.payment.payment.infrastructure.persistence;
+package com.bds.payment.payment.infrastructure.persistence.wallet;
 
 import com.bds.payment.payment.domain.wallet.Wallet;
 import com.bds.payment.payment.domain.wallet.WalletRepository;

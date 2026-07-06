@@ -1,4 +1,4 @@
-package com.bds.payment.payment.infrastructure.persistence;
+package com.bds.payment.payment.infrastructure.persistence.wallet;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
