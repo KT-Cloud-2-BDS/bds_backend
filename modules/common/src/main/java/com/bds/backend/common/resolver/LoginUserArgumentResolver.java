@@ -25,6 +25,10 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
         String email = webRequest.getHeader("X-User-Email");
         String role = webRequest.getHeader("X-User-Role");
 
+        if (userIdStr == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증된 유저 정보가 헤더에 존재하지 않습니다.");
+        }
+
         Long userId;
 
         try {
