@@ -3,12 +3,12 @@ spring:
     name: order-test
 
   datasource:
-    url: jdbc:tc:postgresql:18:///test_db
+    url: jdbc:tc:postgresql:18:///order_db
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
     show-sql: true
 
   flyway:

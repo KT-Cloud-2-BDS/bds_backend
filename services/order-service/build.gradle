@@ -2,12 +2,6 @@ plugins {
     id 'jacoco'
 }
 
-dependencyManagement {
-    imports {
-        mavenBom "org.testcontainers:testcontainers-bom:1.21.0"
-    }
-}
-
 dependencies {
     implementation project(':modules:common')
 
@@ -31,19 +25,22 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
 
     // Test - Testcontainers
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
+    testImplementation 'org.testcontainers:postgresql:1.21.4'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
     finalizedBy jacocoTestReport
 }
 
 jacoco {
-    toolVersion = "0.8.12"
+    toolVersion = "0.8.13"
 }
 
 jacocoTestReport {

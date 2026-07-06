@@ -1,7 +1,6 @@
 package com.bds.order.domain.order;
 
 import com.bds.order.domain.common.BaseEntity;
-import com.bds.order.presentation.dto.OrderStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +13,7 @@ import java.util.UUID;
 @Table(name = "`order`")
 public class Order extends BaseEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true)
@@ -27,6 +27,14 @@ public class Order extends BaseEntity {
     private Long amount;
 
     private String cancelReason;
+
+    public static Order create(Long memberId, Long amount, OrderStatus status) {
+        Order order = new Order();
+        order.memberId = memberId;
+        order.amount = amount;
+        order.status = (status != null) ? status : OrderStatus.PENDING;
+        return order;
+    }
 
     @PrePersist
     public void generateOrderNumber() {
