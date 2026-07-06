@@ -1,5 +1,7 @@
 package com.bds.order.presentation.controller;
 
+import com.bds.backend.common.annotation.LoginUser;
+import com.bds.backend.common.dto.CurrentUser;
 import com.bds.order.application.OrderService;
 import com.bds.order.presentation.dto.OrderResponseDto;
 import jakarta.validation.constraints.Min;
@@ -7,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,10 +27,11 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<List<OrderResponseDto>> listOrders(
-            @AuthenticationPrincipal Long memberId,
+            @LoginUser CurrentUser user,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
+        Long memberId = user.id();
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(orderService.getAllOrders(memberId, pageable));
     }

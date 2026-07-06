@@ -49,8 +49,8 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
             given(orderService.getAllOrders(eq(1L), any())).willReturn(List.of(dto));
 
             mockMvc.perform(get("/api/orders/")
-                            .header("X-Member-Id", "1")
-                            .header("X-Member-Role", "USER"))
+                            .header("X-User-Id", "1")
+                            .header("X-User-Role", "USER"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].orderNo").value("ORD-ABC123DEF456"))
                     .andExpect(jsonPath("$[0].orderStatus").value("PENDING"))

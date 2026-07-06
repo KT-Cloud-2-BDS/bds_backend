@@ -9,12 +9,6 @@ public enum ErrorCode {
     REQUEST_INVALID(HttpStatus.BAD_REQUEST, "Request Body 누락"),
     REQUEST_BODY_MALFORMED(HttpStatus.BAD_REQUEST, "JSON 형식 오류"),
 
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증 필요"),
-    TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Access Token 만료"),
-    TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Access Token 유효성 검증 실패"),
-
-    FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한 없음"),
-
     NOT_FOUND(HttpStatus.NOT_FOUND, "리소스 없음"),
 
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메소드"),
