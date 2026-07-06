@@ -52,7 +52,8 @@ CREATE TABLE "order"
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP   NULL,
 
-    CONSTRAINT pk_order PRIMARY KEY (id)
+    CONSTRAINT pk_order PRIMARY KEY (id),
+    CONSTRAINT uk_order_order_no UNIQUE (order_no)
 );
 
 -- Order Reward

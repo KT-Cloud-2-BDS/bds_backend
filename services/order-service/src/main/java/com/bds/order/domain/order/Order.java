@@ -17,6 +17,9 @@ public class Order {
     private LocalDateTime updatedAt;
 
     public static Order create(Long memberId, Long amount, OrderStatus status) {
+        if (amount == null || amount < 0) {
+            throw new IllegalArgumentException("amount must be non-negative");
+        }
         Order order = new Order();
         order.memberId = memberId;
         order.amount = amount;

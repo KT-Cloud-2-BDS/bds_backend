@@ -24,7 +24,8 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         String memberIdHeader = request.getHeader("X-Member-Id");
         String roleHeader = request.getHeader("X-Member-Role");
 
-        if (memberIdHeader == null || memberIdHeader.isBlank()) {
+        if (memberIdHeader == null || memberIdHeader.isBlank()
+                || roleHeader == null || roleHeader.isBlank()) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
