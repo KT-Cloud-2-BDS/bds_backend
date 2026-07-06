@@ -18,4 +18,14 @@ public class OrderMapper {
                 entity.getUpdatedAt()
         );
     }
+
+    public OrderJpaEntity toJpaEntity(Order domain) {
+        return OrderJpaEntity.builder()
+                .id(domain.getId())
+                .memberId(domain.getMemberId())
+                .status(domain.getStatus())
+                .amount(domain.getAmount())
+                .cancelReason(domain.getCancelReason())
+                .build();
+    }
 }

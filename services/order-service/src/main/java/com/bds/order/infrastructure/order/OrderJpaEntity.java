@@ -1,8 +1,9 @@
 package com.bds.order.infrastructure.order;
 
-import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -14,7 +15,9 @@ import java.util.UUID;
 
 @Entity
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "`order`")
 @EntityListeners(AuditingEntityListener.class)
 public class OrderJpaEntity {
@@ -40,15 +43,6 @@ public class OrderJpaEntity {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    public static OrderJpaEntity from(Order order) {
-        OrderJpaEntity entity = new OrderJpaEntity();
-        entity.memberId = order.getMemberId();
-        entity.status = order.getStatus();
-        entity.amount = order.getAmount();
-        entity.cancelReason = order.getCancelReason();
-        return entity;
-    }
 
     @PrePersist
     public void generateOrderNumber() {
