@@ -1,8 +1,8 @@
 package com.bds.order.application;
 
 import com.bds.order.domain.order.Order;
+import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
-import com.bds.order.infrastructure.order.OrderJpaRepository;
 import com.bds.order.presentation.dto.OrderResponseDto;
 import com.bds.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.*;
@@ -20,17 +20,17 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     private OrderService orderService;
 
     @Autowired
-    private OrderJpaRepository orderJpaRepository;
+    private OrderRepository orderRepository;
 
     @BeforeEach
     void setUp() {
-        orderJpaRepository.save(Order.create(1L, 33000L, OrderStatus.PENDING));
-        orderJpaRepository.save(Order.create(1L, 53000L, OrderStatus.PAID));
+        orderRepository.save(Order.create(1L, 33000L, OrderStatus.PENDING));
+        orderRepository.save(Order.create(1L, 53000L, OrderStatus.PAID));
     }
 
     @AfterEach
     void tearDown() {
-        orderJpaRepository.deleteAll();
+        orderRepository.deleteAll();
     }
 
     @Nested

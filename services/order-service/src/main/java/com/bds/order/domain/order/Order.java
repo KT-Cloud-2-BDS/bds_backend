@@ -1,32 +1,20 @@
 package com.bds.order.domain.order;
 
-import com.bds.order.domain.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
-import java.util.UUID;
+import java.time.LocalDateTime;
 
-@Entity
 @Getter
-@NoArgsConstructor
-@Table(name = "`order`")
-public class Order extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class Order {
+
     private Long id;
-
-    @Column(unique = true)
     private String orderNo;
-
     private Long memberId;
-
-    @Enumerated(EnumType.STRING)
     private OrderStatus status;
-
     private Long amount;
-
     private String cancelReason;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static Order create(Long memberId, Long amount, OrderStatus status) {
         Order order = new Order();
@@ -36,8 +24,16 @@ public class Order extends BaseEntity {
         return order;
     }
 
-    @PrePersist
-    public void generateOrderNumber() {
-        this.orderNo = "ORD-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+    public static Order of(Long id, String orderNo, Long memberId, OrderStatus status, Long amount, String cancelReason, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        Order order = new Order();
+        order.id = id;
+        order.orderNo = orderNo;
+        order.memberId = memberId;
+        order.status = status;
+        order.amount = amount;
+        order.cancelReason = cancelReason;
+        order.createdAt = createdAt;
+        order.updatedAt = updatedAt;
+        return order;
     }
 }
