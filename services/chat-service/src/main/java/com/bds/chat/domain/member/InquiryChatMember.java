@@ -24,6 +24,9 @@ public class InquiryChatMember {
     }
 
     public void leave() {
+        if(this.status == MemberStatus.BANNED ||  this.status == MemberStatus.LEFT) {
+            return;
+        }
         this.status = MemberStatus.LEFT;
         this.deletedAt = LocalDateTime.now();
     }

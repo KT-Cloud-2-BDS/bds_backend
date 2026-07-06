@@ -64,8 +64,8 @@ CREATE UNIQUE INDEX idx_chat_message_client_id ON chat_message (client_id) WHERE
 
 
 CREATE INDEX idx_inquiry_member_member ON inquiry_chat_member (member_id);
-ALTER TABLE inquiry_chat_member ADD CONSTRAINT uq_inquiry_member UNIQUE (member_id, room_id);
+CREATE UNIQUE INDEX uq_inquiry_member ON inquiry_chat_member (member_id, room_id) WHERE deleted_at IS NULL;
 
 
 CREATE INDEX idx_blacklist_member ON funding_chat_blacklist (member_id);
-ALTER TABLE funding_chat_blacklist ADD CONSTRAINT uq_blacklist UNIQUE (room_id, member_id);
+CREATE UNIQUE INDEX uq_blacklist ON funding_chat_blacklist (room_id, member_id) WHERE deleted_at IS NULL;

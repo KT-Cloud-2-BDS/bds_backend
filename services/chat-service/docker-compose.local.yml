@@ -24,8 +24,8 @@ services:
     image: rabbitmq:4-management
     container_name: bds-chat-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-bds}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-bds1234}
     ports:
       - "5674:5672"    # AMQP
       - "15674:15672"  # Management UI

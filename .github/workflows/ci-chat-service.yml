@@ -33,6 +33,9 @@ jobs:
       # 다중 인스턴스 간 메시지 Fan-out을 위한 외부 브로커
       rabbitmq:
         image: rabbitmq:4
+        env:
+          RABBITMQ_DEFAULT_USER: bds
+          RABBITMQ_DEFAULT_PASS: bds1234
         ports:
           - 5672:5672
         options: >-
@@ -71,8 +74,8 @@ jobs:
           DB_PASSWORD: postgres
           RABBITMQ_HOST: localhost
           RABBITMQ_PORT: 5672
-          RABBITMQ_USERNAME: guest
-          RABBITMQ_PASSWORD: guest
+          RABBITMQ_USERNAME: bds
+          RABBITMQ_PASSWORD: bds1234
           CORS_ALLOWED_ORIGINS: http://localhost:3000
         run: ./gradlew :services:chat-service:clean :services:chat-service:build
 
