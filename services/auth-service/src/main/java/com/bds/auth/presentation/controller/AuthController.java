@@ -2,14 +2,12 @@ package com.bds.auth.presentation.controller;
 
 import com.bds.auth.application.AuthService;
 import com.bds.auth.presentation.dto.EmailRequestDto;
-import com.bds.auth.presentation.dto.SignupRequestDto;
+import com.bds.auth.presentation.dto.VerifyCodeRequestDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,5 +23,11 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/mailCheck")
+    public ResponseEntity<String> checkVerificationCode(@RequestBody VerifyCodeRequestDto requestDto) {
+        authService.verifyCode(requestDto.email(),requestDto.verificationCode());
+        return ResponseEntity.ok("인증이 성공적으로 완료되었습니다.");
+
+    }
 
 }

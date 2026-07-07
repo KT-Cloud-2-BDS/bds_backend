@@ -3,7 +3,6 @@ package com.bds.auth.application;
 
 import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
-import com.bds.auth.presentation.dto.EmailRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,5 +25,20 @@ public class AuthService {
 
         redisAdapter.put("verify:" + email, verificationCode, 3);
         emailService.sendVerificationEmail(email, verificationCode);
+    }
+
+    @Transactional
+    public void verifyCode(String email, String code) {
+        String redisCode = redisAdapter.get("verify:" + email);
+
+        if (redisCode == null) {
+            throw new IllegalArgumentException("인증번호가 만료되었거나 발송되지 않았습니다.");
+        }
+        if (!redisCode.equals(code)) {
+            throw new IllegalArgumentException("인증번호가 일치하지 않습니다.");
+        }
+
+        redisAdapter.delete("verify:" + email);
+        redisAdapter.put("verified:" + email, "true", 10);
     }
 }
