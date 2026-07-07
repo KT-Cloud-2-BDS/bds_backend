@@ -1,4 +1,4 @@
-package com.bds.backend.auth.presentation.dto;
+package com.bds.auth.presentation.dto;
 
 public record SignupRequestDto(
     String email,

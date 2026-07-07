@@ -1,4 +1,4 @@
-package com.bds.backend.auth.domain.entity;
+package com.bds.auth.infrastructure.persistence.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,15 +9,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "auth_local")
-public class AuthLocal {
+public class AuthLocalJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,11 +31,6 @@ public class AuthLocal {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "auth_id", nullable = false)
-    private Auth auth;
+    private AuthJpaEntity authJpaEntity;
 
-    @Builder
-    public AuthLocal(String password, Auth auth) {
-        this.password = password;
-        this.auth = auth;
-    }
 }
