@@ -1,7 +1,7 @@
 package com.bds.order.presentation.controller;
 
-import com.bds.backend.common.annotation.LoginUser;
-import com.bds.backend.common.dto.CurrentUser;
+import com.bds.common.annotation.LoginUser;
+import com.bds.common.dto.CurrentUser;
 import com.bds.order.application.OrderService;
 import com.bds.order.presentation.dto.OrderResponseDto;
 import jakarta.validation.constraints.Min;
