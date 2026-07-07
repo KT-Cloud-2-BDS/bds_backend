@@ -40,18 +40,17 @@ POST /api/orders/billing
 
 #### Request Body
 
-| 필드 | 타입 | 필수 | 설명 |
-|------|------|------|------|
-| `rewards` | Object[] | Y | 주문 리워드 목록 |
-| `rewards[].id` | Long | Y | 리워드 ID |
-| `rewards[].qty` | Integer | Y | 수량 |
+| 필드              | 타입       | 필수 | 설명        |
+|-----------------|----------|------|-----------|
+| `fundingId`     | Long     | Y | 펀딩 ID     |
+| `rewards`       | Object[] | Y | 주문 리워드 목록 |
+| `rewards[].id`  | Long     | Y | 리워드 ID    |
+| `rewards[].qty` | Integer  | Y | 수량        |
 
 #### Response Body
 
 ```json
 {
-  "status": 200,
-  "data": {
     "memberId": 1,
     "rewards": [
       {
@@ -66,14 +65,12 @@ POST /api/orders/billing
     "rewardAmount": 182400,
     "totalShippingCharge": 5000,
     "totalBillingAmount": 187400
-  }
 }
 ```
 
 #### Validation / Business Rules
 - `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 미리보기 전용으로 DB 저장 X
-- 미인증된 사용자 호출: 401 Unauthorized
 - `rewards.size() < 1`: 400 Bad Request
 - `qty < 1`: 400 Bad Request
 - 존재하지 않는 리워드: 404 Not Found

@@ -3,17 +3,17 @@ package com.bds.order.presentation.controller;
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
 import com.bds.order.application.OrderService;
+import com.bds.order.presentation.dto.BillingRequestDto;
+import com.bds.order.presentation.dto.BillingResponseDto;
 import com.bds.order.presentation.dto.OrderResponseDto;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -34,5 +34,14 @@ public class OrderController {
         Long memberId = user.id();
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(orderService.getAllOrders(memberId, pageable));
+    }
+
+    @PostMapping("/billing")
+    public ResponseEntity<BillingResponseDto> createBilling(
+            @LoginUser CurrentUser user,
+            @Valid @RequestBody BillingRequestDto reqDto
+    ) {
+        Long memberId = user.id();
+        return ResponseEntity.ok(orderService.createBilling(memberId, reqDto));
     }
 }

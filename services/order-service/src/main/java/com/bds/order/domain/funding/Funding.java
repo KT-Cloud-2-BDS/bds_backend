@@ -31,4 +31,8 @@ public class Funding {
         return new Funding(id, title, creatorId, status, startAt, holdTo, payAt,
                 participationCnt, goalAmount, currentAmount, isSuccess, createdAt, updatedAt);
     }
+
+    public boolean isFuningPeriod(LocalDateTime now) {
+        return now.isAfter(startAt) && now.isBefore(holdTo);
+    }
 }

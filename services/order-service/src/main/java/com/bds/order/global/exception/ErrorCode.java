@@ -27,7 +27,16 @@ public enum ErrorCode {
     DEPENDENCY_FAILURE(HttpStatus.SERVICE_UNAVAILABLE, "외부 서비스 호출 실패"),
 
     // Order
-    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 주문입니다");
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 주문입니다"),
+
+    // Reward
+    REWARD_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리워드를 찾을 수 없습니다"),
+    REWARD_DUPLICATED(HttpStatus.BAD_REQUEST, "동일한 리워드를 중복으로 선택할 수 없습니다"),
+    REWARD_STOCK_INSUFFICIENT(HttpStatus.CONFLICT, "리워드 재고가 부족합니다"),
+
+    // Funding
+    FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 펀딩을 찾을 수 없습니다"),
+    FUNDING_NOT_AVAILABLE(HttpStatus.FORBIDDEN, "현재 펀딩 가능한 기간이 아닙니다");
 
     private final HttpStatus httpStatus;
     private final String message;

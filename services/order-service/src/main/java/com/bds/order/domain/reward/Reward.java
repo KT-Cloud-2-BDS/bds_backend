@@ -15,16 +15,24 @@ public class Reward {
     private String name;
     private String description;
     private int limitQty;
-    private Integer remainQty;
+    private int remainQty;
     private BadgeType badgeType;
-    private int price;
+    private Long price;
     private LocalDateTime offerAt;
-    private int shippingCharge;
+    private Long shippingCharge;
 
     public static Reward of(Long id, Long fundingId, String name, String description,
-                            int limitQty, Integer remainQty, BadgeType badgeType,
-                            int price, LocalDateTime offerAt, int shippingCharge) {
+                            int limitQty, int remainQty, BadgeType badgeType,
+                            Long price, LocalDateTime offerAt, Long shippingCharge) {
         return new Reward(id, fundingId, name, description, limitQty, remainQty,
                 badgeType, price, offerAt, shippingCharge);
+    }
+
+    public Long calculateAmount(Integer qty) {
+        return price * qty;
+    }
+    
+    public Boolean isStockSufficient(Integer requiredQty) {
+        return remainQty > 0 && remainQty >= requiredQty;
     }
 }

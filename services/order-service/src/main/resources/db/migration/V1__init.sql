@@ -32,9 +32,9 @@ CREATE TABLE reward
     limit_qty       INT          NOT NULL,
     remain_qty      INT          NULL,
     badge_type      VARCHAR(20)  NULL     DEFAULT NULL,
-    price           INT          NOT NULL,
+    price           BIGINT       NOT NULL,
     offer_at        TIMESTAMP    NOT NULL,
-    shipping_charge INT          NOT NULL DEFAULT 0,
+    shipping_charge BIGINT       NOT NULL DEFAULT 0,
 
     CONSTRAINT pk_reward PRIMARY KEY (id),
     CONSTRAINT fk_reward_funding FOREIGN KEY (funding_id) REFERENCES funding (id)

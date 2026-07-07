@@ -32,18 +32,18 @@ public class RewardJpaEntity {
     @Column(nullable = false)
     private int limitQty;
 
-    private Integer remainQty;
+    private int remainQty;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private BadgeType badgeType;
 
     @Column(nullable = false)
-    private int price;
+    private Long price;
 
     @Column(nullable = false)
     private LocalDateTime offerAt;
 
     @Column(nullable = false)
-    private int shippingCharge;
+    private Long shippingCharge;
 }
