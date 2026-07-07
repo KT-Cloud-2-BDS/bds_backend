@@ -1,0 +1,33 @@
+package com.bds.auth.infrastructure.persistence.adapter;
+
+import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class RedisAdapter {
+    private final StringRedisTemplate redisTemplate;
+
+    /**
+     * Redis에 키-값 저장 및 만료 시간 설정
+     */
+    public void put(String key, String value, long timeoutInMinutes) {
+        redisTemplate.opsForValue().set(key, value, timeoutInMinutes, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Redis에서 키로 값 조회
+     */
+    public String get(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    /**
+     * 사용이 완료된 인증번호 키 삭제
+     */
+    public void delete(String key) {
+        redisTemplate.delete(key);
+    }
+}

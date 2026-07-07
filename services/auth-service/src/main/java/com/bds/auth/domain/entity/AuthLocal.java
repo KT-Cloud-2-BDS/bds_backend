@@ -26,4 +26,5 @@ public class AuthLocal {
         authLocal.auth = auth;
         return authLocal;
     }
+
 }

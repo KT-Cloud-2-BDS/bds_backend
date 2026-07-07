@@ -17,9 +17,5 @@ public class AuthAdapter {
         return authJpaRepo.existsByEmail(email);
     }
 
-    public Auth save(Auth auth) {
-        AuthJpaEntity jpaEntity = AuthMapper.toJpaEntity(auth);
-        AuthJpaEntity savedEntity = authJpaRepo.save(jpaEntity);
-        return AuthMapper.toDomain(savedEntity);
-    }
+
 }

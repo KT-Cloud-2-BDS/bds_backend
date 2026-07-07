@@ -1,5 +1,6 @@
 package com.bds.auth.infrastructure.persistence.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -29,8 +30,14 @@ public class AuthLocalJpaEntity {
     @Column(nullable = false, length = 225)
     private String password;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "auth_id", nullable = false)
     private AuthJpaEntity authJpaEntity;
 
+    public static AuthLocalJpaEntity create(AuthJpaEntity authJpaEntity, String password, String nickname) {
+        return AuthLocalJpaEntity.builder()
+            .authJpaEntity(authJpaEntity)
+            .password(password)
+            .build();
+    }
 }
