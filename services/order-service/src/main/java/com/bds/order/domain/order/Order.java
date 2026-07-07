@@ -16,27 +16,33 @@ public class Order {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private Order(Long id, String orderNo, Long memberId, OrderStatus status,
+                  Long amount, String cancelReason, LocalDateTime createdAt,
+                  LocalDateTime updatedAt) {
+        this.id = id;
+        this.orderNo = orderNo;
+        this.memberId = memberId;
+        this.status = status;
+        this.amount = amount;
+        this.cancelReason = cancelReason;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    private Order(Long memberId, Long amount, OrderStatus status) {
+        this.memberId = memberId;
+        this.amount = amount;
+        this.status = status;
+    }
+
     public static Order create(Long memberId, Long amount, OrderStatus status) {
         if (amount == null || amount < 0) {
             throw new IllegalArgumentException("amount must be non-negative");
         }
-        Order order = new Order();
-        order.memberId = memberId;
-        order.amount = amount;
-        order.status = (status != null) ? status : OrderStatus.PENDING;
-        return order;
+        return new Order(memberId, amount, (status != null) ? status : OrderStatus.PENDING);
     }
 
     public static Order of(Long id, String orderNo, Long memberId, OrderStatus status, Long amount, String cancelReason, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        Order order = new Order();
-        order.id = id;
-        order.orderNo = orderNo;
-        order.memberId = memberId;
-        order.status = status;
-        order.amount = amount;
-        order.cancelReason = cancelReason;
-        order.createdAt = createdAt;
-        order.updatedAt = updatedAt;
-        return order;
+        return new Order(id, orderNo, memberId, status, amount, cancelReason, createdAt, updatedAt);
     }
 }
