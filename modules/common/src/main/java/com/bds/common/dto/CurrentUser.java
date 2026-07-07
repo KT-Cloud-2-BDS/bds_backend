@@ -1,4 +1,4 @@
-package com.bds.backend.common.dto;
+package com.bds.common.dto;
 
 public record CurrentUser(
     Long id,

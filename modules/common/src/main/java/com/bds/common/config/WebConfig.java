@@ -1,6 +1,6 @@
-package com.bds.backend.common.config;
+package com.bds.common.config;
 
-import com.bds.backend.common.resolver.LoginUserArgumentResolver;
+import com.bds.common.resolver.LoginUserArgumentResolver;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

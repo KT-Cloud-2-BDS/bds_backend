@@ -1,4 +1,4 @@
-package com.bds.backend.common.annotation;
+package com.bds.common.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

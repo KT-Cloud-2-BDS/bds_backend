@@ -1,7 +1,7 @@
-package com.bds.backend.common.resolver;
+package com.bds.common.resolver;
 
-import com.bds.backend.common.annotation.LoginUser;
-import com.bds.backend.common.dto.CurrentUser;
+import com.bds.common.annotation.LoginUser;
+import com.bds.common.dto.CurrentUser;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.support.WebDataBinderFactory;
