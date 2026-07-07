@@ -3,6 +3,7 @@ package com.bds.chat.infrastructure.persistence.blacklist;
 import com.bds.chat.domain.blackList.BlacklistStatus;
 import com.bds.chat.domain.blackList.FundingChatBlacklist;
 import com.bds.chat.domain.blackList.FundingChatBlacklistRepository;
+import com.bds.chat.domain.shared.FundingChatBlacklistId;
 import com.bds.chat.infrastructure.persistence.chatroom.ChatRoomJpaEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -34,7 +35,12 @@ public class FundingChatBlacklistPersistenceAdapter implements FundingChatBlackl
 
     @Override
     public FundingChatBlacklist save(FundingChatBlacklist blacklist) {
-        ChatRoomJpaEntity roomRef = entityManager.getReference(ChatRoomJpaEntity.class, blacklist.getRoomId());
-        return mapper.toDomain(jpaRepository.save(mapper.toJpaEntity(blacklist, roomRef)));
+        ChatRoomJpaEntity roomRef = entityManager.getReference(ChatRoomJpaEntity.class, blacklist.getRoomId().value());
+        FundingChatBlacklistJpaEntity saved = jpaRepository.save(mapper.toJpaEntity(blacklist, roomRef));
+        if (blacklist.getId() == null) {
+            blacklist.assignId(FundingChatBlacklistId.of(saved.getId()));
+            return blacklist;
+        }
+        return mapper.toDomain(saved);
     }
 }

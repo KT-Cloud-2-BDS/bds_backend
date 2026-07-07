@@ -9,5 +9,9 @@ public interface InquiryChatMemberRepository {
 
     List<InquiryChatMember> findActiveMembers(Long roomId);
 
+    List<InquiryChatMember> findByMemberId(Long memberId);
+
+    List<InquiryChatMember> findActiveMembersByRoomIds(List<Long> roomIds);
+
     InquiryChatMember save(InquiryChatMember member);
 }

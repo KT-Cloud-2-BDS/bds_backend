@@ -56,9 +56,11 @@ Validation / Business Rules
 
 - 채팅방은 상품 생성자(seller) 와 요청 사용자(buyer) 간에만 생성된다.
 - productId는 반드시 존재하는 펀딩 상품이어야 한다.
-- 동일한 (productId + buyerId) 조합에 대해서는 하나의 채팅방만 생성된다. 
-- 이미 존재하는 경우 기존 채팅방을 반환하거나 409 Conflict를 반환한다 (정책 선택 가능).
+- 동일한 (productId + buyerId) 조합에 대해서는 하나의 채팅방만 생성된다.
+- 이미 존재하는 경우 409 Conflict를 반환한다.
 - 채팅방 type은 INQUIRY로 고정된다.
+- seller ID는 클라이언트로부터 직접 받지 않는다. 해당 product의 FUNDING 채팅방 creator_id를 seller로 간주하여 chat-service 내부에서 조회한다. 따라서 FUNDING 채팅방이 존재하지 않는 product에 대해서는 INQUIRY 채팅방 생성이 불가능하며 404를 반환한다.
+- 생성 시 buyer와 seller 모두 ACTIVE 멤버로 즉시 추가된다.
 ---
 
 ## 내 참여 문의 채팅방 목록 조회

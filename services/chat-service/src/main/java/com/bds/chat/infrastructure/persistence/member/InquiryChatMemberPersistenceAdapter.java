@@ -2,6 +2,7 @@ package com.bds.chat.infrastructure.persistence.member;
 
 import com.bds.chat.domain.member.InquiryChatMember;
 import com.bds.chat.domain.member.InquiryChatMemberRepository;
+import com.bds.chat.domain.shared.InquiryChatMemberId;
 import com.bds.chat.infrastructure.persistence.chatroom.ChatRoomJpaEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -36,8 +37,29 @@ public class InquiryChatMemberPersistenceAdapter implements InquiryChatMemberRep
     }
 
     @Override
+    public List<InquiryChatMember> findByMemberId(Long memberId) {
+        return jpaRepository.findByMemberIdAndDeletedAtIsNull(memberId)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<InquiryChatMember> findActiveMembersByRoomIds(List<Long> roomIds) {
+        return jpaRepository.findByRoom_IdInAndDeletedAtIsNull(roomIds)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public InquiryChatMember save(InquiryChatMember member) {
-        ChatRoomJpaEntity roomRef = entityManager.getReference(ChatRoomJpaEntity.class, member.getRoomId());
-        return mapper.toDomain(jpaRepository.save(mapper.toJpaEntity(member, roomRef)));
+        ChatRoomJpaEntity roomRef = entityManager.getReference(ChatRoomJpaEntity.class, member.getRoomId().value());
+        InquiryChatMemberJpaEntity saved = jpaRepository.save(mapper.toJpaEntity(member, roomRef));
+        if (member.getId() == null) {
+            member.assignId(InquiryChatMemberId.of(saved.getId()));
+            return member;
+        }
+        return mapper.toDomain(saved);
     }
 }

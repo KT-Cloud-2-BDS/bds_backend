@@ -10,4 +10,8 @@ interface InquiryChatMemberJpaRepository extends JpaRepository<InquiryChatMember
     Optional<InquiryChatMemberJpaEntity> findByRoom_IdAndMemberIdAndDeletedAtIsNull(Long roomId, Long memberId);
 
     List<InquiryChatMemberJpaEntity> findByRoom_IdAndDeletedAtIsNull(Long roomId);
+
+    List<InquiryChatMemberJpaEntity> findByMemberIdAndDeletedAtIsNull(Long memberId);
+
+    List<InquiryChatMemberJpaEntity> findByRoom_IdInAndDeletedAtIsNull(List<Long> roomIds);
 }
