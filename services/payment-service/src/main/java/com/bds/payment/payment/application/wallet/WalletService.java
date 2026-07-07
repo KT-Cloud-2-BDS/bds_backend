@@ -22,4 +22,11 @@ public class WalletService {
                 .orElseGet(() -> walletCreator.createWalletSafely(memberId));
         return WalletResponseDto.from(wallet);
     }
+
+    @Transactional(readOnly = true)
+    public Long getWalletId(Long memberId) {
+        Wallet wallet = walletRepository.findByMemberId(memberId)
+                .orElseGet(() -> walletCreator.createWalletSafely(memberId));
+        return wallet.getId();
+    }
 }

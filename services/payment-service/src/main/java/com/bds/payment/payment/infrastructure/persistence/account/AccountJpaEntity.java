@@ -1,0 +1,47 @@
+package com.bds.payment.payment.infrastructure.persistence.account;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Entity
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class AccountJpaEntity {
+
+    @Id
+    private Long walletId;
+
+    @Column(nullable = false, length = 10)
+    private String bankCode;
+
+    @Column(nullable = false, length = 50)
+    private String accountNumber;
+
+    @Column(nullable = false, length = 50)
+    private String holderName;
+
+    @Column(nullable = false)
+    private Boolean isVerified;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        this.isVerified = false;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+}
