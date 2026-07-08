@@ -3,7 +3,6 @@ package com.bds.member.presentation.controller;
 import com.bds.member.application.MemberService;
 import com.bds.member.presentation.dto.AuthLoginResponseDto;
 import com.bds.member.presentation.dto.MemberLoginRequestDto;
-import com.bds.member.presentation.dto.MemberLoginResponseDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

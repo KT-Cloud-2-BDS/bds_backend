@@ -2,6 +2,8 @@ package com.bds.auth.domain.entity;
 
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.domain.entity.enums.Status;
+import com.bds.auth.global.exception.BusinessException;
+import com.bds.auth.global.exception.ErrorCode;
 import lombok.Getter;
 
 @Getter
@@ -21,7 +23,7 @@ public class Auth {
 
     public static Auth create(String email, Status status, Role role) {
         if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("흠..");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         return new Auth(null, email, Status.ACTIVE, (role != null) ? role : Role.SUPPORTER);
     }

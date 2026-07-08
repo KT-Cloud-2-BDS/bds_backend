@@ -1,5 +1,7 @@
 package com.bds.auth.domain.entity;
 
+import com.bds.auth.global.exception.BusinessException;
+import com.bds.auth.global.exception.ErrorCode;
 import lombok.Getter;
 
 @Getter
@@ -11,7 +13,7 @@ public class AuthLocal {
 
     public static AuthLocal create(Long authId, String password) {
         if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("흠..");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         AuthLocal authLocal = new AuthLocal();
         authLocal.password = password;

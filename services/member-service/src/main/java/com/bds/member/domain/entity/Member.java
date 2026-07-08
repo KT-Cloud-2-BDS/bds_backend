@@ -1,5 +1,7 @@
 package com.bds.member.domain.entity;
 
+import com.bds.member.global.exception.BusinessException;
+import com.bds.member.global.exception.ErrorCode;
 import lombok.Getter;
 
 @Getter
@@ -16,8 +18,8 @@ public class Member {
     }
 
     public static Member create(Long authId, String nickname) {
-        if (authId == null) throw new IllegalArgumentException("인증 정보가 없습니다.");
-        if (nickname == null || nickname.isBlank()) throw new IllegalArgumentException("닉네임은 필수입니다.");
+        if (authId == null) throw new BusinessException(ErrorCode.UNAUTHORIZED_MEMBER);
+        if (nickname == null || nickname.isBlank()) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         return new Member(null, authId, nickname);
     }
 

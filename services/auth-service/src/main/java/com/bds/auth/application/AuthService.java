@@ -5,6 +5,8 @@ import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.domain.entity.enums.Status;
+import com.bds.auth.global.exception.BusinessException;
+import com.bds.auth.global.exception.ErrorCode;
 import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.AuthLocalAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
@@ -31,7 +33,7 @@ public class AuthService {
     @Transactional
     public void sendSignUpVerificationCode(String email) {
         if (authAdapter.existsByEmail(email)) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
         String verificationCode = String.valueOf((int)(Math.random() * 899999) + 100000);
 
@@ -44,10 +46,10 @@ public class AuthService {
         String redisCode = redisAdapter.get("verify:" + email);
 
         if (redisCode == null) {
-            throw new IllegalArgumentException("인증번호가 만료되었거나 발송되지 않았습니다.");
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_EXPIRED);
         }
         if (!redisCode.equals(code)) {
-            throw new IllegalArgumentException("인증번호가 일치하지 않습니다.");
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_MISMATCH);
         }
 
         redisAdapter.delete("verify:" + email);
@@ -59,7 +61,7 @@ public class AuthService {
 
         String ticket = redisAdapter.get("verified:" + email);
         if (!"true".equals(ticket)) {
-            throw new IllegalArgumentException("인증되지 않은 이메일입니다.");
+            throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
         }
 
         Auth newAuth = Auth.create(
@@ -82,13 +84,13 @@ public class AuthService {
     @Transactional
     public AuthLoginResponseDto login(String email, String password) {
         Auth auth = authAdapter.findByEmail(email)
-            .orElseThrow(() -> new IllegalArgumentException());
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
         AuthLocal authLocal = authLocalAdapter.findByAuthId(auth.getId())
-            .orElseThrow(() -> new IllegalArgumentException());
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
         if (!passwordEncoder.matches(password, authLocal.getPassword())) {
-            throw new IllegalArgumentException();
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }
 
         String accessToken = jwtTokenUtil.createAccessToken(auth.getId(), auth.getEmail(), auth.getRole());
