@@ -50,7 +50,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         FundingJpaEntity funding = new FundingJpaEntity(
                 null, "Title", 100L, FundingStatus.ACTIVE,
                 now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                0, 1000000L, 500000L, false, now, now, new ArrayList<>()
+                0, 1000000L, 500000L, false, new ArrayList<>()
         );
         fundingJpaRepository.save(funding);
 

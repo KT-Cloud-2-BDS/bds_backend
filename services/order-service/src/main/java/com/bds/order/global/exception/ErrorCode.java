@@ -15,7 +15,7 @@ public enum ErrorCode {
 
     CONFLICT(HttpStatus.CONFLICT, "리소스 충돌 (중복)"),
 
-    BUSINESS_RULE_VIOLATION(HttpStatus.UNPROCESSABLE_ENTITY, "비즈니스 규칙 위반"),
+    BUSINESS_RULE_VIOLATION(HttpStatus.valueOf(422), "비즈니스 규칙 위반"),
 
     RESOURCE_LOCKED(HttpStatus.LOCKED, "리소스가 잠겨있음"),
 
