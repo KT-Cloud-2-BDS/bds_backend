@@ -30,9 +30,10 @@ public class OrderRewardJpaEntity {
     @Column(nullable = false)
     private int qty;
 
+    private Long amount;
+
     private Long shippingCharge;
 
-    private Long amount;
 
     public Long getOrderId() {
         return order.getId();

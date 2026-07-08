@@ -40,6 +40,7 @@ public class OrderJpaEntity extends BaseEntity {
 
     private LocalDateTime cancelledAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderRewardJpaEntity> orderRewards = new ArrayList<>();
 
