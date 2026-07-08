@@ -12,9 +12,16 @@ import org.springframework.stereotype.Component;
 public class AuthAdapter {
 
     private final AuthJpaRepository authJpaRepo;
+    private final AuthMapper authMapper;
 
     public boolean existsByEmail(String email) {
         return authJpaRepo.existsByEmail(email);
+    }
+
+    public Auth save(Auth auth) {
+        AuthJpaEntity jpaEntity = authMapper.toJpaEntity(auth);
+        AuthJpaEntity savedEntity = authJpaRepo.save(jpaEntity);
+        return authMapper.toDomain(savedEntity);
     }
 
 

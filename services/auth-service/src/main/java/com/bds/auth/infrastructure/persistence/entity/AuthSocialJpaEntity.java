@@ -35,8 +35,7 @@ public class AuthSocialJpaEntity {
     @Column(nullable = false, length = 50)
     private String email;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "auth_id", nullable = false)
-    private AuthJpaEntity authJpaEntity;
+    @JoinColumn(nullable = false)
+    private Long authId;
 
 }

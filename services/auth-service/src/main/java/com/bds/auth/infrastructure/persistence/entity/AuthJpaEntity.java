@@ -1,6 +1,7 @@
 package com.bds.auth.infrastructure.persistence.entity;
 
 
+import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.domain.entity.enums.Status;
 import jakarta.persistence.Column;
@@ -38,5 +39,14 @@ public class AuthJpaEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    public static AuthJpaEntity from(Auth auth) {
+        return AuthJpaEntity.builder()
+            .id(auth.getId())
+            .email(auth.getEmail())
+            .status(auth.getStatus())
+            .role(auth.getRole())
+            .build();
+    }
 
 }

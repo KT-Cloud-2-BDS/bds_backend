@@ -9,24 +9,24 @@ public class AuthSocial {
     private String providerId;
     private String provider;
     private String email;
-    private Auth auth;
+    private Long authId;
 
-    public static AuthSocial create(String providerId, String provider, String email, Auth auth) {
+    public static AuthSocial create(String providerId, String provider, String email, Long authId) {
         AuthSocial authSocial = new AuthSocial();
         authSocial.providerId = providerId;
         authSocial.provider = provider;
         authSocial.email = email;
-        authSocial.auth = auth;
+        authSocial.authId = authId;
         return authSocial;
     }
 
-    public static AuthSocial of(Long id, String providerId, String provider, String email, Auth auth) {
+    public static AuthSocial of(Long id, String providerId, String provider, String email, Long authId) {
         AuthSocial authSocial = new AuthSocial();
         authSocial.id = id;
         authSocial.providerId = providerId;
         authSocial.provider = provider;
         authSocial.email = email;
-        authSocial.auth = auth;
+        authSocial.authId = authId;
         return authSocial;
     }
 }

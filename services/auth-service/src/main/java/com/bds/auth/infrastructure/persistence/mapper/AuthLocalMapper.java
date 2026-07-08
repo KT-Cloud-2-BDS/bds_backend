@@ -3,17 +3,17 @@ package com.bds.auth.infrastructure.persistence.mapper;
 import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
 import com.bds.auth.infrastructure.persistence.entity.AuthLocalJpaEntity;
+import org.springframework.stereotype.Component;
 
+@Component
 public class AuthLocalMapper {
 
     public static AuthLocal toDomain(AuthLocalJpaEntity jpaEntity) {
         if (jpaEntity == null) return null;
-        Auth authDomain = AuthMapper.toDomain(jpaEntity.getAuthJpaEntity());
-
         return AuthLocal.of(
             jpaEntity.getId(),
             jpaEntity.getPassword(),
-            authDomain
+            jpaEntity.getAuthId()
         );
     }
 
@@ -23,7 +23,7 @@ public class AuthLocalMapper {
         return AuthLocalJpaEntity.builder()
             .id(domain.getId())
             .password(domain.getPassword())
-            .authJpaEntity(AuthMapper.toJpaEntity(domain.getAuth()))
+            .authId(domain.getAuthId())
             .build();
     }
 

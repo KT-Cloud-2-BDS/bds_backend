@@ -19,7 +19,7 @@ public class Auth {
         this.role = role;
     }
 
-    public static Auth create(String email, Role role, Status active) {
+    public static Auth create(String email, Status status, Role role) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("흠..");
         }

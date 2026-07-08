@@ -7,23 +7,23 @@ public class AuthLocal {
 
     private Long id;
     private String password;
-    private Auth auth;
+    private Long authId;
 
-    public static AuthLocal create(String password, Auth auth) {
+    public static AuthLocal create(Long authId, String password) {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("흠..");
         }
         AuthLocal authLocal = new AuthLocal();
         authLocal.password = password;
-        authLocal.auth = auth;
+        authLocal.authId = authId;
         return authLocal;
     }
 
-    public static AuthLocal of(Long id, String password, Auth auth) {
+    public static AuthLocal of(Long id, String password, Long authId) {
         AuthLocal authLocal = new AuthLocal();
         authLocal.id = id;
         authLocal.password = password;
-        authLocal.auth = auth;
+        authLocal.authId = authId;
         return authLocal;
     }
 
