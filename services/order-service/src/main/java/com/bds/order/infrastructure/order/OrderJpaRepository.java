@@ -6,10 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> {
 
     @Query("SELECT new com.bds.order.infrastructure.order.OrderListProjection(" +
-            "o.id, o.orderNo, o.status, o.amount, o.createdAt, " +
+            "o.id, o.orderNo, o.status, o.totalRewardAmount, o.totalShippingCharge, o.createdAt, " +
             "f.title, f.creatorId, f.holdTo, f.isSuccess) " +
             "FROM OrderJpaEntity o " +
             "JOIN o.orderRewards orw " +
@@ -17,4 +19,15 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
             "JOIN r.funding f " +
             "WHERE o.memberId = :memberId")
     Page<OrderListProjection> findOrderListWithFunding(@Param("memberId") Long memberId, Pageable pageable);
+
+    @Query("SELECT new com.bds.order.infrastructure.order.OrderDetailProjection(" +
+            "o.id, o.orderNo, o.status, o.totalRewardAmount, o.totalShippingCharge, o.createdAt, " +
+            "f.title, f.creatorId, f.holdTo, f.isSuccess," +
+            "o.cancelledAt, o.cancelReason) " +
+            "FROM OrderJpaEntity o " +
+            "JOIN o.orderRewards orw " +
+            "JOIN orw.reward r " +
+            "JOIN r.funding f " +
+            "WHERE o.memberId = :memberId AND o.id = :orderId")
+    Optional<OrderDetailProjection> findOrderWithFunding(@Param("memberId") Long memberId, @Param("orderId") Long orderId);
 }

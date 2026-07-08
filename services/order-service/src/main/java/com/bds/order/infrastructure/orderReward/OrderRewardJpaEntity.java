@@ -29,4 +29,16 @@ public class OrderRewardJpaEntity {
 
     @Column(nullable = false)
     private int qty;
+
+    private Long shippingCharge;
+
+    private Long amount;
+
+    public Long getOrderId() {
+        return order.getId();
+    }
+
+    public Long getRewardId() {
+        return reward.getId();
+    }
 }

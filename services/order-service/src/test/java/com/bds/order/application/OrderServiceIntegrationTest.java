@@ -45,9 +45,6 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        orderRepository.save(Order.create(1L, 33000L, OrderStatus.PENDING));
-        orderRepository.save(Order.create(1L, 53000L, OrderStatus.PAID));
-
         LocalDateTime now = LocalDateTime.now();
 
         FundingJpaEntity funding = new FundingJpaEntity(
@@ -63,13 +60,13 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         );
         rewardJpaRepository.save(reward);
 
-        Order order1 = Order.create(1L, 33000L, OrderStatus.PENDING);
-        Order order2 = Order.create(1L, 53000L, OrderStatus.PAID);
+        Order order1 = Order.create(1L, 33000L, 3000L, OrderStatus.PENDING);
+        Order order2 = Order.create(1L, 53000L, 5000L, OrderStatus.PAID);
         Order savedOrder1 = orderRepository.save(order1);
         Order savedOrder2 = orderRepository.save(order2);
 
-        OrderRewardJpaEntity orderReward1 = new OrderRewardJpaEntity(null, orderMapper.toJpaEntity(savedOrder1), reward, 1);
-        OrderRewardJpaEntity orderReward2 = new OrderRewardJpaEntity(null, orderMapper.toJpaEntity(savedOrder2), reward, 2);
+        OrderRewardJpaEntity orderReward1 = new OrderRewardJpaEntity(null, orderMapper.toJpaEntity(savedOrder1), reward, 1, 33000L, 3000L);
+        OrderRewardJpaEntity orderReward2 = new OrderRewardJpaEntity(null, orderMapper.toJpaEntity(savedOrder2), reward, 2, 53000L, 5000L);
         orderRewardJpaRepository.save(orderReward1);
         orderRewardJpaRepository.save(orderReward2);
     }
@@ -81,7 +78,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         rewardJpaRepository.deleteAll();
         fundingJpaRepository.deleteAll();
     }
-    
+
     @Nested
     @DisplayName("주문 목록 조회 정상 테스트")
     class GetAllOrdersTest {

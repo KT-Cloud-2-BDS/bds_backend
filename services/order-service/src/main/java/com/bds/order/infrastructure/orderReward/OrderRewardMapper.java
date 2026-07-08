@@ -7,11 +7,13 @@ import org.springframework.stereotype.Component;
 public class OrderRewardMapper {
 
     public OrderReward toDomain(OrderRewardJpaEntity entity) {
-        return OrderReward.of(
+        return OrderReward.reconstitute(
                 entity.getId(),
-                entity.getOrder().getId(),
-                entity.getReward().getId(),
-                entity.getQty()
+                entity.getOrderId(),
+                entity.getRewardId(),
+                entity.getQty(),
+                entity.getShippingCharge(),
+                entity.getAmount()
         );
     }
 }

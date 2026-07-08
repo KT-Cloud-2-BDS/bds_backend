@@ -12,10 +12,12 @@ public class OrderMapper {
                 entity.getOrderNo(),
                 entity.getMemberId(),
                 entity.getStatus(),
-                entity.getAmount(),
+                entity.getTotalRewardAmount(),
+                entity.getTotalShippingCharge(),
                 entity.getCancelReason(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getCancelledAt()
         );
     }
 
@@ -24,8 +26,10 @@ public class OrderMapper {
                 .id(domain.getId())
                 .memberId(domain.getMemberId())
                 .status(domain.getStatus())
-                .amount(domain.getAmount())
+                .totalRewardAmount(domain.getTotalRewardAmount())
+                .totalShippingCharge(domain.getTotalShippingCharge())
                 .cancelReason(domain.getCancelReason())
+                .cancelledAt(domain.getCancelledAt())
                 .build();
     }
 }

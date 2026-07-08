@@ -34,7 +34,9 @@ public class OrderJpaEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    private Long amount;
+    private Long totalRewardAmount;
+
+    private Long totalShippingCharge;
 
     private String cancelReason;
 
@@ -43,6 +45,8 @@ public class OrderJpaEntity {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    private LocalDateTime cancelledAt;
 
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderRewardJpaEntity> orderRewards = new ArrayList<>();

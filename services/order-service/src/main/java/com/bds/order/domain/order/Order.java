@@ -14,25 +14,40 @@ public class Order {
     private String orderNo;
     private Long memberId;
     private OrderStatus status;
-    private Long amount;
+    private Long totalRewardAmount;
+    private Long totalShippingCharge;
     private String cancelReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime cancelledAt;
 
-    private Order(Long memberId, Long amount, OrderStatus status) {
+    private Order(Long memberId, Long totalRewardAmount, Long totalShippingCharge, OrderStatus status) {
         this.memberId = memberId;
-        this.amount = amount;
+        this.totalRewardAmount = totalRewardAmount;
+        this.totalShippingCharge = totalShippingCharge;
         this.status = status;
     }
 
-    public static Order create(Long memberId, Long amount, OrderStatus status) {
-        if (amount == null || amount < 0) {
-            throw new IllegalArgumentException("amount must be non-negative");
+    public static Order create(Long memberId, Long totalRewardAmount, Long totalShippingCharge, OrderStatus status) {
+        if (totalRewardAmount == null || totalRewardAmount < 0) {
+            throw new IllegalArgumentException("totalRewardAmount must be non-negative");
         }
-        return new Order(memberId, amount, (status != null) ? status : OrderStatus.PENDING);
+        if (totalShippingCharge == null || totalShippingCharge < 0) {
+            throw new IllegalArgumentException("totalShippingCharge must be non-negative");
+        }
+        return new Order(memberId, totalRewardAmount, totalShippingCharge,
+                (status != null) ? status : OrderStatus.PENDING);
     }
 
-    public static Order reconstitute(Long id, String orderNo, Long memberId, OrderStatus status, Long amount, String cancelReason, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        return new Order(id, orderNo, memberId, status, amount, cancelReason, createdAt, updatedAt);
+    public static Order reconstitute(Long id, String orderNo, Long memberId, OrderStatus status,
+                                     Long totalRewardAmount, Long totalShippingCharge,
+                                     String cancelReason, LocalDateTime createdAt,
+                                     LocalDateTime updatedAt, LocalDateTime cancelledAt) {
+        return new Order(id, orderNo, memberId, status, totalRewardAmount, totalShippingCharge,
+                cancelReason, createdAt, updatedAt, cancelledAt);
+    }
+
+    public Long getTotalAmount() {
+        return totalRewardAmount + totalShippingCharge;
     }
 }

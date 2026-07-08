@@ -43,6 +43,7 @@ class OrderServiceUnitTest {
                     "ORD-001",
                     OrderStatus.PENDING,
                     33000L,
+                    3000L,
                     LocalDateTime.now().minusYears(1),
                     "Title",
                     100L,

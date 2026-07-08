@@ -25,7 +25,7 @@ public record OrderResponseDto(
                 order.fundingTitle(),
                 order.hostId(),
                 LocalDateTime.now().isAfter(order.holdTo()),
-                order.amount(),
+                order.totalRewardAmount() + order.totalShippingCharge(),
                 null,
                 null,
                 order.isSuccess()

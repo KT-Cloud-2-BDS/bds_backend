@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -30,5 +31,10 @@ public class OrderPersistenceAdapter implements OrderRepository {
     @Override
     public List<OrderListProjection> findOrderListByMemberId(Long memberId, Pageable pageable) {
         return orderJpaRepository.findOrderListWithFunding(memberId, pageable).getContent();
+    }
+
+    @Override
+    public Optional<OrderDetailProjection> findOrderByMemberId(Long memberId, Long orderId) {
+        return orderJpaRepository.findOrderWithFunding(memberId, orderId);
     }
 }

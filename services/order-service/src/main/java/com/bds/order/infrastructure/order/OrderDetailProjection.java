@@ -4,7 +4,7 @@ import com.bds.order.domain.order.OrderStatus;
 
 import java.time.LocalDateTime;
 
-public record OrderListProjection(
+public record OrderDetailProjection(
         Long orderId,
         String orderNo,
         OrderStatus status,
@@ -14,6 +14,8 @@ public record OrderListProjection(
         String fundingTitle,
         Long hostId,
         LocalDateTime holdTo,
-        boolean isSuccess
+        boolean isSuccess,
+        LocalDateTime cancelledAt,
+        String cancelReason
 ) {
 }

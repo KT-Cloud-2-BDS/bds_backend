@@ -214,14 +214,11 @@ GET /api/orders/{orderId}
 
 ```json
 {
-  "status": 200,
-  "data": {
     "orderNo": "ORD-20250201-00001",
     "fundingDate": "2025-01-10T04:54:42+09:00",
     "title": "선글라스",
-    "hostName": "(주)스토어",
+    "hostId": 21103,
     "isEnded": false,
-    "billingAmount": 51800,
     "isFundingSucceeded": true,
     "memberId": 1,
     "orderStatus": "PAID",
@@ -235,13 +232,12 @@ GET /api/orders/{orderId}
         "shippingCharge": 5000
       }
     ],
+    "rewardAmount": 182400,
     "totalShippingCharge": 5000,
     "totalBillingAmount": 187400,
     "paymentStatus": "PAID",
     "paidAt": "2025-02-01T14:30:00",
-    "createdAt": "2025-02-01T14:29:50",
     "cancelledAt": null
-  }
 }
 ```
 

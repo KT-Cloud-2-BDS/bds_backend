@@ -5,6 +5,7 @@ import com.bds.common.dto.CurrentUser;
 import com.bds.order.application.OrderService;
 import com.bds.order.presentation.dto.BillingRequestDto;
 import com.bds.order.presentation.dto.BillingResponseDto;
+import com.bds.order.presentation.dto.OrderDetailResponseDto;
 import com.bds.order.presentation.dto.OrderResponseDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -34,6 +35,16 @@ public class OrderController {
         Long memberId = user.id();
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(orderService.getAllOrders(memberId, pageable));
+    }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderDetailResponseDto> listOrders(
+            @LoginUser CurrentUser user,
+            @PathVariable Long orderId
+
+    ) {
+        Long memberId = user.id();
+        return ResponseEntity.ok(orderService.getOrderDetail(memberId, orderId));
     }
 
     @PostMapping("/billing")

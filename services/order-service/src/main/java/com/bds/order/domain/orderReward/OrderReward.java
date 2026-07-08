@@ -12,8 +12,11 @@ public class OrderReward {
     private Long orderId;
     private Long rewardId;
     private int qty;
+    private Long shippingCharge;
+    private Long amount;
 
-    public static OrderReward of(Long id, Long orderId, Long rewardId, int qty) {
-        return new OrderReward(id, orderId, rewardId, qty);
+    public static OrderReward reconstitute(Long id, Long orderId, Long rewardId, int qty, Long shippingCharge, Long amount) {
+        return new OrderReward(id, orderId, rewardId, qty, shippingCharge, amount);
     }
+
 }
