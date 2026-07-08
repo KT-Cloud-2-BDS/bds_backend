@@ -34,15 +34,28 @@ class OrderControllerExceptionUnitTest extends MockMvcTestSupport {
 
         @Test
         void 헤더에_유저정보가_없으면_401을_응답한다() throws Exception {
-            mockMvc.perform(get("/api/orders/"))
+            mockMvc.perform(get("/api/orders"))
                     .andExpect(status().isUnauthorized());
         }
 
         @Test
         void 유저ID가_숫자가_아니면_401을_응답한다() throws Exception {
-            mockMvc.perform(get("/api/orders/")
+            mockMvc.perform(get("/api/orders")
                             .header("X-User-Id", "invalid"))
                     .andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Nested
+    @DisplayName("주문 조회 예외 응답")
+    class GetOrderListExceptionTest {
+        @Test
+        void page가_음수이면_400을_응답한다() throws Exception {
+            mockMvc.perform(get("/api/orders")
+                            .header("X-User-Id", "1")
+                            .param("page", "-1"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
         }
     }
 
@@ -98,6 +111,24 @@ class OrderControllerExceptionUnitTest extends MockMvcTestSupport {
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.code").value("FUNDING_NOT_AVAILABLE"));
+        }
+
+        @Test
+        void 동일한_리워드를_중복_선택하면_400을_응답한다() throws Exception {
+            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
+                    new BillingRequestDto.RewardItemDto(1L, 1),
+                    new BillingRequestDto.RewardItemDto(1L, 2)
+            ));
+
+            given(orderService.createBilling(eq(1L), any()))
+                    .willThrow(new BusinessException(ErrorCode.REWARD_DUPLICATED));
+
+            mockMvc.perform(post("/api/orders/billing")
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(reqDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("REWARD_DUPLICATED"));
         }
 
         @Test

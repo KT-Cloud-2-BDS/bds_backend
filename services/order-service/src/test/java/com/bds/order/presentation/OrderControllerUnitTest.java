@@ -44,7 +44,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
 
             given(orderService.getAllOrders(eq(1L), any())).willReturn(List.of(dto));
 
-            mockMvc.perform(get("/api/orders/")
+            mockMvc.perform(get("/api/orders")
                             .header("X-User-Id", "1")
                             .param("page", "0")
                             .param("size", "20"))

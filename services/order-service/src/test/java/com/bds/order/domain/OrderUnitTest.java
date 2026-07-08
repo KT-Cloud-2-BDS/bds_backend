@@ -7,6 +7,9 @@ import com.bds.order.domain.order.OrderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,87 +50,34 @@ class OrderUnitTest {
     @DisplayName("주문 상태 전이 성공")
     class UpdateStatusTest {
 
-        @Test
-        void PENDING에서_PAYING으로_변경할_수_있다() {
-            Order order = Order.create(1L, 33000L, 3000L, OrderStatus.PENDING);
+        @ParameterizedTest(name = "{0} → {1}")
+        @CsvSource({
+                "PENDING, PAYING",
+                "RESERVED, PAYING",
+                "PAYING, PAID",
+                "PAYING, CANCELLED",
+                "RESERVED, CANCELLED",
+                "PAID, CANCELLED",
+                "CANCELLED, REFUNDED",
+                "RESERVED, REFUNDED"
+        })
+        void 허용된_상태_전이는_성공한다(OrderStatus from, OrderStatus to) {
+            Order order = createOrderWithStatus(from);
 
-            order.updateStatus(OrderStatus.PAYING);
+            order.updateStatus(to);
 
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);
+            assertThat(order.getStatus()).isEqualTo(to);
         }
-
-        @Test
-        void RESERVED에서_PAYING으로_변경할_수_있다() {
-            Order order = createOrderWithStatus(OrderStatus.RESERVED);
-
-            order.updateStatus(OrderStatus.PAYING);
-
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);
-        }
-
-        @Test
-        void PAYING에서_PAID로_변경할_수_있다() {
-            Order order = createOrderWithStatus(OrderStatus.PAYING);
-
-            order.updateStatus(OrderStatus.PAID);
-
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
-        }
-
-        @Test
-        void PAYING에서_CANCELLED로_변경할_수_있다() {
-            Order order = createOrderWithStatus(OrderStatus.PAYING);
-
-            order.updateStatus(OrderStatus.CANCELLED);
-
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-        }
-
-        @Test
-        void RESERVED에서_CANCELLED로_변경할_수_있다() {
-            Order order = createOrderWithStatus(OrderStatus.RESERVED);
-
-            order.updateStatus(OrderStatus.CANCELLED);
-
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-        }
-
-        @Test
-        void PAID에서_CANCELLED로_변경할_수_있다() {
-            Order order = createOrderWithStatus(OrderStatus.PAID);
-
-            order.updateStatus(OrderStatus.CANCELLED);
-
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-        }
-
-        @Test
-        void CANCELLED에서_REFUNDED로_변경할_수_있다() {
-            Order order = createOrderWithStatus(OrderStatus.CANCELLED);
-
-            order.updateStatus(OrderStatus.REFUNDED);
-
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUNDED);
-        }
-
-        @Test
-        void RESERVED에서_REFUNDED로_변경할_수_있다() {
-            Order order = createOrderWithStatus(OrderStatus.RESERVED);
-
-            order.updateStatus(OrderStatus.REFUNDED);
-
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUNDED);
-        }
-
     }
 
     @Nested
     @DisplayName("주문 취소 성공")
     class CancelOrderTest {
 
-        @Test
-        void PAYING_상태에서_취소하면_CANCELLED로_변경된다() {
-            Order order = createOrderWithStatus(OrderStatus.PAYING);
+        @ParameterizedTest(name = "{0} 상태에서 취소하면 CANCELLED로 변경된다")
+        @EnumSource(value = OrderStatus.class, names = {"PAYING", "PAID"})
+        void 취소_가능한_상태에서_취소하면_CANCELLED로_변경된다(OrderStatus from) {
+            Order order = createOrderWithStatus(from);
 
             order.cancelOrder(CancelReason.USER_CANCEL);
 
@@ -135,16 +85,6 @@ class OrderUnitTest {
             assertThat(order.getCancelReason()).isEqualTo(CancelReason.USER_CANCEL);
             assertThat(order.getCancelledAt()).isNotNull();
         }
-
-        @Test
-        void PAID_상태에서_취소하면_CANCELLED로_변경된다() {
-            Order order = createOrderWithStatus(OrderStatus.PAID);
-
-            order.cancelOrder(CancelReason.USER_CANCEL);
-
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-        }
-
     }
 
     @Nested

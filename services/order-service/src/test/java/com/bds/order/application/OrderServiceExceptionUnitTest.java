@@ -118,6 +118,24 @@ class OrderServiceExceptionUnitTest {
         }
 
         @Test
+        void 동일한_리워드를_중복_선택하면_예외를_던진다() {
+            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
+                    new BillingRequestDto.RewardItemDto(1L, 1),
+                    new BillingRequestDto.RewardItemDto(1L, 2)
+            ));
+
+            LocalDateTime now = LocalDateTime.now();
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
+                    0, 1000000L, 500000L, false, now, now);
+
+            given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
+
+            assertThatThrownBy(() -> orderService.createBilling(1L, reqDto))
+                    .isInstanceOf(BusinessException.class);
+        }
+
+        @Test
         void 리워드_재고가_부족하면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
             BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(

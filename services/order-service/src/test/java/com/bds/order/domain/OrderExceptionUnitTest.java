@@ -6,6 +6,8 @@ import com.bds.order.domain.order.OrderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -53,27 +55,21 @@ class OrderExceptionUnitTest {
     @DisplayName("주문 상태 변경 예외")
     class UpdateStatusExceptionTest {
 
-        @Test
-        void PENDING에서_PAID로_직접_변경하면_예외를_던진다() {
-            Order order = Order.create(1L, 33000L, 3000L, OrderStatus.PENDING);
+        @ParameterizedTest(name = "{0} → {1} 전이 불가")
+        @CsvSource({
+                "PENDING, PAID",
+                "PENDING, CANCELLED",
+                "PAYING, REFUNDED",
+                "PAID, PAYING",
+                "PENDING, PENDING",
+                "PAID, RESERVED",
+                "CANCELLED, PAYING",
+                "REFUNDED, PAYING"
+        })
+        void 허용되지_않은_상태_전이는_예외를_던진다(OrderStatus from, OrderStatus to) {
+            Order order = createOrderWithStatus(from);
 
-            assertThatThrownBy(() -> order.updateStatus(OrderStatus.PAID))
-                    .isInstanceOf(IllegalStateException.class);
-        }
-
-        @Test
-        void PENDING에서_CANCELLED로_변경하면_예외를_던진다() {
-            Order order = Order.create(1L, 33000L, 3000L, OrderStatus.PENDING);
-
-            assertThatThrownBy(() -> order.updateStatus(OrderStatus.CANCELLED))
-                    .isInstanceOf(IllegalStateException.class);
-        }
-
-        @Test
-        void PAID에서_PAYING으로_변경하면_예외를_던진다() {
-            Order order = createOrderWithStatus(OrderStatus.PAID);
-
-            assertThatThrownBy(() -> order.updateStatus(OrderStatus.PAYING))
+            assertThatThrownBy(() -> order.updateStatus(to))
                     .isInstanceOf(IllegalStateException.class);
         }
     }
