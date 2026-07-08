@@ -2,10 +2,15 @@ package com.bds.member.application;
 
 import com.bds.member.domain.entity.Member;
 import com.bds.member.infrastructure.persistence.adapter.MemberAdapter;
-import com.bds.member.infrastructure.persistence.feginClient.AuthFeignClient;
+import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
+import com.bds.member.presentation.dto.AuthLoginRequestDto;
+import com.bds.member.presentation.dto.AuthLoginResponseDto;
+import com.bds.member.presentation.dto.MemberLoginRequestDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
+import feign.Response;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,5 +38,22 @@ public class MemberService {
         );
 
         memberAdapter.save(newMember);
+    }
+
+    @Transactional
+    public AuthLoginResponseDto login(MemberLoginRequestDto requestDto) {
+
+        AuthLoginRequestDto authRequest = new AuthLoginRequestDto(
+            requestDto.email(),
+            requestDto.password()
+        );
+
+        ResponseEntity<AuthLoginResponseDto> feignResponse = authFeignClient.login(authRequest);
+
+        if (!feignResponse.getStatusCode().is2xxSuccessful() || feignResponse.getBody() == null) {
+            throw new IllegalArgumentException("로그인 서버와의 통신에 실패했습니다.");
+        }
+
+        return feignResponse.getBody();
     }
 }

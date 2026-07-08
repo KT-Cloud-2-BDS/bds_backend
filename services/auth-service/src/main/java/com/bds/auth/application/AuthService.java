@@ -8,6 +8,9 @@ import com.bds.auth.domain.entity.enums.Status;
 import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.AuthLocalAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
+import com.bds.auth.infrastructure.security.JwtTokenUtil;
+import com.bds.auth.presentation.dto.AuthLoginResponseDto;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class AuthService {
     private final RedisAdapter redisAdapter;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenUtil jwtTokenUtil;
 
     @Transactional
     public void sendSignUpVerificationCode(String email) {
@@ -73,5 +77,27 @@ public class AuthService {
         authLocalAdapter.save(newAuthLocal);
 
         return savedAuth.getId();
+    }
+
+    @Transactional
+    public AuthLoginResponseDto login(String email, String password) {
+        Auth auth = authAdapter.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException());
+
+        AuthLocal authLocal = authLocalAdapter.findByAuthId(auth.getId())
+            .orElseThrow(() -> new IllegalArgumentException());
+
+        if (!passwordEncoder.matches(password, authLocal.getPassword())) {
+            throw new IllegalArgumentException();
+        }
+
+        String accessToken = jwtTokenUtil.createAccessToken(auth.getId(), auth.getEmail(), auth.getRole());
+        String refreshToken = jwtTokenUtil.createRefreshToken(auth.getId());
+
+        String redisKey = "refresh:" + auth.getId();
+
+        redisAdapter.save(redisKey, refreshToken, 7, TimeUnit.DAYS);
+
+        return new AuthLoginResponseDto(accessToken, refreshToken);
     }
 }

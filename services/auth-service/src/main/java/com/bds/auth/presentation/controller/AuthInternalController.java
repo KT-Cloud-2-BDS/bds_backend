@@ -2,6 +2,8 @@ package com.bds.auth.presentation.controller;
 
 import com.bds.auth.application.AuthService;
 import com.bds.auth.presentation.dto.AuthCreateRequestDto;
+import com.bds.auth.presentation.dto.AuthLoginRequestDto;
+import com.bds.auth.presentation.dto.AuthLoginResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,4 +24,9 @@ public class AuthInternalController {
         return ResponseEntity.ok(authId);
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<AuthLoginResponseDto> login(@RequestBody AuthLoginRequestDto requestDto) {
+        AuthLoginResponseDto responseDto = authService.login(requestDto.email(), requestDto.password());
+        return ResponseEntity.ok(responseDto);
+    }
 }

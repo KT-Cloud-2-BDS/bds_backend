@@ -1,4 +1,4 @@
-package com.bds.auth.infrastructure.persistence.config;
+package com.bds.auth.infrastructure.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

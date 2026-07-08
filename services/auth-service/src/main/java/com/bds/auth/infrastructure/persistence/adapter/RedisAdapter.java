@@ -30,4 +30,11 @@ public class RedisAdapter {
     public void delete(String key) {
         redisTemplate.delete(key);
     }
+
+    /**
+     * RefreshToken 저장용 유연한 메서드
+     */
+    public void save(String key, String value, long timeout, TimeUnit timeUnit) {
+        redisTemplate.opsForValue().set(key, value, timeout, timeUnit);
+    }
 }

@@ -4,6 +4,7 @@ import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.infrastructure.persistence.entity.AuthJpaEntity;
 import com.bds.auth.infrastructure.persistence.mapper.AuthMapper;
 import com.bds.auth.infrastructure.persistence.repository.AuthJpaRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,11 @@ public class AuthAdapter {
         AuthJpaEntity jpaEntity = authMapper.toJpaEntity(auth);
         AuthJpaEntity savedEntity = authJpaRepo.save(jpaEntity);
         return authMapper.toDomain(savedEntity);
+    }
+
+    public Optional<Auth> findByEmail(String email){
+        return authJpaRepo.findByEmail(email)
+            .map(AuthMapper::toDomain);
     }
 
 
