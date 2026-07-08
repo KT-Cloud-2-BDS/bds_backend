@@ -1,6 +1,7 @@
 package com.bds.order.infrastructure.funding;
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.infrastructure.common.BaseEntity;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -17,7 +18,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class FundingJpaEntity {
+public class FundingJpaEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,12 +53,6 @@ public class FundingJpaEntity {
     private Long currentAmount;
 
     private Boolean isSuccess;
-
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "funding", fetch = FetchType.LAZY)
     private List<RewardJpaEntity> rewards = new ArrayList<>();

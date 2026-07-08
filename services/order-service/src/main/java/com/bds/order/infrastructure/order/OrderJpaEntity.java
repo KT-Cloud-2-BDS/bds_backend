@@ -2,12 +2,10 @@ package com.bds.order.infrastructure.order;
 
 import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.infrastructure.common.BaseEntity;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,8 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(name = "`order`")
-@EntityListeners(AuditingEntityListener.class)
-public class OrderJpaEntity {
+public class OrderJpaEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,12 +37,6 @@ public class OrderJpaEntity {
     private Long totalShippingCharge;
 
     private CancelReason cancelReason;
-
-    @CreatedDate
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 
     private LocalDateTime cancelledAt;
 
