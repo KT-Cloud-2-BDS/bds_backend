@@ -3,10 +3,7 @@ package com.bds.order.presentation.controller;
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
 import com.bds.order.application.OrderService;
-import com.bds.order.presentation.dto.BillingRequestDto;
-import com.bds.order.presentation.dto.BillingResponseDto;
-import com.bds.order.presentation.dto.OrderDetailResponseDto;
-import com.bds.order.presentation.dto.OrderResponseDto;
+import com.bds.order.presentation.dto.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -54,5 +51,14 @@ public class OrderController {
     ) {
         Long memberId = user.id();
         return ResponseEntity.ok(orderService.createBilling(memberId, reqDto));
+    }
+
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<OrderCancelResponseDto> cancelOrder(
+            @LoginUser CurrentUser user,
+            @PathVariable Long orderId
+    ) {
+        Long memberId = user.id();
+        return ResponseEntity.ok(orderService.cancelOrder(memberId, orderId));
     }
 }

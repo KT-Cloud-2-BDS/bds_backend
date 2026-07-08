@@ -12,7 +12,10 @@ public interface OrderRepository {
 
     void deleteAll();
 
-    List<OrderListProjection> findOrderListByMemberId(Long memberId, Pageable pageable);
+    Optional<Order> findByIdForUpdate(Long orderId);
 
-    Optional<OrderDetailProjection> findOrderByMemberId(Long memberId, Long orderId);
+    List<OrderListProjection> findOrderListWithFunding(Long memberId, Pageable pageable);
+
+    Optional<OrderDetailProjection> findOrderDetailWithFunding(Long memberId, Long orderId);
+
 }

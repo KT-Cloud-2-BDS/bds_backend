@@ -1,5 +1,6 @@
 package com.bds.order.infrastructure.order;
 
+import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import jakarta.persistence.*;
@@ -38,7 +39,7 @@ public class OrderJpaEntity {
 
     private Long totalShippingCharge;
 
-    private String cancelReason;
+    private CancelReason cancelReason;
 
     @CreatedDate
     private LocalDateTime createdAt;

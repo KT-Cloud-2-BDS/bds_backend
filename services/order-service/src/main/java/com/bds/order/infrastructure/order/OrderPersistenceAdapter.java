@@ -29,12 +29,17 @@ public class OrderPersistenceAdapter implements OrderRepository {
     }
 
     @Override
-    public List<OrderListProjection> findOrderListByMemberId(Long memberId, Pageable pageable) {
+    public List<OrderListProjection> findOrderListWithFunding(Long memberId, Pageable pageable) {
         return orderJpaRepository.findOrderListWithFunding(memberId, pageable).getContent();
     }
 
     @Override
-    public Optional<OrderDetailProjection> findOrderByMemberId(Long memberId, Long orderId) {
+    public Optional<OrderDetailProjection> findOrderDetailWithFunding(Long memberId, Long orderId) {
         return orderJpaRepository.findOrderWithFunding(memberId, orderId);
+    }
+
+    @Override
+    public Optional<Order> findByIdForUpdate(Long orderId) {
+        return orderJpaRepository.findByIdForUpdate(orderId).map(orderMapper::toDomain);
     }
 }

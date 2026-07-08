@@ -1,5 +1,6 @@
 package com.bds.order.infrastructure.order;
 
+import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.OrderStatus;
 
 import java.time.LocalDateTime;
@@ -16,6 +17,6 @@ public record OrderDetailProjection(
         LocalDateTime holdTo,
         boolean isSuccess,
         LocalDateTime cancelledAt,
-        String cancelReason
+        CancelReason cancelReason
 ) {
 }

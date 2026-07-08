@@ -20,4 +20,9 @@ public class RewardPersistenceAdaptor implements RewardRepository {
                 .toList();
     }
 
+    @Override
+    public void increaseRemainQty(Long rewardId, int qty) {
+        rewardJpaRepository.increaseRemainQty(rewardId, qty);
+    }
+
 }

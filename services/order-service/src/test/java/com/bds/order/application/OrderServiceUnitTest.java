@@ -51,7 +51,7 @@ class OrderServiceUnitTest {
                     false
             );
 
-            given(orderRepository.findOrderListByMemberId(memberId, pageable)).willReturn(List.of(projection));
+            given(orderRepository.findOrderListWithFunding(memberId, pageable)).willReturn(List.of(projection));
 
             List<OrderResponseDto> result = orderService.getAllOrders(memberId, pageable);
 

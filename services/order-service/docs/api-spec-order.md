@@ -243,7 +243,6 @@ GET /api/orders/{orderId}
 
 #### Validation / Business Rules
 - `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
-- 미인증된 사용자 호출: 401 Unauthorized
 - 타인 주문 접근: 403 Forbidden
 - 존재하지 않는 orderId: 404 Not Found
 
@@ -267,20 +266,16 @@ PATCH /api/orders/{orderId}/cancel
 
 ```json
 {
-  "status": 200,
-  "data": {
     "orderNo": "ORD-20250201-00001",
     "orderStatus": "CANCELLED",
     "cancelledAt": "2025-02-03T10:00:00",
     "refundStatus": "REFUND_REQUESTED"
-  }
 }
 ```
 
 #### Validation / Business Rules
 - `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
-- 미인증된 사용자 호출: 401 Unauthorized
-- 타인 주문 취소 시도: 403 Forbidden
+- 타인 주문 접근: 403 Forbidden
 - 존재하지 않는 orderId: 404 Not Found
 - 취소 불가 상태 (PAID 상태만 취소 가능): 400 Bad Request
 - 이미 취소된 주문 재취소: 409 Conflict

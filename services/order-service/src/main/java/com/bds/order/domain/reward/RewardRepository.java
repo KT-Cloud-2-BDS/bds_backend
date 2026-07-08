@@ -4,4 +4,6 @@ import java.util.List;
 
 public interface RewardRepository {
     List<Reward> findAllByIdAndFundingId(List<Long> ids, Long fundingId);
+
+    void increaseRemainQty(Long rewardId, int qty);
 }

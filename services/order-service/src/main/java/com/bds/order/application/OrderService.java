@@ -2,6 +2,8 @@ package com.bds.order.application;
 
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
+import com.bds.order.domain.order.CancelReason;
+import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.orderReward.OrderRewardRepository;
 import com.bds.order.domain.reward.Reward;
@@ -11,11 +13,8 @@ import com.bds.order.global.exception.ErrorCode;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
-import com.bds.order.presentation.dto.BillingRequestDto;
-import com.bds.order.presentation.dto.BillingResponseDto;
+import com.bds.order.presentation.dto.*;
 import com.bds.order.presentation.dto.BillingResponseDto.RewardDto;
-import com.bds.order.presentation.dto.OrderDetailResponseDto;
-import com.bds.order.presentation.dto.OrderResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,13 +35,13 @@ public class OrderService {
     private final OrderRewardRepository orderRewardRepository;
 
     public List<OrderResponseDto> getAllOrders(Long memberId, Pageable pageable) {
-        List<OrderListProjection> orderList = orderRepository.findOrderListByMemberId(memberId, pageable);
+        List<OrderListProjection> orderList = orderRepository.findOrderListWithFunding(memberId, pageable);
 
         return orderList.stream().map(OrderResponseDto::from).toList();
     }
 
     public OrderDetailResponseDto getOrderDetail(Long memberId, Long orderId) {
-        OrderDetailProjection order = orderRepository.findOrderByMemberId(memberId, orderId)
+        OrderDetailProjection order = orderRepository.findOrderDetailWithFunding(memberId, orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         List<OrderRewardDetailProjection> orderRewards = orderRewardRepository.findOrderRewardDetailsWithReward(orderId);
@@ -94,5 +93,27 @@ public class OrderService {
         }
 
         return new BillingResponseDto(memberId, rewardDtos, rewardAmount, totalShippingCharge, rewardAmount + totalShippingCharge);
+    }
+
+    public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!memberId.equals(order.getMemberId())) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        try {
+            order.cancelOrder(CancelReason.USER_CANCEL);
+        } catch (IllegalStateException e) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
+        }
+
+        order.getOrderRewards().forEach(or -> {
+            rewardRepository.increaseRemainQty(or.getRewardId(), or.getQty());
+        });
+
+        // TODO: Calling Refund API
+        return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
     }
 }
