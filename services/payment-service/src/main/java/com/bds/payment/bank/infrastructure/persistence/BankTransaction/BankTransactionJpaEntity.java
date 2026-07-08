@@ -10,6 +10,7 @@ import java.util.UUID;
 @Getter
 @Entity
 @Builder
+@Table(name = "bank_transaction")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BankTransactionJpaEntity {

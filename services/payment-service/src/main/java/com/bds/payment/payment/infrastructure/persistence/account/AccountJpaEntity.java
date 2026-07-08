@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Builder
+@Table(name = "bank_account")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AccountJpaEntity {

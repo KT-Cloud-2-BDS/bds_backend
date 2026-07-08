@@ -17,10 +17,16 @@ public class WalletService {
     private final WalletCreator walletCreator;
 
     @Transactional(readOnly = true)
-    public WalletResponseDto getWallet(Long memberId) {
+    public WalletResponseDto getWalletResponseDto(Long memberId) {
         Wallet wallet = walletRepository.findByMemberId(memberId)
                 .orElseGet(() -> walletCreator.createWalletSafely(memberId));
         return WalletResponseDto.from(wallet);
+    }
+
+    @Transactional(readOnly = true)
+    public Wallet getWallet(Long memberId) {
+        return walletRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
     }
 
     @Transactional(readOnly = true)
@@ -28,5 +34,22 @@ public class WalletService {
         Wallet wallet = walletRepository.findByMemberId(memberId)
                 .orElseGet(() -> walletCreator.createWalletSafely(memberId));
         return wallet.getId();
+    }
+
+    //TODO: charge, decrease Lock 도입 필요
+    @Transactional
+    public Wallet charge(Long memberId, Long amount) {
+        Wallet wallet = walletRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
+        wallet.charge(amount);
+        return walletRepository.save(wallet);
+    }
+
+    @Transactional
+    public Wallet decrease(Long memberId, Long amount) {
+        Wallet wallet = walletRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
+        wallet.withdraw(amount);
+        return walletRepository.save(wallet);
     }
 }

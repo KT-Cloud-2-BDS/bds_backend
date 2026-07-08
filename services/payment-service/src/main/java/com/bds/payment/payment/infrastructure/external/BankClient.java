@@ -1,6 +1,7 @@
 package com.bds.payment.payment.infrastructure.external;
 
 import com.bds.payment.payment.infrastructure.external.request.BankAccountRequestDto;
+import com.bds.payment.payment.infrastructure.external.request.BankTransactionRequestDto;
 import com.bds.payment.payment.infrastructure.external.request.BankVerifyRequestDto;
 import com.bds.payment.payment.infrastructure.external.response.BankAccountResponseDto;
 import com.bds.payment.payment.infrastructure.external.response.BankVerifyResponseDto;
@@ -46,6 +47,36 @@ public class BankClient {
                     .verified();
         } catch (HttpClientErrorException e) {
             log.error("은행 계좌 인증 실패");
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public BankTransactionRequestDto withdraw(BankTransactionRequestDto requestDto){
+        log.info("은행으로부터 충전 진행");
+
+        try {
+            return restClient.post()
+                    .uri("/api/banks/withdraw")
+                    .body(requestDto)
+                    .retrieve()
+                    .body(BankTransactionRequestDto.class);
+        } catch (HttpClientErrorException e) {
+            log.error("은행으로부터 충전 실패");
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public BankTransactionRequestDto deposit(BankTransactionRequestDto requestDto){
+        log.info("은행으로부터 충전 진행");
+
+        try {
+            return restClient.post()
+                    .uri("/api/banks/deposit")
+                    .body(requestDto)
+                    .retrieve()
+                    .body(BankTransactionRequestDto.class);
+        } catch (HttpClientErrorException e) {
+            log.error("은행으로부터 충전 실패");
             throw new IllegalArgumentException();
         }
     }

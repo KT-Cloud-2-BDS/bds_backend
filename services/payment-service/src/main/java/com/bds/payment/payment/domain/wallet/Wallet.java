@@ -24,4 +24,12 @@ public class Wallet {
                 .updatedAt(now)
                 .build();
     }
+
+    public void charge(Long amount) {
+        this.balance += amount; //TODO: amount 검증 필수
+    }
+
+    public void withdraw(Long amount) {
+        this.balance -= amount; //TODO: amount 검증 필수 및 출금이 불가능한 경우(ex. 잔액부족) 검증 필요
+    }
 }

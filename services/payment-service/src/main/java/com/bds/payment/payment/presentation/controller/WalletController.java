@@ -18,6 +18,6 @@ public class WalletController {
 
     @GetMapping("/wallet")
     public ResponseEntity<WalletResponseDto> walletInfo(@RequestHeader("X-Member-Id") Long memberId) {
-        return ResponseEntity.ok(walletService.getWallet(memberId));
+        return ResponseEntity.ok(walletService.getWalletResponseDto(memberId));
     }
 }

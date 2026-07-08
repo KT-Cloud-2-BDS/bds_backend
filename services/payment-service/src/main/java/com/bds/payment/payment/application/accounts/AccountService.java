@@ -36,11 +36,15 @@ public class AccountService {
     }
 
     public String verifyAccount(Long memberId, AccountVerifyRequestDto dto) {
-        Long walletId = walletService.getWalletId(memberId);
-        Account account = accountRepository.findById(walletId)
-                .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 계좌번호입니다."));
+        Account account = getAccount(memberId);
         boolean isOk = client.confirmVerification(BankVerifyRequestDto.create(account.getAccountNumber(), dto));
         if (!isOk) throw new IllegalArgumentException("인증에 실패 했습니다.");
         return "정상 처리되었습니다.";
+    }
+
+    public Account getAccount(Long memberId) {
+        Long walletId = walletService.getWalletId(memberId);
+        return accountRepository.findById(walletId)
+                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
     }
 }
