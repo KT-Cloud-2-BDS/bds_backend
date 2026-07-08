@@ -14,7 +14,6 @@ import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
 import com.bds.order.presentation.dto.*;
-import com.bds.order.presentation.dto.BillingResponseDto.RewardDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -77,7 +76,7 @@ public class OrderService {
         Long rewardAmount = 0L;
         Long totalShippingCharge = 0L;
 
-        List<RewardDto> rewardDtos = new ArrayList<>();
+        List<RewardItemDto> rewardDtos = new ArrayList<>();
 
         for (Reward reward : foundRewards) {
             Integer qty = rewardIdQtyMap.get(reward.getId());
@@ -86,7 +85,7 @@ public class OrderService {
                 throw new BusinessException(ErrorCode.REWARD_STOCK_INSUFFICIENT);
             }
 
-            RewardDto dto = RewardDto.from(reward, qty);
+            RewardItemDto dto = RewardItemDto.from(reward, qty);
             rewardAmount += dto.amount();
             totalShippingCharge += dto.shippingCharge();
             rewardDtos.add(dto);

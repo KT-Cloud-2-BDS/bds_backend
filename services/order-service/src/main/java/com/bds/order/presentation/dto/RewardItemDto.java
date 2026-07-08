@@ -23,7 +23,7 @@ public record RewardItemDto(
         );
     }
 
-    public static RewardItemDto fromOrderReward(OrderRewardDetailProjection reward) {
+    public static RewardItemDto from(OrderRewardDetailProjection reward) {
         return new RewardItemDto(
                 reward.orderRewardId(),
                 reward.qty(),

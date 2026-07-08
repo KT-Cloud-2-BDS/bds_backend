@@ -35,7 +35,7 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDetailResponseDto> listOrders(
+    public ResponseEntity<OrderDetailResponseDto> detailOrder(
             @LoginUser CurrentUser user,
             @PathVariable Long orderId
 

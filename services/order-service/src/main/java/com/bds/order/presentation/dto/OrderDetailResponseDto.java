@@ -36,7 +36,7 @@ public record OrderDetailResponseDto(
                 null,
                 null,
                 order.isSuccess(),
-                orderRewards.stream().map(RewardItemDto::fromOrderReward).toList(),
+                orderRewards.stream().map(RewardItemDto::from).toList(),
                 order.totalRewardAmount(),
                 order.totalShippingCharge(),
                 order.totalRewardAmount() + order.totalShippingCharge(),

@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record BillingRequestDto(
-        Long fundingId,
+        @NotNull Long fundingId,
         @NotNull List<@Valid RewardItemDto> rewards
 ) {
 
