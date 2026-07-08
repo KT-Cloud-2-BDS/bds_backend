@@ -166,15 +166,13 @@ GET /api/orders
 
 ```json
 {
-  "status": 200,
-  "data": {
     "content": [
       {
         "orderNo": "ORD-20250201-00001",
         "orderStatus": "PAID",
         "fundingDate": "2025-01-10T04:54:42+09:00",
         "title": "선글라스",
-        "hostName": "(주)스토어",
+        "hostId": 20112,
         "isEnded": false,
         "billingAmount": 51800,
         "paymentStatus": "PAID",
@@ -186,7 +184,6 @@ GET /api/orders
     "size": 20,
     "totalElements": 3,
     "totalPages": 1
-  }
 }
 ```
 

@@ -1,10 +1,13 @@
 package com.bds.order.domain.order;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Order {
 
     private Long id;
@@ -15,19 +18,6 @@ public class Order {
     private String cancelReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    private Order(Long id, String orderNo, Long memberId, OrderStatus status,
-                  Long amount, String cancelReason, LocalDateTime createdAt,
-                  LocalDateTime updatedAt) {
-        this.id = id;
-        this.orderNo = orderNo;
-        this.memberId = memberId;
-        this.status = status;
-        this.amount = amount;
-        this.cancelReason = cancelReason;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
 
     private Order(Long memberId, Long amount, OrderStatus status) {
         this.memberId = memberId;
@@ -42,7 +32,7 @@ public class Order {
         return new Order(memberId, amount, (status != null) ? status : OrderStatus.PENDING);
     }
 
-    public static Order of(Long id, String orderNo, Long memberId, OrderStatus status, Long amount, String cancelReason, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public static Order reconstitute(Long id, String orderNo, Long memberId, OrderStatus status, Long amount, String cancelReason, LocalDateTime createdAt, LocalDateTime updatedAt) {
         return new Order(id, orderNo, memberId, status, amount, cancelReason, createdAt, updatedAt);
     }
 }

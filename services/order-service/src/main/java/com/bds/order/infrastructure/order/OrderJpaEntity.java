@@ -1,6 +1,7 @@
 package com.bds.order.infrastructure.order;
 
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -8,6 +9,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -40,6 +43,9 @@ public class OrderJpaEntity {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    private List<OrderRewardJpaEntity> orderRewards = new ArrayList<>();
 
     @PrePersist
     public void generateOrderNumber() {

@@ -4,6 +4,7 @@ import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ import java.util.List;
 @Table(name = "funding")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class FundingJpaEntity {
 
     @Id

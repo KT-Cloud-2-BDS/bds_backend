@@ -28,9 +28,7 @@ public class OrderPersistenceAdapter implements OrderRepository {
     }
 
     @Override
-    public List<Order> findAllByMemberId(Long id, Pageable pageable) {
-        return orderJpaRepository.findAllByMemberId(id, pageable).stream()
-                .map(orderMapper::toDomain)
-                .toList();
+    public List<OrderListProjection> findOrderListByMemberId(Long memberId, Pageable pageable) {
+        return orderJpaRepository.findOrderListWithFunding(memberId, pageable).getContent();
     }
 }

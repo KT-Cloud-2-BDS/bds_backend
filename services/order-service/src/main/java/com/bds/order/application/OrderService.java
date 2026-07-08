@@ -2,12 +2,12 @@ package com.bds.order.application;
 
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
-import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
+import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.presentation.dto.BillingRequestDto;
 import com.bds.order.presentation.dto.BillingResponseDto;
 import com.bds.order.presentation.dto.BillingResponseDto.RewardDto;
@@ -31,10 +31,9 @@ public class OrderService {
     private final RewardRepository rewardRepository;
 
     public List<OrderResponseDto> getAllOrders(Long memberId, Pageable pageable) {
-        List<Order> orderList = orderRepository.findAllByMemberId(memberId, pageable);
+        List<OrderListProjection> orderList = orderRepository.findOrderListByMemberId(memberId, pageable);
 
-        return orderList.stream()
-                .map(order -> OrderResponseDto.from(order)).toList();
+        return orderList.stream().map(OrderResponseDto::from).toList();
     }
 
     public BillingResponseDto createBilling(Long memberId, BillingRequestDto reqDto) {

@@ -4,6 +4,7 @@ import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @Table(name = "reward")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class RewardJpaEntity {
 
     @Id

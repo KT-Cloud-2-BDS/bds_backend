@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 public class OrderMapper {
 
     public Order toDomain(OrderJpaEntity entity) {
-        return Order.of(
+        return Order.reconstitute(
                 entity.getId(),
                 entity.getOrderNo(),
                 entity.getMemberId(),
