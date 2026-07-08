@@ -10,20 +10,20 @@
 | POST   | /api/payment/deposit                    | O             | 페이 충전                                                 |
 | POST   | /api/payment/withdraw                   | O             | 페이 출금                                                 |
 | GET    | /api/payment/history                    | O             | 개인 월렛 거래 내역 조회                                     |
-| POST   | /api/payment/funding                    | X             | 펀딩 결제 (주문 도메인에서 호출; Kafka로 전달 시 미 사용)         |
-| POST   | /api/payment/funding/settlement         | X             | 펀딩 정산 요청 (주문 도메인에서 호출; 목표 달성 시)                |
-| POST   | /api/payment/funding/batch-refund       | X             | 펀딩 배치 환불 요청 (주문 도메인에서 호출; 목표 미달성 시)          |
-| POST   | /api/payment/refund                     | O             | 수동 환불                                                 |
+| POST   | /api/payment/funding                    | X             | 펀딩 결제 (`FundingController` 구현)                          |
+| POST   | /api/payment/funding/settlement         | X             | 펀딩 정산 요청 (미구현)                                      |
+| POST   | /api/payment/funding/batch-refund       | X             | 펀딩 배치 환불 요청 (미구현)                                 |
+| POST   | /api/payment/refund                     | O             | 수동 환불 (미구현)                                           |
 
 ### 가상 금융망 엔드포인트 목록
 
 | method | path                                   | auth required | 설명                    |
 |--------|----------------------------------------|---------------|------------------------|
-| POST   | /api/bank/accounts                     | X             | 계좌 실명 조회 + 1원 송금 |
-| POST   | /api/bank/accounts/verify              | X             | 인증 코드 조회           |
-| POST   | /api/bank/charge                       | X             | 계좌 출금 (페이 충전)    |
-| POST   | /api/bank/withdraw                     | X             | 계좌 입금 (원화 환불)    |
-| GET    | /api/bank/transactions/{tranSeqNo}     | X             | 거래 코드 조회           |
+| POST   | /api/banks/accounts                    | X             | 계좌 실명 조회 + 1원 송금 |
+| POST   | /api/banks/accounts/verify             | X             | 인증 코드 조회           |
+| POST   | /api/banks/withdraw                    | X             | 계좌 출금 (페이 충전)    |
+| POST   | /api/banks/deposit                     | X             | 계좌 입금 (원화 환불)    |
+| GET    | /api/banks/transactions/{tranSeqNo}    | X             | 거래 코드 조회           |
 
 ---
 
@@ -35,7 +35,7 @@ GET /api/payment/wallet
 
 Auth Required: **O**
 
-Request Body: 없음 (memberId는 JWT 헤더에서 추출)
+Request Body: 없음 (`X-User-Id` 헤더로 사용자 식별)
 
 Response Body
 
@@ -49,6 +49,7 @@ Response Body
 Validation / Business Rules
 
 - 인증된 사용자 본인의 월렛 잔액만 조회 가능.
+- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
 
 ---
 
@@ -60,22 +61,18 @@ POST /api/payment/accounts
 
 Auth Required: **O**
 
-Request Body (memberId는 JWT 헤더에서 추출)
+Request Body (`X-User-Id` 헤더로 사용자 식별)
 
 | 필드              | 타입     | 필수 | 설명      |
-|-----------------|--------|-----|---------|
-| `bankCode`      | String | Y   | 은행 코드   |
-| `accountNumber` | String | Y   | 계좌 번호   |
-| `holderName`    | String | Y   | 예금주 이름  |
+|------------------|--------|-----|---------|
+| `bankCode`       | String | Y   | 은행 코드   |
+| `accountNumber`  | String | Y   | 계좌 번호   |
+| `holderName`     | String | Y   | 예금주 이름  |
 
 Response Body
 
 ```json
-{
-  "bankCode": "004",
-  "accountNumber": "1234567890",
-  "holderName": "홍길동"
-}
+"정상 처리되었습니다."
 ```
 
 Validation / Business Rules
@@ -85,7 +82,7 @@ Validation / Business Rules
 - 클라이언트가 입력한 `holderName`과 가상 은행 실명 조회 결과 일치 여부 검증.
 - 불일치 시 등록 실패 처리.
 - 계좌 등록 후 1원 인증이 완료되어야 최종 등록 완료.
-- 다른 계좌를 등록을 원하는 경우 기존 계좌를 삭제하고 재 등록 진행.
+- 다른 계좌를 등록하려면 기존 계좌를 삭제하고 재등록 진행.
 
 ---
 
@@ -106,17 +103,15 @@ Request Body
 Response Body
 
 ```json
-{
-  "accountNumber": "1234567890",
-  "verified": true
-}
+"정상 처리되었습니다."
 ```
 
 Validation / Business Rules
 
 - 인증된 사용자만 요청 가능.
 - 가상 은행에 인증 코드 조회 후 일치 시 계좌 등록 완료.
-- 코드 불일치 시 등록 실패 처리.
+- 코드 불일치 시 인증 실패 처리.
+- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
 
 ---
 
@@ -128,7 +123,7 @@ POST /api/payment/deposit
 
 Auth Required: **O**
 
-Request Body (memberId는 JWT 헤더에서 추출)
+Request Body (`X-User-Id` 헤더로 사용자 식별)
 
 | 필드       | 타입   | 필수 | 설명     |
 |----------|------|-----|--------|
@@ -151,6 +146,7 @@ Validation / Business Rules
 - `tranSeqNo` 중복 검증으로 이중 충전 방지.
 - `tranSeqNo`는 UUID v7 사용.
 - 처리 완료 시 `payment_history`에 `type: DEPOSIT`으로 기록.
+- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
 
 ---
 
@@ -162,7 +158,7 @@ POST /api/payment/withdraw
 
 Auth Required: **O**
 
-Request Body (memberId는 JWT 헤더에서 추출)
+Request Body (`X-User-Id` 헤더로 사용자 식별)
 
 | 필드       | 타입   | 필수 | 설명     |
 |----------|------|-----|--------|
@@ -188,7 +184,8 @@ Validation / Business Rules
   - 존재하지 않을 경우 잔액 복원.
 - `tranSeqNo` 중복 검증으로 이중 출금 방지.
 - `tranSeqNo`는 UUID v7 사용.
-- 처리 완료 시 `payment_history`에 `type: WITHDRAWAL`으로 기록.
+- 처리 완료 시 `payment_history`에 `TransactionType.WITHDRAW` 및 `TransactionReason.WITHDRAW`로 기록됩니다.
+- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
 
 ---
 
@@ -200,14 +197,14 @@ GET /api/payment/history
 
 Auth Required: **O**
 
-Request Body: 없음 (memberId는 JWT 헤더에서 추출)
+Request Body: 없음 (`X-User-Id` 헤더로 사용자 식별)
 
 Query Parameter
 
 | 필드        | 타입     | 필수 | 설명                    |
 |-----------|--------|-----|-----------------------|
-| `from`    | Int    | N   | 조회 시작일 (ISO-8601, 예: 2026-05-01). 미지정 시 현재로부터 1개월 전 |
-| `to`      | Int    | N   | 조회 종료일 (ISO-8601). 미지정 시 현재 시각|
+| `from`    | String | N   | 조회 시작일 (ISO-8601, 예: 2026-05-01). 미지정 시 현재로부터 1개월 전 |
+| `to`      | String | N   | 조회 종료일 (ISO-8601). 미지정 시 현재 시각 |
 | `page`    | Int    | N   | 페이지 번호 (기본값 0)      |
 | `size`    | Int    | N   | 페이지당 개수 (기본값 20)    |
 
@@ -218,25 +215,21 @@ Response Body
   "content": [
     {
       "tranSeqNo": "018e1234-abcd-7xxx-xxxx-xxxxxxxxxxxx",
-      "type": "DEPOSIT",
+      "type": "CHARGE",
       "message": "페이 충전",
       "amount": 10000,
       "balanceAfter": 60000,
-      "orderId": null,
-      "productId": null,
       "status": "SUCCESS",
-      "createdAt": "2026-06-01T10:00:00"
+      "createAt": "2026-06-01T10:00:00"
     },
     {
       "tranSeqNo": "018e5678-abcd-7xxx-xxxx-xxxxxxxxxxxx",
-      "type": "FUNDING",
-      "message": "펀딩 결제",
+      "type": "WITHDRAW",
+      "message": null,
       "amount": 10000,
       "balanceAfter": 50000,
-      "orderId": 500,
-      "productId": 100,
       "status": "SUCCESS",
-      "createdAt": "2026-05-30T15:20:00"
+      "createAt": "2026-05-30T15:20:00"
     }
   ],
   "page": 0,
@@ -248,10 +241,11 @@ Response Body
 Validation / Business Rules
 
 - 인증된 사용자 본인의 거래 내역만 조회 가능.
-- from, to 미지정 시 기본 조회 범위는 현재 시각 기준 최근 1개월.
-- from이 to보다 늦을 경우 400 응답.
-- createdAt 기준 최신순 정렬.
-- 월렛 거래(payment_history)와 펀딩 거래(funding_payment)를 통합하여 반환.
+- `from`, `to` 미지정 시 기본 조회 범위는 현재 시각 기준 최근 1개월.
+- `from`이 `to`보다 늦을 경우 400 응답.
+- `createAt` 기준 최신순 정렬.
+- 월렛 거래(`payment_history`)를 반환.
+- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
 
 ---
 
@@ -261,17 +255,17 @@ Validation / Business Rules
 POST /api/payment/funding
 ```
 
-Auth Required: **X** (주문 도메인 서버에서 호출; Kafka 적용 시 미 사용)
+Auth Required: **X** (주문 도메인 서버에서 호출; Kafka로 전달 시 미 사용)
 
 Request Body
 
-| 필드            | 타입     | 필수 | 설명                               |
-|---------------|--------|-----|----------------------------------|
-| `orderId`     | Long   | Y   | 주문 ID                            |
-| `memberId`    | Long   | Y   | 후원자 ID                           |
-| `productId`   | Long   | Y   | 상품 ID                            |
-| `amount`      | Long   | Y   | 결제 금액                            |
-| `paymentType` | Enum   | Y   | 결제 유형 (`INSTANT` \| `RESERVED`)  |
+| 필드            | 타입     | 필수 | 설명                              |
+|---------------|--------|-----|---------------------------------|
+| `orderId`     | Long   | Y   | 주문 ID                           |
+| `memberId`    | Long   | Y   | 후원자 ID                          |
+| `productId`   | Long   | Y   | 상품 ID                           |
+| `amount`      | Long   | Y   | 결제 금액                           |
+| `paymentType` | Enum   | Y   | 결제 유형 (`INSTANT` \| `RESERVED`) |
 
 Response Body
 
@@ -381,7 +375,7 @@ POST /api/payment/refund
 
 Auth Required: **O**
 
-Request Body (memberId는 JWT 헤더에서 추출)
+Request Body (`X-User-Id` 헤더로 사용자 식별)
 
 | 필드        | 타입   | 필수 | 설명    |
 |-----------|------|-----|-------|
@@ -409,7 +403,7 @@ Validation / Business Rules
 ### [가상 금융망] 계좌 실명 조회 + 1원 송금
 
 ```
-POST /api/bank/accounts
+POST /api/banks/accounts
 ```
 
 Auth Required: **X**
@@ -417,9 +411,10 @@ Auth Required: **X**
 Request Body
 
 | 필드              | 타입     | 필수 | 설명     |
-|-----------------|--------|-----|--------|
-| `bankCode`      | String | Y   | 은행 코드  |
-| `accountNumber` | String | Y   | 계좌 번호  |
+|------------------|--------|-----|--------|
+| `bankCode`       | String | Y   | 은행 코드   |
+| `accountNumber`  | String | Y   | 계좌 번호  |
+| `holderName`     | String | Y   | 예금주 이름  |
 
 Response Body
 
@@ -440,7 +435,7 @@ Validation / Business Rules
 ### [가상 금융망] 인증 코드 조회
 
 ```
-POST /api/bank/accounts/verify
+POST /api/banks/accounts/verify
 ```
 
 Auth Required: **X**
@@ -448,9 +443,9 @@ Auth Required: **X**
 Request Body
 
 | 필드              | 타입     | 필수 | 설명     |
-|-----------------|--------|-----|--------|
-| `accountNumber` | String | Y   | 계좌 번호  |
-| `code`          | String | Y   | 인증 코드  |
+|------------------|--------|-----|--------|
+| `accountNumber`  | String | Y   | 계좌 번호  |
+| `code`           | String | Y   | 인증 코드  |
 
 Response Body
 
@@ -470,7 +465,7 @@ Validation / Business Rules
 ### [가상 금융망] 계좌 출금 (페이 충전)
 
 ```
-POST /api/bank/charge
+POST /api/banks/withdraw
 ```
 
 Auth Required: **X**
@@ -478,10 +473,10 @@ Auth Required: **X**
 Request Body
 
 | 필드              | 타입     | 필수 | 설명       |
-|-----------------|--------|-----|----------|
-| `accountNumber` | String | Y   | 계좌 번호    |
-| `amount`        | Long   | Y   | 출금 금액    |
-| `tranSeqNo`     | String | Y   | 거래 고유 번호 |
+|------------------|--------|-----|----------|
+| `accountNumber`  | String | Y   | 계좌 번호    |
+| `amount`         | Long   | Y   | 출금 금액    |
+| `tranSeqNo`      | String | Y   | 거래 고유 번호 |
 
 Response Body
 
@@ -503,7 +498,7 @@ Validation / Business Rules
 ### [가상 금융망] 계좌 입금 (원화 환불)
 
 ```
-POST /api/bank/withdraw
+POST /api/banks/deposit
 ```
 
 Auth Required: **X**
@@ -511,10 +506,10 @@ Auth Required: **X**
 Request Body
 
 | 필드              | 타입     | 필수 | 설명       |
-|-----------------|--------|-----|----------|
-| `accountNumber` | String | Y   | 계좌 번호    |
-| `amount`        | Long   | Y   | 입금 금액    |
-| `tranSeqNo`     | String | Y   | 거래 고유 번호 |
+|------------------|--------|-----|----------|
+| `accountNumber`  | String | Y   | 계좌 번호    |
+| `amount`         | Long   | Y   | 입금 금액    |
+| `tranSeqNo`      | String | Y   | 거래 고유 번호 |
 
 Response Body
 
@@ -535,7 +530,7 @@ Validation / Business Rules
 ### [가상 금융망] 거래 코드 조회
 
 ```
-GET /api/bank/transactions/{tranSeqNo}
+GET /api/banks/transactions/{tranSeqNo}
 ```
 
 Auth Required: **X**
