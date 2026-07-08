@@ -2,6 +2,7 @@ package com.bds.notification.presentation;
 
 import com.bds.notification.application.NotificationService;
 import com.bds.notification.presentation.dto.NotificationListResponse;
+import com.bds.notification.presentation.dto.UnreadCountResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -29,6 +30,11 @@ public class NotificationController {
       @RequestHeader("X-User-Id") Long memberId,
       @PageableDefault(size = 20) Pageable pageable) {
     return notificationService.getNotifications(memberId, pageable);
+  }
+
+  @GetMapping("/unread-count")
+  public UnreadCountResponse unreadCount(@RequestHeader("X-User-Id") Long memberId) {
+    return notificationService.getUnreadCount(memberId);
   }
 
 }

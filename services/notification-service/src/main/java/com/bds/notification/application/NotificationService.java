@@ -7,6 +7,7 @@ import com.bds.notification.domain.notification.repository.NotificationRepositor
 import com.bds.notification.infrastructure.sse.SseEmitterManager;
 import com.bds.notification.presentation.dto.NotificationListResponse;
 import com.bds.notification.presentation.dto.NotificationResponse;
+import com.bds.notification.presentation.dto.UnreadCountResponse;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,13 @@ public class NotificationService {
     notificationRepository.markAllAsReadByMemberId(memberId);
 
     return NotificationListResponse.of(responses, notifications.size(), unReadCount);
+  }
+
+  // 읽지 않은 알림 반환
+  public UnreadCountResponse getUnreadCount(Long memberId) {
+
+    long unreadCount = notificationRepository.countByMemberIdAndIsReadFalse(memberId);
+    return new UnreadCountResponse(unreadCount);
   }
 
 }
