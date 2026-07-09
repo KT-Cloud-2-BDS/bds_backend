@@ -9,10 +9,9 @@ import com.bds.member.presentation.dto.AuthCreateRequestDto;
 import com.bds.member.presentation.dto.AuthLoginRequestDto;
 import com.bds.member.presentation.dto.AuthLoginResponseDto;
 import com.bds.member.presentation.dto.MemberLoginRequestDto;
+import com.bds.member.presentation.dto.MemberInfoRequestDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
-import feign.Response;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.internal.util.collections.BoundedConcurrentHashMap.EvictionPolicy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,5 +57,21 @@ public class MemberService {
         }
 
         return feignResponse.getBody();
+    }
+
+    @Transactional
+    public void updateNickname(Long authId, MemberInfoRequestDto requestDto) {
+        if (requestDto.nickname() == null || requestDto.nickname().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (memberAdapter.existsByNickname(requestDto.nickname())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+
+        Member member = memberAdapter.findByAuthId(authId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        member.changeNickname(requestDto.nickname());
+        memberAdapter.save(member);
     }
 }

@@ -1,12 +1,16 @@
 package com.bds.member.presentation.controller;
 
+import com.bds.common.annotation.LoginUser;
+import com.bds.common.dto.CurrentUser;
 import com.bds.member.application.MemberService;
 import com.bds.member.presentation.dto.AuthLoginResponseDto;
 import com.bds.member.presentation.dto.MemberLoginRequestDto;
+import com.bds.member.presentation.dto.MemberInfoRequestDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +32,15 @@ public class MemberController {
     public ResponseEntity<AuthLoginResponseDto> login(@RequestBody MemberLoginRequestDto requestDto) {
         AuthLoginResponseDto loginResponse = memberService.login(requestDto);
         return ResponseEntity.ok(loginResponse);
+    }
+
+    @PatchMapping("/info")
+    public ResponseEntity<Void> updateNickname(
+        @LoginUser CurrentUser user,
+        @RequestBody MemberInfoRequestDto requestDto
+    ) {
+        memberService.updateNickname(user.id(), requestDto);
+        return ResponseEntity.ok().build();
     }
 }
 

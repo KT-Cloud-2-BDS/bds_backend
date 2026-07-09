@@ -20,6 +20,7 @@ public class MemberMapper {
         if (domain == null) return null;
 
         return MemberJpaEntity.builder()
+            .id(domain.getId())
             .authId(domain.getAuthId())
             .nickname(domain.getNickname())
             .build();

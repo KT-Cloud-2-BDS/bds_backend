@@ -9,7 +9,7 @@ public class Member {
 
     private final Long id;
     private final Long authId;
-    private final String nickname;
+    private  String nickname;
 
     private Member(Long id, Long authId, String nickname) {
         this.id = id;
@@ -25,5 +25,12 @@ public class Member {
 
     public static Member of(Long id, Long authId, String nickname) {
         return new Member(id, authId, nickname);
+    }
+
+    public void changeNickname(String newNickname) {
+        if (newNickname == null || newNickname.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        this.nickname = newNickname;
     }
 }
