@@ -10,7 +10,7 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class BankClientConfig {
 
-    @Value("http://localhost:8085")
+    @Value("${bank.api.base-url}")
     private String baseUrl;
 
     @Bean
