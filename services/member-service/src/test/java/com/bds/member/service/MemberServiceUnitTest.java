@@ -1,8 +1,15 @@
 package com.bds.member.service;
 
-import com.bds.member.application.MemberService; // 오리지널 MemberService 경로에 맞게 자동 임포트 확인!
+import com.bds.member.application.MemberService;
+import com.bds.member.domain.entity.Member;
 import com.bds.member.infrastructure.persistence.adapter.MemberAdapter;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
+import com.bds.member.presentation.dto.AuthCreateRequestDto;
+import com.bds.member.presentation.dto.AuthLoginRequestDto;
+import com.bds.member.presentation.dto.AuthLoginResponseDto;
+import com.bds.member.presentation.dto.MemberInfoRequestDto;
+import com.bds.member.presentation.dto.MemberLoginRequestDto;
+import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -11,6 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+
+import java.util.Optional;
 
 import static org.mockito.BDDMockito.*;
 
@@ -28,22 +37,88 @@ public class MemberServiceUnitTest {
     public AuthFeignClient authFeignClient;
 
     @Nested
+    @DisplayName("회원가입 기능")
+    public class SignUp {
+        @Test
+        @DisplayName("닉네임 중복이 없고 Auth 서버 계정 생성이 성공하면 회원가입이 완료된다")
+        public void 회원가입_성공() {
+            // given
+            MemberSignupRequestDto requestDto = new MemberSignupRequestDto("test@email.com", "password123!", "여진닉네임");
+            Long mockedAuthId = 100L;
+
+            given(memberAdapter.existsByNickname(anyString())).willReturn(false);
+            given(authFeignClient.createAuthAccount(any(AuthCreateRequestDto.class)))
+                .willReturn(ResponseEntity.ok(mockedAuthId));
+
+            // when
+            memberService.signUp(requestDto);
+
+            // then
+            verify(memberAdapter, times(1)).save(any(Member.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("로그인 기능")
+    public class Login {
+        @Test
+        @DisplayName("인증 서버 통신이 성공하면 로그인 토큰 정보가 정상 반환된다")
+        public void 로그인_성공() {
+            // given
+            MemberLoginRequestDto requestDto = new MemberLoginRequestDto("test@email.com", "password123!");
+            AuthLoginResponseDto expectedResponse = new AuthLoginResponseDto("accessToken", "refreshToken");
+
+            given(authFeignClient.login(any(AuthLoginRequestDto.class)))
+                .willReturn(ResponseEntity.ok(expectedResponse));
+
+            // when
+            memberService.login(requestDto);
+
+            // then
+            verify(authFeignClient, times(1)).login(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("닉네임 수정 기능")
+    public class UpdateNickname {
+        @Test
+        @DisplayName("정상적인 닉네임 입력이고 중복이 없으면 닉네임이 정상 변경된다")
+        public void 닉네임수정_성공() {
+            // given
+            Long authId = 24L;
+            MemberInfoRequestDto requestDto = new MemberInfoRequestDto("새로운닉네임");
+            Member mockMember = mock(Member.class);
+
+            given(memberAdapter.existsByNickname(anyString())).willReturn(false);
+            given(memberAdapter.findByAuthId(anyLong())).willReturn(Optional.of(mockMember));
+
+            // when
+            memberService.updateNickname(authId, requestDto);
+
+            // then
+            verify(mockMember, times(1)).changeNickname(anyString());
+            verify(memberAdapter, times(1)).save(any(Member.class));
+        }
+    }
+
+    @Nested
     @DisplayName("회원 탈퇴 기능")
     public class DeleteMember {
-
         @Test
         @DisplayName("유저가 존재하고 Auth 서버 통신이 성공하면 소프트 딜리트가 정상 수행된다")
         public void 유저존재_통신성공_소프트딜리트수행() {
             // given
             Long authId = 24L;
-            given(memberAdapter.existsByAuthId(authId)).willReturn(true);
-            given(authFeignClient.deleteAuth(authId)).willReturn(ResponseEntity.ok().build());
+
+            given(memberAdapter.existsByAuthId(anyLong())).willReturn(true);
+            given(authFeignClient.deleteAuth(anyLong())).willReturn(ResponseEntity.ok().build());
 
             // when
             memberService.deleteMember(authId);
 
             // then
-            verify(memberAdapter, times(1)).softDeleteByAuthId(authId);
+            verify(memberAdapter, times(1)).softDeleteByAuthId(anyLong());
         }
     }
 }

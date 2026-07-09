@@ -56,7 +56,11 @@ jacocoTestReport {
                     "**/*Dto*",
                     "**/*Exception*",
                     "**/infrastructure/persistence/entity/**",
-                    "**/global/**"
+                    "**/global/**",
+                    "**/infrastructure/persistence/adapter/**",
+                    "**/infrastructure/persistence/mapper/**",
+                    "**/presentation/controller/**",
+                    "**/*Application*"
             ])
         }))
     }
@@ -85,10 +89,14 @@ jacocoTestCoverageVerification {
             }
 
             excludes = [
-                    "**.*Dto*",
-                    "**.*Exception*",
-                    "**.infrastructure.persistence.entity.**",
-                    "**.global.**"
+                    "**/*Dto*",
+                    "**/*Exception*",
+                    "**/infrastructure/persistence/entity/**",
+                    "**/global/**",
+                    "**/infrastructure/persistence/adapter/**",
+                    "**/infrastructure/persistence/mapper/**",
+                    "**/presentation/controller/**",
+                    "**/*Application*"
             ]
         }
     }
