@@ -19,9 +19,9 @@ interface ChatRoomJpaRepository extends JpaRepository<ChatRoomJpaEntity, Long> {
     @Query("SELECT cr FROM ChatRoomJpaEntity cr WHERE cr.id = :id AND cr.deletedAt IS NULL")
     Optional<ChatRoomJpaEntity> findByIdAndDeletedAtIsNullForUpdate(@Param("id") Long id);
 
-    Optional<ChatRoomJpaEntity> findByProductIdAndCreatorIdAndType(Long productId, Long creatorId, ChatRoomType type);
+    Optional<ChatRoomJpaEntity> findByProductIdAndCreatorIdAndTypeAndDeletedAtIsNull(Long productId, Long creatorId, ChatRoomType type);
 
-    Optional<ChatRoomJpaEntity> findByProductIdAndType(Long productId, ChatRoomType type);
+    Optional<ChatRoomJpaEntity> findByProductIdAndTypeAndDeletedAtIsNull(Long productId, ChatRoomType type);
 
     @Query("SELECT cr FROM ChatRoomJpaEntity cr WHERE cr.id IN :ids AND cr.deletedAt IS NULL ORDER BY cr.id DESC")
     List<ChatRoomJpaEntity> findActiveByIds(@Param("ids") List<Long> ids, Pageable pageable);

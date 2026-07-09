@@ -53,6 +53,11 @@ public class ChatRoomService {
                                 "roomId=" + existingRoom.getId().value() + " memberId=" + buyerId);
                     }
 
+                    if (existingRoom.getDeletedAt() != null) {
+                        existingRoom.reopen();
+                        chatRoomRepository.save(existingRoom);
+                    }
+
                     members.forEach(m -> {
                         m.rejoin(now);
                         memberRepository.save(m);

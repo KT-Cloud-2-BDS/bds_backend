@@ -32,13 +32,13 @@ public class ChatRoomPersistenceAdapter implements ChatRoomRepository {
 
     @Override
     public Optional<ChatRoom> findInquiryRoomByProductAndBuyer(Long productId, Long buyerId) {
-        return jpaRepository.findByProductIdAndCreatorIdAndType(productId, buyerId, ChatRoomType.INQUIRY)
+        return jpaRepository.findByProductIdAndCreatorIdAndTypeAndDeletedAtIsNull(productId, buyerId, ChatRoomType.INQUIRY)
                 .map(mapper::toDomain);
     }
 
     @Override
     public Optional<ChatRoom> findFundingRoomByProduct(Long productId) {
-        return jpaRepository.findByProductIdAndType(productId, ChatRoomType.FUNDING)
+        return jpaRepository.findByProductIdAndTypeAndDeletedAtIsNull(productId, ChatRoomType.FUNDING)
                 .map(mapper::toDomain);
     }
 
@@ -56,7 +56,6 @@ public class ChatRoomPersistenceAdapter implements ChatRoomRepository {
         ChatRoomJpaEntity saved = jpaRepository.save(mapper.toJpaEntity(chatRoom));
         if (chatRoom.getId() == null) {
             chatRoom.assignId(ChatRoomId.of(saved.getId()));
-            return chatRoom;
         }
         return mapper.toDomain(saved);
     }

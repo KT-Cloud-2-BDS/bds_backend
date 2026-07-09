@@ -37,7 +37,7 @@ interface ChatMessageJpaRepository extends JpaRepository<ChatMessageJpaEntity, L
             LEFT JOIN (
                 SELECT room_id, COUNT(*) AS unread_count
                 FROM chat_message
-                WHERE room_id = :roomId AND deleted_at IS NULL AND id > :lastReadId
+                WHERE room_id = :roomId AND deleted_at IS NULL AND id > COALESCE(:lastReadId, 0)
                 GROUP BY room_id
             ) u ON m.room_id = u.room_id
             WHERE m.room_id = :roomId AND m.deleted_at IS NULL

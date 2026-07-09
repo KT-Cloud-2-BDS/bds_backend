@@ -76,6 +76,14 @@ public class ChatRoom {
         this.deletedAt = now;
     }
 
+    public void reopen() {
+        if (this.status == ChatRoomStatus.ACTIVE) {
+            return;
+        }
+        this.status = ChatRoomStatus.ACTIVE;
+        this.deletedAt = null;
+    }
+
     private void ensureActive() {
         if (this.status != ChatRoomStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.CONFLICT, "ChatRoom is not active: status=" + status);
