@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -115,6 +116,7 @@ class AccountServiceUnitTest {
             // then
             assertEquals("정상 처리되었습니다.", result);
             verify(client).confirmVerification(any(BankVerifyRequestDto.class));
+            assertThat(account.getIsVerified()).isTrue();
         }
     }
 

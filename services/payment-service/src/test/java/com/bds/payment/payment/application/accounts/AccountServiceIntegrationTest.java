@@ -80,5 +80,6 @@ class AccountServiceIntegrationTest {
 
         assertThat(result).isEqualTo("정상 처리되었습니다.");
         verify(client).confirmVerification(any());
+        assertThat(accountRepository.findById(walletId).orElseThrow().getIsVerified()).isTrue();
     }
 }
