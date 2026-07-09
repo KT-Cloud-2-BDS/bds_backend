@@ -5,6 +5,7 @@ import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
 import com.bds.order.presentation.controller.OrderController;
 import com.bds.order.presentation.dto.BillingRequestDto;
+import com.bds.order.presentation.dto.RewardQuantityDto;
 import com.bds.support.MockMvcTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -81,8 +82,8 @@ class OrderControllerExceptionUnitTest extends MockMvcTestSupport {
 
         @Test
         void 펀딩이_존재하지_않으면_404를_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(999L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 1)
+            BillingRequestDto reqDto = new BillingRequestDto(999L, false, List.of(
+                    new RewardQuantityDto(1L, 1)
             ));
 
             given(orderService.createBilling(eq(1L), any()))
@@ -98,8 +99,8 @@ class OrderControllerExceptionUnitTest extends MockMvcTestSupport {
 
         @Test
         void 펀딩_기간이_아니면_403을_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 1)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 1)
             ));
 
             given(orderService.createBilling(eq(1L), any()))
@@ -115,9 +116,9 @@ class OrderControllerExceptionUnitTest extends MockMvcTestSupport {
 
         @Test
         void 동일한_리워드를_중복_선택하면_400을_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 1),
-                    new BillingRequestDto.RewardItemDto(1L, 2)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 1),
+                    new RewardQuantityDto(1L, 2)
             ));
 
             given(orderService.createBilling(eq(1L), any()))
@@ -133,8 +134,8 @@ class OrderControllerExceptionUnitTest extends MockMvcTestSupport {
 
         @Test
         void 리워드_재고가_부족하면_409를_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 100)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 100)
             ));
 
             given(orderService.createBilling(eq(1L), any()))

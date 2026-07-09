@@ -61,4 +61,13 @@ public class OrderController {
         Long memberId = user.id();
         return ResponseEntity.ok(orderService.cancelOrder(memberId, orderId));
     }
+
+    @PostMapping
+    public ResponseEntity<OrderCreateResponseDto> createOrder(
+            @LoginUser CurrentUser user,
+            @Valid @RequestBody OrderCreateRequestDto reqDto
+    ) {
+        Long memberId = user.id();
+        return ResponseEntity.ok(orderService.createOrder(memberId, reqDto));
+    }
 }

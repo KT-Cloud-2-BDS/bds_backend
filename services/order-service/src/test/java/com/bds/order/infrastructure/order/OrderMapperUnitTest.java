@@ -3,6 +3,7 @@ package com.bds.order.infrastructure.order;
 import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.fixture.OrderFixture;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import com.bds.order.infrastructure.orderReward.OrderRewardMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -88,9 +88,7 @@ class OrderMapperUnitTest {
 
         @Test
         void 정상적으로_JpaEntity로_변환한다() {
-            Order order = Order.reconstitute(1L, "ORD-ABC123", 100L, OrderStatus.PAID,
-                    40000L, 3000L, List.of(),
-                    null, LocalDateTime.now(), LocalDateTime.now(), null);
+            Order order = OrderFixture.createOrder(100L, OrderStatus.PAID, 40000L, 3000L);
 
             OrderJpaEntity entity = orderMapper.toJpaEntity(order);
 
@@ -106,9 +104,7 @@ class OrderMapperUnitTest {
         @Test
         void 취소된_주문을_JpaEntity로_변환한다() {
             LocalDateTime cancelledAt = LocalDateTime.now().minusDays(1);
-            Order order = Order.reconstitute(2L, "ORD-DEF456", 200L, OrderStatus.CANCELLED,
-                    50000L, 5000L, List.of(),
-                    CancelReason.USER_CANCEL, LocalDateTime.now(), LocalDateTime.now(), cancelledAt);
+            Order order = OrderFixture.createCancelOrder(cancelledAt);
 
             OrderJpaEntity entity = orderMapper.toJpaEntity(order);
 

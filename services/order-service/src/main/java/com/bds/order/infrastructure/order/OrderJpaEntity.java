@@ -36,9 +36,12 @@ public class OrderJpaEntity extends BaseEntity {
 
     private Long totalShippingCharge;
 
+    @Enumerated(EnumType.STRING)
     private CancelReason cancelReason;
 
     private LocalDateTime cancelledAt;
+
+    private LocalDateTime expiresAt;
 
     @Builder.Default
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)

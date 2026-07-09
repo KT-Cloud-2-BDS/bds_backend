@@ -11,6 +11,7 @@ import com.bds.order.domain.orderReward.OrderRewardRepository;
 import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
+import com.bds.order.fixture.OrderFixture;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
@@ -143,8 +144,8 @@ class OrderServiceUnitTest {
             Long memberId = 1L;
             LocalDateTime now = LocalDateTime.now();
 
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 2)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 2)
             ));
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
@@ -154,9 +155,12 @@ class OrderServiceUnitTest {
             Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 50,
                     BadgeType.ULTRA_EARLY_BIRD, 10000L, now.plusDays(60), 3000L);
 
+            Order savedBilling = OrderFixture.createOrder(1L, OrderStatus.PENDING);
+
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(rewardRepository.findAllByIdAndFundingId(List.of(1L), 1L))
                     .willReturn(List.of(reward));
+            given(orderRepository.save(any(Order.class))).willReturn(savedBilling);
 
             BillingResponseDto result = orderService.createBilling(memberId, reqDto);
 
@@ -172,9 +176,9 @@ class OrderServiceUnitTest {
             Long memberId = 1L;
             LocalDateTime now = LocalDateTime.now();
 
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 2),
-                    new BillingRequestDto.RewardItemDto(2L, 1)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 2),
+                    new RewardQuantityDto(2L, 1)
             ));
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
@@ -186,9 +190,12 @@ class OrderServiceUnitTest {
             Reward reward2 = Reward.of(2L, 1L, "리워드B", "설명", 50, 30,
                     BadgeType.EARLY_BIRD, 20000L, now.plusDays(60), 5000L);
 
+            Order savedBilling = OrderFixture.createOrder(1L, OrderStatus.PENDING);
+
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(rewardRepository.findAllByIdAndFundingId(any(), eq(1L)))
                     .willReturn(List.of(reward1, reward2));
+            given(orderRepository.save(any(Order.class))).willReturn(savedBilling);
 
             BillingResponseDto result = orderService.createBilling(memberId, reqDto);
 
@@ -211,7 +218,7 @@ class OrderServiceUnitTest {
             OrderReward orderReward = OrderReward.reconstitute(1L, 1L, 1L, 2, 3000L, 20000L);
             Order order = Order.reconstitute(1L, "ORD-001", 1L, OrderStatus.PAID,
                     33000L, 3000L, List.of(orderReward),
-                    null, LocalDateTime.now(), LocalDateTime.now(), null);
+                    null, LocalDateTime.now(), LocalDateTime.now(), null, null);
 
             given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.of(order));
 

@@ -3,6 +3,7 @@ package com.bds.order.infrastructure.order;
 
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.fixture.OrderFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -49,14 +50,14 @@ class OrderPersistenceAdapterUnitTest {
                     .build();
             OrderJpaEntity savedEntity = OrderJpaEntity.builder()
                     .id(1L)
-                    .orderNo("ORD-ABC123")
+                    .orderNo("ORD-001")
                     .memberId(1L)
                     .status(OrderStatus.PENDING)
                     .totalRewardAmount(33000L)
                     .totalShippingCharge(3000L)
                     .build();
-            Order savedOrder = Order.reconstitute(1L, "ORD-ABC123", 1L, OrderStatus.PENDING,
-                    33000L, 3000L, List.of(), null, LocalDateTime.now(), LocalDateTime.now(), null);
+
+            Order savedOrder = OrderFixture.createOrder(1L, OrderStatus.PENDING);
 
             given(orderMapper.toJpaEntity(order)).willReturn(entity);
             given(orderJpaRepository.save(entity)).willReturn(savedEntity);
@@ -65,7 +66,7 @@ class OrderPersistenceAdapterUnitTest {
             Order result = orderPersistenceAdapter.save(order);
 
             assertThat(result.getId()).isEqualTo(1L);
-            assertThat(result.getOrderNo()).isEqualTo("ORD-ABC123");
+            assertThat(result.getOrderNo()).isEqualTo("ORD-001");
         }
     }
 
@@ -147,8 +148,7 @@ class OrderPersistenceAdapterUnitTest {
                     .totalRewardAmount(33000L)
                     .totalShippingCharge(3000L)
                     .build();
-            Order order = Order.reconstitute(1L, "ORD-001", 1L, OrderStatus.PAYING,
-                    33000L, 3000L, List.of(), null, LocalDateTime.now(), LocalDateTime.now(), null);
+            Order order = OrderFixture.createOrder(1L, OrderStatus.PAYING);
 
             given(orderJpaRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
             given(orderMapper.toDomain(entity)).willReturn(order);

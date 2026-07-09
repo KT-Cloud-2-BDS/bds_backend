@@ -30,7 +30,8 @@ public class OrderMapper {
                 entity.getCancelReason(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
-                entity.getCancelledAt()
+                entity.getCancelledAt(),
+                entity.getExpiresAt()
         );
     }
 

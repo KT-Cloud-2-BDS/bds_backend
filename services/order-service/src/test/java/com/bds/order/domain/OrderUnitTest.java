@@ -4,6 +4,7 @@ package com.bds.order.domain;
 import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.fixture.OrderFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -11,18 +12,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OrderUnitTest {
-
-    private Order createOrderWithStatus(OrderStatus status) {
-        return Order.reconstitute(1L, "ORD-001", 1L, status,
-                33000L, 3000L, List.of(),
-                null, LocalDateTime.now(), LocalDateTime.now(), null);
-    }
 
     @Nested
     @DisplayName("주문 생성 성공")
@@ -62,7 +54,7 @@ class OrderUnitTest {
                 "RESERVED, REFUNDED"
         })
         void 허용된_상태_전이는_성공한다(OrderStatus from, OrderStatus to) {
-            Order order = createOrderWithStatus(from);
+            Order order = OrderFixture.createOrder(from);
 
             order.updateStatus(to);
 
@@ -77,7 +69,7 @@ class OrderUnitTest {
         @ParameterizedTest(name = "{0} 상태에서 취소하면 CANCELLED로 변경된다")
         @EnumSource(value = OrderStatus.class, names = {"PAYING", "PAID"})
         void 취소_가능한_상태에서_취소하면_CANCELLED로_변경된다(OrderStatus from) {
-            Order order = createOrderWithStatus(from);
+            Order order = OrderFixture.createOrder(from);
 
             order.cancelOrder(CancelReason.USER_CANCEL);
 

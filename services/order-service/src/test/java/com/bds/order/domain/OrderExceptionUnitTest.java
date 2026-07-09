@@ -3,24 +3,16 @@ package com.bds.order.domain;
 import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.fixture.OrderFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OrderExceptionUnitTest {
-
-    private Order createOrderWithStatus(OrderStatus status) {
-        return Order.reconstitute(1L, "ORD-001", 1L, status,
-                33000L, 3000L, List.of(),
-                null, LocalDateTime.now(), LocalDateTime.now(), null);
-    }
 
     @Nested
     @DisplayName("주문 생성 예외")
@@ -67,7 +59,7 @@ class OrderExceptionUnitTest {
                 "REFUNDED, PAYING"
         })
         void 허용되지_않은_상태_전이는_예외를_던진다(OrderStatus from, OrderStatus to) {
-            Order order = createOrderWithStatus(from);
+            Order order = OrderFixture.createOrder(from);
 
             assertThatThrownBy(() -> order.updateStatus(to))
                     .isInstanceOf(IllegalStateException.class);
@@ -80,7 +72,7 @@ class OrderExceptionUnitTest {
 
         @Test
         void PENDING_상태에서_취소하면_예외를_던진다() {
-            Order order = Order.create(1L, 33000L, 3000L, OrderStatus.PENDING);
+            Order order = OrderFixture.createOrder(OrderStatus.PENDING);
 
             assertThatThrownBy(() -> order.cancelOrder(CancelReason.USER_CANCEL))
                     .isInstanceOf(IllegalStateException.class);

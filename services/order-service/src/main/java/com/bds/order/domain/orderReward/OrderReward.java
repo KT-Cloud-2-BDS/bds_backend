@@ -1,5 +1,6 @@
 package com.bds.order.domain.orderReward;
 
+import com.bds.order.presentation.dto.RewardItemDto;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,4 +20,7 @@ public class OrderReward {
         return new OrderReward(id, orderId, rewardId, qty, shippingCharge, amount);
     }
 
+    public static OrderReward of(RewardItemDto reward, Long orderId) {
+        return new OrderReward(null, orderId, reward.id(), reward.qty(), reward.shippingCharge(), reward.amount());
+    }
 }

@@ -40,12 +40,13 @@ POST /api/orders/billing
 
 #### Request Body
 
-| 필드              | 타입       | 필수 | 설명        |
-|-----------------|----------|------|-----------|
-| `fundingId`     | Long     | Y | 펀딩 ID     |
-| `rewards`       | Object[] | Y | 주문 리워드 목록 |
-| `rewards[].id`  | Long     | Y | 리워드 ID    |
-| `rewards[].qty` | Integer  | Y | 수량        |
+| 필드                | 타입       | 필수 | 설명        |
+|-------------------|----------|----|-----------|
+| `fundingId`       | Long     | Y  | 펀딩 ID     |
+| `isReservedOrder` | Boolean  | N  | 예약 주문 여부  |
+| `rewards`         | Object[] | Y  | 주문 리워드 목록 |
+| `rewards[].id`    | Long     | Y  | 리워드 ID    |
+| `rewards[].qty`   | Integer  | Y  | 수량        |
 
 #### Response Body
 
@@ -102,8 +103,6 @@ POST /api/orders
 
 ```json
 {
-  "status": 200,
-  "data": {
     "memberId": 1,
     "orderNo": "ORD-20250201-00001",
     "rewards": [
@@ -116,11 +115,11 @@ POST /api/orders
         "shippingCharge": 5000
       }
     ],
+    "rewardAmount": 182400,
     "totalShippingCharge": 5000,
     "totalBillingAmount": 187400,
     "paymentStatus": "PAID",
     "paidAt": "2025-02-01T14:30:00"
-  }
 }
 ```
 
@@ -355,7 +354,7 @@ RESERVED → CANCELLED  (펀딩 실패 / 사용자 취소 / 타임아웃)
 
 # 공통
 PAYING → PAID         (결제 성공)
-PAYING → FAILED       (결제 실패)
+PAYING → CANCELLED       (결제 실패)
 PAID → CANCELLED      (사용자 취소)
 CANCELLED → REFUNDED  (환불 완료)
 ```

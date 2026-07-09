@@ -91,8 +91,8 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
 
         @Test
         void 빌링을_정상_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 2)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 2)
             ));
 
             RewardItemDto rewardDto = new RewardItemDto(

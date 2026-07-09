@@ -7,11 +7,12 @@ import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
-import com.bds.order.domain.orderReward.OrderRewardRepository;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
+import com.bds.order.fixture.OrderFixture;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.presentation.dto.BillingRequestDto;
+import com.bds.order.presentation.dto.RewardQuantityDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,9 +42,6 @@ class OrderServiceExceptionUnitTest {
     @Mock
     private RewardRepository rewardRepository;
 
-    @Mock
-    private OrderRewardRepository orderRewardRepository;
-
     @InjectMocks
     private OrderService orderService;
 
@@ -67,8 +65,8 @@ class OrderServiceExceptionUnitTest {
 
         @Test
         void 펀딩이_존재하지_않으면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(999L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 1)
+            BillingRequestDto reqDto = new BillingRequestDto(999L, false, List.of(
+                    new RewardQuantityDto(1L, 1)
             ));
 
             given(fundingRepository.findById(999L)).willReturn(Optional.empty());
@@ -80,8 +78,8 @@ class OrderServiceExceptionUnitTest {
         @Test
         void 펀딩_기간이_아니면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 1)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 1)
             ));
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
@@ -97,9 +95,9 @@ class OrderServiceExceptionUnitTest {
         @Test
         void 리워드가_존재하지_않으면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 1),
-                    new BillingRequestDto.RewardItemDto(2L, 1)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 1),
+                    new RewardQuantityDto(2L, 1)
             ));
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
@@ -119,9 +117,9 @@ class OrderServiceExceptionUnitTest {
 
         @Test
         void 동일한_리워드를_중복_선택하면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 1),
-                    new BillingRequestDto.RewardItemDto(1L, 2)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 1),
+                    new RewardQuantityDto(1L, 2)
             ));
 
             LocalDateTime now = LocalDateTime.now();
@@ -138,8 +136,8 @@ class OrderServiceExceptionUnitTest {
         @Test
         void 리워드_재고가_부족하면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
-            BillingRequestDto reqDto = new BillingRequestDto(1L, List.of(
-                    new BillingRequestDto.RewardItemDto(1L, 100)
+            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
+                    new RewardQuantityDto(1L, 100)
             ));
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
@@ -172,9 +170,7 @@ class OrderServiceExceptionUnitTest {
 
         @Test
         void 본인의_주문이_아니면_예외를_던진다() {
-            Order order = Order.reconstitute(1L, "ORD-001", 2L, OrderStatus.PAID,
-                    33000L, 3000L, List.of(),
-                    null, LocalDateTime.now(), LocalDateTime.now(), null);
+            Order order = OrderFixture.createOrder(2L, OrderStatus.PAID);
 
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
 
@@ -184,9 +180,7 @@ class OrderServiceExceptionUnitTest {
 
         @Test
         void 취소_불가_상태이면_예외를_던진다() {
-            Order order = Order.reconstitute(1L, "ORD-001", 1L, OrderStatus.PENDING,
-                    33000L, 3000L, List.of(),
-                    null, LocalDateTime.now(), LocalDateTime.now(), null);
+            Order order = OrderFixture.createOrder(1L, OrderStatus.PENDING);
 
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
 
