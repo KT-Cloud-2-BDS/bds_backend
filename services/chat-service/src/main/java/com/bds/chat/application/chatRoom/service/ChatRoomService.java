@@ -37,24 +37,41 @@ public class ChatRoomService {
     private final Clock clock;
 
 
-    // row 중복 확인의 경우 해당 business가 아니라 sql unique를 통해 보장합니다.
     @Transactional
     public ChatRoomResponseDto createInquiryRoom(Long productId, Long buyerId) {
         LocalDateTime now = LocalDateTime.now(clock);
         MemberId buyerMemberId = MemberId.of(buyerId);
         ProductId pid = ProductId.of(productId);
 
-        guardDuplicateInquiryRoom(productId, buyerId);
-        MemberId sellerMemberId = findSellerFromFundingRoom(productId);
+        // 기존 방이 있으면 buyer를 rejoin 처리
+        return chatRoomRepository.findInquiryRoomByProductAndBuyer(productId, buyerId)
+                .map(existingRoom -> {
+                    List<InquiryChatMember> members = memberRepository.findAllByRoomId(existingRoom.getId().value());
 
-        ChatRoom room = chatRoomRepository.save(
-                ChatRoom.create(buyerMemberId, pid, null, ChatRoomType.INQUIRY, now)
-        );
+                    if (members.stream().noneMatch(m -> m.getMemberId().value().equals(buyerId))) {
+                        throw new BusinessException(ErrorCode.NOT_FOUND,
+                                "roomId=" + existingRoom.getId().value() + " memberId=" + buyerId);
+                    }
 
-        memberRepository.save(InquiryChatMember.create(room.getId(), buyerMemberId, now));
-        memberRepository.save(InquiryChatMember.create(room.getId(), sellerMemberId, now));
+                    members.forEach(m -> {
+                        m.rejoin(now);
+                        memberRepository.save(m);
+                    });
 
-        return ChatRoomResponseDto.from(room, List.of(buyerMemberId.value(), sellerMemberId.value()));
+                    Long sellerId = existingRoom.getCreatorId().value();
+                    return ChatRoomResponseDto.from(existingRoom, List.of(buyerId, sellerId));
+                })
+                .orElseGet(() -> {
+                    MemberId sellerMemberId = findSellerFromFundingRoom(productId);
+
+                    ChatRoom room = chatRoomRepository.save(
+                            ChatRoom.create(buyerMemberId, pid, null, ChatRoomType.INQUIRY, now)
+                    );
+                    memberRepository.save(InquiryChatMember.create(room.getId(), buyerMemberId, now));
+                    memberRepository.save(InquiryChatMember.create(room.getId(), sellerMemberId, now));
+
+                    return ChatRoomResponseDto.from(room, List.of(buyerMemberId.value(), sellerMemberId.value()));
+                });
     }
 
     @Transactional
@@ -104,7 +121,7 @@ public class ChatRoomService {
                 .map(m -> m.getMemberId().value())
                 .toList();
 
-        ChatMessage latestMessage = chatMessageRepository.findLatestWithUnread(roomId, null).latest();
+        ChatMessage latestMessage = chatMessageRepository.findLatestWithUnread(roomId, myMember.getLastReadMessageId()).latest();
         LastMessageDto lastMessage = latestMessage != null ? LastMessageDto.from(latestMessage) : null;
 
         return InquiryChatRoomDetailResponseDto.from(room, participants, MembershipStatusDto.from(myMember), lastMessage);
@@ -162,14 +179,6 @@ public class ChatRoomService {
     }
 
     /* -------------------- private -------------------- */
-
-    private void guardDuplicateInquiryRoom(Long productId, Long buyerId) {
-        chatRoomRepository.findInquiryRoomByProductAndBuyer(productId, buyerId)
-                .ifPresent(r -> {
-                    throw new BusinessException(ErrorCode.CONFLICT,
-                            "Inquiry room already exists: roomId=" + r.getId().value());
-                });
-    }
 
     private void guardDuplicateFundingRoom(Long productId) {
         chatRoomRepository.findFundingRoomByProduct(productId)

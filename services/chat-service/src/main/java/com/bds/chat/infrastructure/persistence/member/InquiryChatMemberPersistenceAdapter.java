@@ -1,5 +1,6 @@
 package com.bds.chat.infrastructure.persistence.member;
 
+import com.bds.chat.application.message.dto.ReadReceiptDto;
 import com.bds.chat.domain.member.InquiryChatMember;
 import com.bds.chat.domain.member.InquiryChatMemberRepository;
 import com.bds.chat.domain.shared.InquiryChatMemberId;
@@ -9,6 +10,8 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +29,25 @@ public class InquiryChatMemberPersistenceAdapter implements InquiryChatMemberRep
     public Optional<InquiryChatMember> findActiveMember(Long roomId, Long memberId) {
         return jpaRepository.findByRoom_IdAndMemberIdAndDeletedAtIsNull(roomId, memberId)
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public boolean existsActiveMember(Long roomId, Long memberId) {
+        return jpaRepository.existsByRoom_IdAndMemberIdAndDeletedAtIsNull(roomId, memberId);
+    }
+
+    @Override
+    public Optional<InquiryChatMember> findByRoomIdAndMemberId(Long roomId, Long memberId) {
+        return jpaRepository.findByRoom_IdAndMemberId(roomId, memberId)
+                .map(mapper::toDomain);
+    }
+
+    @Override
+    public List<InquiryChatMember> findAllByRoomId(Long roomId) {
+        return jpaRepository.findByRoom_Id(roomId)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 
     @Override
@@ -61,5 +83,16 @@ public class InquiryChatMemberPersistenceAdapter implements InquiryChatMemberRep
             return member;
         }
         return mapper.toDomain(saved);
+    }
+
+    @Override
+    public void bulkUpdateLastRead(List<ReadReceiptDto> batch) {
+        Long[]          roomIds    = batch.stream().map(ReadReceiptDto::roomId).toArray(Long[]::new);
+        Long[]          memberIds  = batch.stream().map(ReadReceiptDto::userId).toArray(Long[]::new);
+        Long[]          messageIds = batch.stream().map(ReadReceiptDto::lastReadMessageId).toArray(Long[]::new);
+        LocalDateTime[] readAts    = batch.stream()
+                .map(r->LocalDateTime.ofInstant(r.readAt(), ZoneOffset.UTC))
+                .toArray(LocalDateTime[]::new);
+        jpaRepository.bulkUpdateLastRead(roomIds, memberIds, messageIds, readAts);
     }
 }
