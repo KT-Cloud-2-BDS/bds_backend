@@ -30,4 +30,11 @@ public class Account {
                 .updatedAt(now)
                 .build();
     }
+
+    public void updateAccount(AccountRegisterRequestDto dto) {
+        this.accountNumber = dto.accountNumber();
+        this.bankCode = dto.bankCode();
+        this.holderName = dto.holderName();
+        this.isVerified = false;
+    }
 }

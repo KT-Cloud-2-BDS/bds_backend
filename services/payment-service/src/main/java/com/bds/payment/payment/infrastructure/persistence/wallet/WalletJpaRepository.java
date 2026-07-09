@@ -6,5 +6,7 @@ import java.util.Optional;
 
 interface WalletJpaRepository extends JpaRepository<WalletJpaEntity, Long> {
 
+    boolean existsByMemberId(Long memberId);
+
     Optional<WalletJpaEntity> findByMemberId(Long memberId);
 }

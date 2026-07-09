@@ -15,6 +15,11 @@ public class WalletPersistenceAdapter implements WalletRepository {
     private final WalletMapper mapper;
 
     @Override
+    public boolean existsByMemberId(Long memberId) {
+        return jpaRepository.existsByMemberId(memberId);
+    }
+
+    @Override
     public Optional<Wallet> findByMemberId(Long memberId) {
         return jpaRepository.findByMemberId(memberId).map(mapper::toDomain);
     }

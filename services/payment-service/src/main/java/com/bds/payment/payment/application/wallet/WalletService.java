@@ -14,12 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class WalletService {
 
     private final WalletRepository walletRepository;
-    private final WalletCreator walletCreator;
 
     @Transactional(readOnly = true)
     public WalletResponseDto getWalletResponseDto(Long memberId) {
         Wallet wallet = walletRepository.findByMemberId(memberId)
-                .orElseGet(() -> walletCreator.createWalletSafely(memberId));
+                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
         return WalletResponseDto.from(wallet);
     }
 
@@ -32,8 +31,14 @@ public class WalletService {
     @Transactional(readOnly = true)
     public Long getWalletId(Long memberId) {
         Wallet wallet = walletRepository.findByMemberId(memberId)
-                .orElseGet(() -> walletCreator.createWalletSafely(memberId));
+                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
         return wallet.getId();
+    }
+
+    @Transactional
+    public WalletResponseDto createWallet(Long memberId) {
+        if (walletRepository.existsByMemberId(memberId)) throw new IllegalArgumentException("잘못된 접근입니다.");
+        return WalletResponseDto.from(walletRepository.save(Wallet.create(memberId)));
     }
 
     //TODO: charge, decrease Lock 도입 필요

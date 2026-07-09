@@ -36,9 +36,11 @@ public class AccountJpaEntity {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        this.isVerified = false;
+        LocalDateTime now = LocalDateTime.now();
+
+        if (this.createdAt == null) this.createdAt = now;
+        if (this.updatedAt == null) this.updatedAt = now;
+        if (this.isVerified == null) this.isVerified = false;
     }
 
     @PreUpdate
