@@ -17,8 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 
 @Slf4j
@@ -30,7 +30,7 @@ public class BankService {
     private final BankVerifyCodeRepository bankVerifyCodeRepository;
     private final BankTransactionRepository bankTransactionRepository;
 
-    private final Random random = new Random();
+    private final SecureRandom random = new SecureRandom();
 
     public BankAccountResponseDto sendVerificationCode(BankAccountRequestDto dto) {
         Optional<BankVerifyCode> findBankVerifyCode = bankVerifyCodeRepository.findByAccountNumber(dto.accountNumber());
