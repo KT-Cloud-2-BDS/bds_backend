@@ -2,9 +2,9 @@ package com.bds.notification.presentation;
 
 import com.bds.notification.application.NotificationService;
 import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
-import com.bds.notification.presentation.dto.NotificationListResponse;
-import com.bds.notification.presentation.dto.NotificationSubscribeResponse;
-import com.bds.notification.presentation.dto.UnreadCountResponse;
+import com.bds.notification.presentation.dto.NotificationListResponseDto;
+import com.bds.notification.presentation.dto.NotificationSubscribeResponseDto;
+import com.bds.notification.presentation.dto.UnreadCountResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -32,22 +32,22 @@ public class NotificationController {
   }
 
   @GetMapping("")
-  public NotificationListResponse notifications(
+  public NotificationListResponseDto notifications(
       @RequestHeader("X-User-Id") Long memberId,
       @PageableDefault(size = 20) Pageable pageable) {
     return notificationService.getNotifications(memberId, pageable);
   }
 
   @GetMapping("/unread-count")
-  public UnreadCountResponse unreadCount(@RequestHeader("X-User-Id") Long memberId) {
+  public UnreadCountResponseDto unreadCount(@RequestHeader("X-User-Id") Long memberId) {
     return notificationService.getUnreadCount(memberId);
   }
 
   @PostMapping("/subscriptions/{targetType}/{targetId}")
-  public NotificationSubscribeResponse subscribe(
+  public NotificationSubscribeResponseDto subscribe(
       @RequestHeader("X-User-Id") Long memberId,
       @PathVariable String targetType,
-      @PathVariable("targetId") Long targetId
+      @PathVariable Long targetId
   ) {
     SubscriptionTargetType type = SubscriptionTargetType.valueOf(targetType.toUpperCase());
     return notificationService.subscribe(memberId, type, targetId);
@@ -57,7 +57,7 @@ public class NotificationController {
   public ResponseEntity<Void> unsubscribe(
       @RequestHeader("X-User-Id") Long memberId,
       @PathVariable String targetType,
-      @PathVariable("targetId") Long targetId
+      @PathVariable Long targetId
   ) {
     SubscriptionTargetType type = SubscriptionTargetType.valueOf(targetType.toUpperCase());
     notificationService.unsubscribe(memberId, type, targetId);

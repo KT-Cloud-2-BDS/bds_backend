@@ -8,10 +8,10 @@ import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
 import com.bds.notification.domain.notification.repository.NotificationRepository;
 import com.bds.notification.domain.notification.repository.NotificationSubscriptionRepository;
 import com.bds.notification.infrastructure.sse.SseEmitterManager;
-import com.bds.notification.presentation.dto.NotificationListResponse;
-import com.bds.notification.presentation.dto.NotificationResponse;
-import com.bds.notification.presentation.dto.NotificationSubscribeResponse;
-import com.bds.notification.presentation.dto.UnreadCountResponse;
+import com.bds.notification.presentation.dto.NotificationListResponseDto;
+import com.bds.notification.presentation.dto.NotificationResponseDto;
+import com.bds.notification.presentation.dto.NotificationSubscribeResponseDto;
+import com.bds.notification.presentation.dto.UnreadCountResponseDto;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -48,31 +48,32 @@ public class NotificationService {
 
   // 알림 리스트 반환
   @Transactional
-  public NotificationListResponse getNotifications(Long memberId, Pageable pageable) {
+  public NotificationListResponseDto getNotifications(Long memberId, Pageable pageable) {
     List<Notification> notifications = notificationRepository.findByMemberIdOrderByCreatedAtDesc(
         memberId, pageable);
 
     long unReadCount = notificationRepository.countByMemberIdAndIsReadFalse(memberId);
 
-    List<NotificationResponse> responses = notifications.stream()
-        .map(NotificationResponse::from)
+    List<NotificationResponseDto> responses = notifications.stream()
+        .map(NotificationResponseDto::from)
         .toList();
 
     notificationRepository.markAllAsReadByMemberId(memberId);
 
-    return NotificationListResponse.of(responses, notifications.size(), unReadCount);
+    return NotificationListResponseDto.of(responses, notifications.size(), unReadCount);
   }
 
   // 읽지 않은 알림 반환
-  public UnreadCountResponse getUnreadCount(Long memberId) {
+  public UnreadCountResponseDto getUnreadCount(Long memberId) {
 
     long unreadCount = notificationRepository.countByMemberIdAndIsReadFalse(memberId);
-    return new UnreadCountResponse(unreadCount);
+    return new UnreadCountResponseDto(unreadCount);
   }
 
   // 알림 등록
   @Transactional
-  public NotificationSubscribeResponse subscribe(Long memberId, SubscriptionTargetType targetType,
+  public NotificationSubscribeResponseDto subscribe(Long memberId,
+      SubscriptionTargetType targetType,
       Long targetId) {
     if (notificationSubscriptionRepository.existsByMemberIdAndTargetTypeAndTargetId(memberId,
         targetType, targetId)) {
@@ -86,7 +87,7 @@ public class NotificationService {
 
     notificationSubscriptionRepository.save(notificationSubscription);
 
-    return new NotificationSubscribeResponse(targetType, targetId, true);
+    return new NotificationSubscribeResponseDto(targetType, targetId, true);
   }
 
   // 알림 해지

@@ -1,6 +1,6 @@
 package com.bds.notification.presentation.dto;
 
-public record UnreadCountResponse(
+public record UnreadCountResponseDto(
     long unreadCount
 ) {
 

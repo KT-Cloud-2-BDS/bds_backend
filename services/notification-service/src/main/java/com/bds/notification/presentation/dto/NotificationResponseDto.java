@@ -4,7 +4,7 @@ import com.bds.notification.domain.notification.entity.Notification;
 import com.bds.notification.domain.notification.entity.NotificationType;
 import java.time.LocalDateTime;
 
-public record NotificationResponse(
+public record NotificationResponseDto(
     Long notificationId,
     NotificationType type,
     String title,
@@ -14,8 +14,8 @@ public record NotificationResponse(
     LocalDateTime createdAt
 ) {
 
-  public static NotificationResponse from(Notification notification) {
-    return new NotificationResponse(
+  public static NotificationResponseDto from(Notification notification) {
+    return new NotificationResponseDto(
         notification.getNotificationId(),
         notification.getType(),
         notification.getTitle(),
