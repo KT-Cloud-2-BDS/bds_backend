@@ -2,6 +2,7 @@ package com.bds.order.global.exception;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -80,5 +81,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(e.getStatusCode())
                 .body(new ErrorResponse(e.getStatusCode().toString(), e.getReason(), null));
+    }
+
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handlePessimisticLockingFailureException(PessimisticLockingFailureException e) {
+        return ResponseEntity
+                .status(ErrorCode.RESOURCE_LOCKED.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.RESOURCE_LOCKED));
     }
 }

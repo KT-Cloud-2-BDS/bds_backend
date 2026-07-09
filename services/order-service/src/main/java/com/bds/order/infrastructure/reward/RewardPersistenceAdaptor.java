@@ -25,4 +25,9 @@ public class RewardPersistenceAdaptor implements RewardRepository {
         rewardJpaRepository.increaseRemainQty(rewardId, qty);
     }
 
+    @Override
+    public int decreaseStock(Long id, int qty) {
+        return rewardJpaRepository.decreaseStock(id, qty);
+    }
+
 }

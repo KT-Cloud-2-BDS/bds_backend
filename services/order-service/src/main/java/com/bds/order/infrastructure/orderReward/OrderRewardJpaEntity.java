@@ -34,7 +34,6 @@ public class OrderRewardJpaEntity {
 
     private Long shippingCharge;
 
-
     public Long getOrderId() {
         return order.getId();
     }

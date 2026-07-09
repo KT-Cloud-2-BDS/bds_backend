@@ -72,6 +72,11 @@ public class Order {
         this.cancelReason = cancelReason;
     }
 
+    public void startPayment() {
+        updateStatus(OrderStatus.PAYING);
+        this.expiresAt = null;
+    }
+
     private boolean canTransitTo(OrderStatus newStatus) {
         return switch (newStatus) {
             case PAYING -> this.status == OrderStatus.PENDING || this.status == OrderStatus.RESERVED;

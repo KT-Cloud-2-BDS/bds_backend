@@ -17,4 +17,11 @@ public interface RewardJpaRepository extends JpaRepository<RewardJpaEntity, Long
     @Modifying
     @Query("UPDATE RewardJpaEntity r SET r.remainQty = r.remainQty + :qty WHERE r.id = :rewardId")
     void increaseRemainQty(@Param("rewardId") Long rewardId, @Param("qty") int qty);
+
+    @Modifying
+    @Query("""
+              UPDATE RewardJpaEntity r SET r.remainQty = r.remainQty - :qty
+              WHERE r.id = :id AND r.remainQty >= :qty
+            """)
+    int decreaseStock(@Param("id") Long id, @Param("qty") int qty);
 }

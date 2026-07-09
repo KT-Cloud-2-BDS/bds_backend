@@ -93,6 +93,7 @@ POST /api/orders
 
 | 필드               | 타입       | 필수 | 설명                    |
 |------------------|----------|----|-----------------------|
+| `orderId`        | Long     | Y  | 주문 ID                 |
 | `rewards`        | Object[] | Y  | 주문 리워드 목록             |
 | `rewards[].id`   | Long     | Y  | 리워드 ID                |
 | `rewards[].qty`  | Integer  | Y  | 수량                    |
@@ -105,18 +106,6 @@ POST /api/orders
 {
     "memberId": 1,
     "orderNo": "ORD-20250201-00001",
-    "rewards": [
-      {
-        "id": 192412,
-        "qty": 2,
-        "name": "선크림 4병 + 쿠션 퍼프 1개",
-        "amount": 182400,
-        "badgeType": "ULTRA_EARLY_BIRD",
-        "shippingCharge": 5000
-      }
-    ],
-    "rewardAmount": 182400,
-    "totalShippingCharge": 5000,
     "totalBillingAmount": 187400,
     "paymentStatus": "PAID",
     "paidAt": "2025-02-01T14:30:00"
@@ -125,13 +114,10 @@ POST /api/orders
 
 #### Validation / Business Rules
 - `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
-- 미인증된 사용자 호출: 401 Unauthorized
-- 금액은 서버에서 재계산 (클라이언트 금액 신뢰 X)
 - 재고 차감: CAS(Compare-And-Swap) Update로 동시성 처리
 - 재고 부족: 409 Conflict
 - 펀딩 기간 재확인 (billing → 주문 사이 마감 가능): 403 Forbidden
-- 중복 주문 방지: `idempotencyKey` 기반, 중복 시 기존 주문 응답 반환
-- 결제 실패 시 롤백: 재고 복구 + 주문 상태 `FAILED`
+- 결제 실패 시 롤백: 재고 복구 + 주문 상태 `CANCELLED`
 
 #### 내부 처리 시퀀스
 

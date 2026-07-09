@@ -89,7 +89,32 @@ public class OrderService {
 
     @Transactional
     public OrderCreateResponseDto createOrder(Long memberId, OrderCreateRequestDto reqDto) {
-        return null;
+
+        validateFunding(reqDto.fundingId());
+
+        Order order = orderRepository.findByIdForUpdate(reqDto.orderId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!memberId.equals(order.getMemberId())) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        try {
+            order.startPayment();
+        } catch (IllegalStateException e) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
+        }
+
+        order.getOrderRewards().forEach(orw -> {
+            if (rewardRepository.decreaseStock(orw.getRewardId(), orw.getQty()) == 0) {
+                throw new BusinessException(ErrorCode.REWARD_STOCK_INSUFFICIENT);
+            }
+        });
+
+
+        // TODO: Calling Payment API 결제 시작
+
+        return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), null, null);
     }
 
     public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId) {
@@ -106,8 +131,8 @@ public class OrderService {
             throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
         }
 
-        order.getOrderRewards().forEach(or -> {
-            rewardRepository.increaseRemainQty(or.getRewardId(), or.getQty());
+        order.getOrderRewards().forEach(orw -> {
+            rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty());
         });
 
         // TODO: Calling Refund API
@@ -147,4 +172,7 @@ public class OrderService {
 
     private record ValidatedRewards(List<Reward> rewards, Map<Long, Integer> qtyMap) {
     }
+
+    // TODO: 주문성공 처리 내부 API
+    // TODO: 주문실패 보상처리 내부 API
 }
