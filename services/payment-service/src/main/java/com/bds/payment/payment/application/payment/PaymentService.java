@@ -42,13 +42,13 @@ public class PaymentService {
         Account account = accountService.getAccount(memberId);
         UUID tranSeqNo = createUuid();
 
+        Wallet updatedWallet = walletService.charge(memberId, dto.amount());
+
         BankTransactionRequestDto requestDto = BankTransactionRequestDto.create(account.getAccountNumber(), dto.amount(), tranSeqNo);
         bankClient.withdraw(requestDto);
 
-        Wallet UpdatedWallet = walletService.charge(memberId, dto.amount());
-
         PaymentHistoryCommand command = PaymentHistoryCommand.of(
-                UpdatedWallet,
+                updatedWallet,
                 tranSeqNo,
                 TransactionType.DEPOSIT,
                 TransactionReason.CHARGE,
@@ -57,7 +57,7 @@ public class PaymentService {
 
         paymentHistoryRepository.save(PaymentHistory.create(command));
 
-        return null;
+        return new AccountTransactionResponseDto(updatedWallet.getBalance(), tranSeqNo);
     }
 
     public AccountTransactionResponseDto withdraw(Long memberId,AccountTransactionRequestDto dto) {
@@ -79,7 +79,7 @@ public class PaymentService {
 
         bankClient.deposit(requestDto);
 
-        return null;
+        return new AccountTransactionResponseDto(updatedWallet.getBalance(), tranSeqNo);
     }
 
     @Transactional(readOnly = true)
