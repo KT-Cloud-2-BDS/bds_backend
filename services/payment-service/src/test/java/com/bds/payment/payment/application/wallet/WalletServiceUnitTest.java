@@ -89,7 +89,7 @@ class WalletServiceUnitTest {
                     .memberId(memberId)
                     .balance(0L)
                     .build();
-            given(walletRepository.findByMemberId(memberId)).willReturn(Optional.of(wallet));
+            given(walletRepository.findByMemberIdWithLock(memberId)).willReturn(Optional.of(wallet));
             given(walletRepository.save(wallet)).willReturn(wallet);
 
             // when
@@ -115,7 +115,7 @@ class WalletServiceUnitTest {
                     .memberId(memberId)
                     .balance(50000L)
                     .build();
-            given(walletRepository.findByMemberId(memberId)).willReturn(Optional.of(wallet));
+            given(walletRepository.findByMemberIdWithLock(memberId)).willReturn(Optional.of(wallet));
             given(walletRepository.save(wallet)).willReturn(wallet);
 
             // when

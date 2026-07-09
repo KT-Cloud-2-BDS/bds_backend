@@ -96,7 +96,7 @@ class WalletServiceUnitExceptionTest {
             // given
             Long memberId = Long.MAX_VALUE;
             Long amount = 10000L;
-            given(walletRepository.findByMemberId(memberId)).willReturn(Optional.empty());
+            given(walletRepository.findByMemberIdWithLock(memberId)).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> walletService.charge(memberId, amount))
@@ -116,7 +116,7 @@ class WalletServiceUnitExceptionTest {
             // given
             Long memberId = Long.MAX_VALUE;
             Long amount = 10000L;
-            given(walletRepository.findByMemberId(memberId)).willReturn(Optional.empty());
+            given(walletRepository.findByMemberIdWithLock(memberId)).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> walletService.decrease(memberId, amount))

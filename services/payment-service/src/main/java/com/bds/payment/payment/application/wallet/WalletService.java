@@ -41,10 +41,9 @@ public class WalletService {
         return WalletResponseDto.from(walletRepository.save(Wallet.create(memberId)));
     }
 
-    //TODO: charge, decrease Lock 도입 필요
     @Transactional
     public Wallet charge(Long memberId, Long amount) {
-        Wallet wallet = walletRepository.findByMemberId(memberId)
+        Wallet wallet = walletRepository.findByMemberIdWithLock(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
         wallet.charge(amount);
         return walletRepository.save(wallet);
@@ -52,7 +51,7 @@ public class WalletService {
 
     @Transactional
     public Wallet decrease(Long memberId, Long amount) {
-        Wallet wallet = walletRepository.findByMemberId(memberId)
+        Wallet wallet = walletRepository.findByMemberIdWithLock(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
         wallet.withdraw(amount);
         return walletRepository.save(wallet);

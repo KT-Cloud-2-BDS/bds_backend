@@ -6,7 +6,9 @@ public interface WalletRepository {
 
     boolean existsByMemberId(Long memberId);
 
-    Optional<Wallet> findByMemberId(Long id);
+    Optional<Wallet> findByMemberId(Long memberId);
+
+    Optional<Wallet> findByMemberIdWithLock(Long memberId);
 
     Wallet save(Wallet wallet);
 }
