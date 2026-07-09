@@ -6,6 +6,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -105,6 +108,37 @@ class WalletServiceUnitExceptionTest {
 
             verify(walletRepository, never()).save(any(Wallet.class));
         }
+
+        @ParameterizedTest
+        @ValueSource(longs = {0L, -1L, -10000L})
+        void 금액이_0이하이면_예외가_발생한다(Long invalidAmount) {
+            //given
+            Long memberId = 1L;
+            Wallet.create(memberId);
+            //when then
+            assertThatThrownBy(() -> walletService.charge(memberId, invalidAmount))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("금액은 0보다 커야 합니다.");
+
+            verify(walletRepository, never()).findByMemberIdWithLock(any());
+            verify(walletRepository, never()).save(any());
+        }
+
+        @ParameterizedTest
+        @NullSource
+        void 금액이_null이면_예외가_발생한다(Long nullAmount) {
+            //given
+            Long memberId = 1L;
+            Wallet.create(memberId);
+            //when then
+            assertThatThrownBy(() -> walletService.charge(memberId, nullAmount))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("금액은 null일 수 없습니다.");
+
+            verify(walletRepository, never()).findByMemberIdWithLock(any());
+            verify(walletRepository, never()).save(any());
+        }
+
     }
 
     @Nested
@@ -124,6 +158,50 @@ class WalletServiceUnitExceptionTest {
                     .hasMessage("잘못된 접근입니다.");
 
             verify(walletRepository, never()).save(any(Wallet.class));
+        }
+
+        @ParameterizedTest
+        @ValueSource(longs = {0L, -1L, -10000L})
+        void 금액이_0이하이면_예외가_발생한다(Long invalidAmount) {
+            //given
+            Long memberId = 1L;
+            Wallet.create(memberId);
+            //when then
+            assertThatThrownBy(() -> walletService.decrease(memberId, invalidAmount))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("금액은 0보다 커야 합니다.");
+
+            verify(walletRepository, never()).findByMemberIdWithLock(any());
+            verify(walletRepository, never()).save(any());
+        }
+
+        @ParameterizedTest
+        @NullSource
+        void 금액이_null이면_예외가_발생한다(Long nullAmount) {
+            //given
+            Long memberId = 1L;
+            Wallet.create(memberId);
+            //when then
+            assertThatThrownBy(() -> walletService.decrease(memberId, nullAmount))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("금액은 null일 수 없습니다.");
+
+            verify(walletRepository, never()).findByMemberIdWithLock(any());
+            verify(walletRepository, never()).save(any());
+        }
+
+        @Test
+        void 잔액이_출금_금액보다_적으면_예외가_발생한다() {
+            //given
+            Long memberId = 1L;
+            Wallet wallet = Wallet.create(memberId);
+            given(walletRepository.findByMemberIdWithLock(memberId)).willReturn(Optional.ofNullable(wallet));
+            //when then
+            assertThatThrownBy(() -> walletService.decrease(memberId, 5000L))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("잔액이 부족 합니다.");
+
+            verify(walletRepository, never()).save(any());
         }
     }
 }

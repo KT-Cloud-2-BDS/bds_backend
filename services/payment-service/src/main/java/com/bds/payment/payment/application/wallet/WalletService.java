@@ -43,6 +43,7 @@ public class WalletService {
 
     @Transactional
     public Wallet charge(Long memberId, Long amount) {
+        validateAmount(amount);
         Wallet wallet = walletRepository.findByMemberIdWithLock(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
         wallet.charge(amount);
@@ -51,9 +52,19 @@ public class WalletService {
 
     @Transactional
     public Wallet decrease(Long memberId, Long amount) {
+        validateAmount(amount);
         Wallet wallet = walletRepository.findByMemberIdWithLock(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
         wallet.withdraw(amount);
         return walletRepository.save(wallet);
+    }
+
+    private void validateAmount(Long amount) {
+        if (amount == null) {
+            throw new IllegalArgumentException("금액은 null일 수 없습니다.");
+        }
+        if (amount <= 0) {
+            throw new IllegalArgumentException("금액은 0보다 커야 합니다.");
+        }
     }
 }

@@ -5,6 +5,9 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -104,6 +107,48 @@ class WalletServiceIntegrationExceptionTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("잘못된 접근입니다.");
         }
+
+        @ParameterizedTest
+        @ValueSource(longs = {0L, -1L, -10000L})
+        void 충전_시_금액이_0이하이면_예외가_발생한다(Long invalidAmount) {
+            // given
+            Long memberId = 1L;
+            WalletJpaEntity walletJpaEntity = WalletJpaEntity.builder()
+                    .memberId(memberId)
+                    .balance(0L)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+
+            em.persist(walletJpaEntity);
+            em.flush();
+            em.clear();
+            // when then
+            assertThatThrownBy(() -> walletService.charge(memberId, invalidAmount))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("금액은 0보다 커야 합니다.");
+        }
+
+        @ParameterizedTest
+        @NullSource
+        void 충전_시_금액이_null이면_예외가_발생한다(Long nullAmount) {
+            //given
+            Long memberId = 1L;
+            WalletJpaEntity walletJpaEntity = WalletJpaEntity.builder()
+                    .memberId(memberId)
+                    .balance(0L)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+
+            em.persist(walletJpaEntity);
+            em.flush();
+            em.clear();
+            //when then
+            assertThatThrownBy(() -> walletService.charge(memberId, nullAmount))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("금액은 null일 수 없습니다.");
+        }
     }
 
     @Nested
@@ -120,6 +165,68 @@ class WalletServiceIntegrationExceptionTest {
             assertThatThrownBy(() -> walletService.decrease(memberId, amount))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("잘못된 접근입니다.");
+        }
+
+        @ParameterizedTest
+        @ValueSource(longs = {0L, -1L, -10000L})
+        void 충전_시_금액이_0이하이면_예외가_발생한다(Long invalidAmount) {
+            // given
+            Long memberId = 1L;
+            WalletJpaEntity walletJpaEntity = WalletJpaEntity.builder()
+                    .memberId(memberId)
+                    .balance(0L)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+
+            em.persist(walletJpaEntity);
+            em.flush();
+            em.clear();
+            // when then
+            assertThatThrownBy(() -> walletService.decrease(memberId, invalidAmount))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("금액은 0보다 커야 합니다.");
+        }
+
+        @ParameterizedTest
+        @NullSource
+        void 충전_시_금액이_null이면_예외가_발생한다(Long nullAmount) {
+            //given
+            Long memberId = 1L;
+            WalletJpaEntity walletJpaEntity = WalletJpaEntity.builder()
+                    .memberId(memberId)
+                    .balance(0L)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+
+            em.persist(walletJpaEntity);
+            em.flush();
+            em.clear();
+            //when then
+            assertThatThrownBy(() -> walletService.decrease(memberId, nullAmount))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("금액은 null일 수 없습니다.");
+        }
+
+        @Test
+        void 잔액이_출금_금액보다_적으면_예외가_발생한다() {
+            //given
+            Long memberId = 1L;
+            WalletJpaEntity walletJpaEntity = WalletJpaEntity.builder()
+                    .memberId(memberId)
+                    .balance(0L)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+
+            em.persist(walletJpaEntity);
+            em.flush();
+            em.clear();
+            //when then
+            assertThatThrownBy(() -> walletService.decrease(memberId, 5000L))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("잔액이 부족 합니다.");
         }
     }
 }
