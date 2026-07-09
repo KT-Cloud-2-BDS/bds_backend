@@ -35,19 +35,22 @@ public class SessionContextRegistry implements WebSocketHandlerDecoratorFactory 
 
             @Override
             public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-                SessionContext removed = contexts.remove(session.getId());
-                if(removed!=null){
-                    if(removed.anonymous){
-                        anonymousCount.decrementAndGet();
-                    }
-                    if(removed.authState !=null){
-                        Set<String> ids = sessionIdsByUser.get(removed.authState.userId());
-                        if(ids!=null){
-                            ids.remove(session.getId());
+                try {
+                    SessionContext removed = contexts.remove(session.getId());
+                    if (removed != null) {
+                        if (removed.anonymous) {
+                            anonymousCount.decrementAndGet();
+                        }
+                        if (removed.authState != null) {
+                            sessionIdsByUser.computeIfPresent(removed.authState.userId(), (userId, ids) -> {
+                                ids.remove(session.getId());
+                                return ids.isEmpty() ? null : ids;
+                            });
                         }
                     }
+                } finally {
+                    super.afterConnectionClosed(session, status);
                 }
-                super.afterConnectionClosed(session, status);
             }
         };
     }

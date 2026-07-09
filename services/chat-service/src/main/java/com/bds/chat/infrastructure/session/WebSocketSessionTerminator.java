@@ -51,7 +51,7 @@ public class WebSocketSessionTerminator implements SessionTerminationService {
                     header.getMessageHeaders()
             );
         }catch (Exception e){
-            log.debug("종료 통지 실패(무시) sessionId={}", sessionId);
+            log.debug("종료 통지 실패(무시) sessionId={}", sessionId, e);
         }
     }
 }
