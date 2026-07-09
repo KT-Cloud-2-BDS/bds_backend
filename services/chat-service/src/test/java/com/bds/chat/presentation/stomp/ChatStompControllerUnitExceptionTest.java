@@ -1,8 +1,11 @@
 package com.bds.chat.presentation.stomp;
 
+import com.bds.chat.application.message.dto.MessageResponseDto;
 import com.bds.chat.application.message.service.MessageService;
+import com.bds.chat.common.DuplicateClientIdException;
 import com.bds.chat.infrastructure.config.StompPrincipal;
 import com.bds.chat.infrastructure.session.ReadReceiptBuffer;
+import com.bds.chat.presentation.stomp.dto.ChatMessageDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,6 +17,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -59,6 +63,23 @@ class ChatStompControllerUnitExceptionTest {
 
             verify(messagingTemplate).convertAndSendToUser(
                     eq("5"), eq("/queue/error"), any(ChatStompController.SendFailure.class));
+        }
+
+        @Test
+        @DisplayName("DuplicateClientIdException 발생 시 기존 메시지를 브로드캐스트한다")
+        void DuplicateClientIdException_발생_시_기존_메시지_브로드캐스트() {
+            MessageResponseDto existing = new MessageResponseDto(
+                    100L, 5L, "msg", false, LocalDateTime.of(2026, 1, 1, 0, 0), 1L);
+
+            given(messageService.create(any(), anyLong()))
+                    .willThrow(new DuplicateClientIdException("cid"));
+            given(messageService.findByClientId("cid")).willReturn(existing);
+
+            assertThatCode(() -> controller.send(1L,
+                    new ChatStompController.ChatSendRequest("cid", "msg"), STOMP_PRINCIPAL))
+                    .doesNotThrowAnyException();
+
+            verify(messagingTemplate).convertAndSend(eq("/topic/chat.room.1"), any(ChatMessageDto.class));
         }
     }
 

@@ -218,4 +218,19 @@ class MessageServiceUnitTest {
             assertThat(result.messages()).hasSize(1);
         }
     }
+
+    @Nested
+    @DisplayName("clientId로 메시지 조회")
+    class FindByClientIdTest {
+
+        @Test
+        void clientId로_기존_메시지를_반환한다() {
+            given(chatMessageRepository.findByClientId("cm-1")).willReturn(Optional.of(sentMessage()));
+
+            MessageResponseDto result = messageService.findByClientId("cm-1");
+
+            assertThat(result.messageId()).isEqualTo(MSG_ID);
+            assertThat(result.roomId()).isEqualTo(ROOM_ID);
+        }
+    }
 }

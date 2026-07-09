@@ -220,4 +220,18 @@ class MessageServiceUnitExceptionTest {
                     .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
         }
     }
+
+    @Nested
+    @DisplayName("clientId로 메시지 조회 예외")
+    class FindByClientIdExceptionTest {
+
+        @Test
+        void 존재하지_않는_clientId면_NOT_FOUND_예외() {
+            given(chatMessageRepository.findByClientId("unknown")).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> messageService.findByClientId("unknown"))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
+        }
+    }
 }

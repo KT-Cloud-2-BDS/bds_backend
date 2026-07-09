@@ -3,6 +3,7 @@ package com.bds.chat.presentation.stomp;
 import com.bds.chat.application.message.dto.MessageResponseDto;
 import com.bds.chat.application.message.dto.MessageSendRequestDto;
 import com.bds.chat.application.message.service.MessageService;
+import com.bds.chat.common.DuplicateClientIdException;
 import com.bds.chat.domain.message.MessageType;
 import com.bds.chat.infrastructure.config.StompPrincipal;
 import com.bds.chat.infrastructure.session.ReadReceiptBuffer;
@@ -47,7 +48,12 @@ public class ChatStompController {
             messagingTemplate.convertAndSend(
                     "/topic/chat.room." + roomId, message.withSeq(saved.messageId()));
 
-        } catch (Exception e) {
+        } catch (DuplicateClientIdException e) {
+            MessageResponseDto existing = messageService.findByClientId(e.getClientId());
+            messagingTemplate.convertAndSend(
+                    "/topic/chat.room." + roomId, message.withSeq(existing.messageId()));
+        }
+        catch (Exception e) {
             log.error("메시지 저장 실패 clientMessageId={} roomId={}",
                     request.clientMessageId(), roomId, e);
             messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/error",

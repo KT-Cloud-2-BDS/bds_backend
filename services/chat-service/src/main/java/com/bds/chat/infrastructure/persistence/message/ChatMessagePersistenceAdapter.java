@@ -8,12 +8,16 @@ import com.bds.chat.domain.message.MessageType;
 import com.bds.chat.domain.shared.ChatMessageId;
 import com.bds.chat.domain.shared.ChatRoomId;
 import com.bds.chat.domain.shared.MemberId;
+import com.bds.chat.common.DuplicateClientIdException;
 import com.bds.chat.infrastructure.persistence.chatroom.ChatRoomJpaEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+
+import java.sql.SQLException;
 
 import java.util.List;
 import java.util.Map;
@@ -97,12 +101,28 @@ public class ChatMessagePersistenceAdapter implements ChatMessageRepository {
     @Override
     public ChatMessage save(ChatMessage chatMessage) {
         ChatRoomJpaEntity roomRef = entityManager.getReference(ChatRoomJpaEntity.class, chatMessage.getRoomId().value());
-        ChatMessageJpaEntity saved = jpaRepository.save(mapper.toJpaEntity(chatMessage, roomRef));
-        if (chatMessage.getId() == null) {
-            chatMessage.assignId(ChatMessageId.of(saved.getId()));
-            return chatMessage;
+        try {
+            ChatMessageJpaEntity saved = jpaRepository.save(mapper.toJpaEntity(chatMessage, roomRef));
+            if (chatMessage.getId() == null) {
+                chatMessage.assignId(ChatMessageId.of(saved.getId()));
+                return chatMessage;
+            }
+            return mapper.toDomain(saved);
+        } catch (DataIntegrityViolationException e) {
+            if (chatMessage.getClientId() != null && isUniqueViolation(e)) {
+                throw new DuplicateClientIdException(chatMessage.getClientId());
+            }
+            throw e;
         }
-        return mapper.toDomain(saved);
+    }
+
+    private static boolean isUniqueViolation(Throwable ex) {
+        Throwable t = ex;
+        while (t != null) {
+            if (t instanceof SQLException s && "23505".equals(s.getSQLState())) return true;
+            t = t.getCause();
+        }
+        return false;
     }
 
     private ChatMessage projectToDomain(MessageWithUnreadProjection p) {
