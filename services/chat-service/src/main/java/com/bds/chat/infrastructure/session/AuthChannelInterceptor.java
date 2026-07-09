@@ -1,10 +1,12 @@
 package com.bds.chat.infrastructure.session;
 
+import com.bds.chat.application.chatRoom.ChatRoomAccessPolicy;
 import com.bds.chat.infrastructure.config.StompPrincipal;
 import com.bds.chat.infrastructure.security.JwtVerifier;
 import com.bds.chat.infrastructure.security.TokenRenewalManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessagingException;
@@ -22,10 +24,15 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
 
     private static final String REFRESH_DESTINATION = "/app/auth/refresh";
     private static final String ROOM_TOPIC_PREFIX = "/topic/chat.room.";
+    private static final String USER_QUEUE_PREFIX = "/user/queue/";
 
     private final JwtVerifier jwtVerifier;
     private final SessionContextRegistry sessionContextRegistry;
     private final TokenRenewalManager renewalManager;
+    private final ChatRoomAccessPolicy accessPolicy;
+
+    @Value("${app.auth.max-anonymous-sessions:1000}")
+    private int maxAnonymousSessions;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel){
@@ -35,13 +42,21 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
         }
 
         switch (accessor.getCommand()){
-            case CONNECT -> auth
+            case CONNECT -> authenticateTokenPresent(accessor);
+            case SUBSCRIBE -> authorizeSubscribe(accessor);
+            case SEND -> guardSend(accessor);
+            default -> {}
         }
+        return message;
     }
 
     private void authenticateTokenPresent(StompHeaderAccessor accessor){
         String header = accessor.getFirstNativeHeader("Authorization");
         if(header == null){
+            if(!sessionContextRegistry.tryAcquireAnonymousSlot(accessor.getSessionId(),maxAnonymousSessions)){
+                log.warn("익명 CONNECT 거부 — 정원 초과 (max={})", maxAnonymousSessions);
+                throw new MessagingException("익명 세션 정원 초과");
+            }
             log.debug("익명 CONNECT 허용 sessionId={}", accessor.getSessionId());
             return;
         }
@@ -73,8 +88,21 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
         Optional<String> userId = sessionContextRegistry.authenticatedUserId(accessor.getSessionId());
         if(destination.startsWith(ROOM_TOPIC_PREFIX)){
             Long roomId = parseRoomId(destination);
-            if(!accessPolist)
+            if(!accessPolicy.canSubscribe(roomId,userId)){
+                log.warn("구독 거부 destination={} userId={}", destination, userId.orElse("anonymous"));
+                throw new MessagingException("구독 권한 없음 room=" + roomId);
+            }
+            return;
         }
+        if(destination.startsWith(USER_QUEUE_PREFIX)){
+            if(userId.isEmpty()){
+                throw new MessagingException("익명 세션이 구독할 수 없는 destination: " + destination);
+            }
+            return;
+        }
+        log.warn("구독 거부 — 허용 목록 외 destination={} userId={}",
+                destination, userId.orElse("anonymous"));
+        throw new MessagingException("허용되지 않은 destination: " + destination);
     }
 
     private Long parseRoomId(String destination){
