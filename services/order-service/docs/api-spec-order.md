@@ -71,7 +71,7 @@ POST /api/orders/billing
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 미리보기 전용으로 DB 저장 X
 - 미인증된 사용자 호출: 401 Unauthorized
 - `rewards.size() < 1`: 400 Bad Request
@@ -128,7 +128,7 @@ POST /api/orders
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 미인증된 사용자 호출: 401 Unauthorized
 - 금액은 서버에서 재계산 (클라이언트 금액 신뢰 X)
 - 재고 차감: CAS(Compare-And-Swap) Update로 동시성 처리
@@ -194,9 +194,9 @@ GET /api/orders
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 미인증된 사용자 호출: 401 Unauthorized
-- 본인 주문만 조회 (JWT 기반)
+- 본인 주문만 조회
 - 최신순 정렬 (default)
 - 페이지네이션 적용
 
@@ -252,7 +252,7 @@ GET /api/orders/{orderId}
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 미인증된 사용자 호출: 401 Unauthorized
 - 타인 주문 접근: 403 Forbidden
 - 존재하지 않는 orderId: 404 Not Found
@@ -288,7 +288,7 @@ PATCH /api/orders/{orderId}/cancel
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 미인증된 사용자 호출: 401 Unauthorized
 - 타인 주문 취소 시도: 403 Forbidden
 - 존재하지 않는 orderId: 404 Not Found

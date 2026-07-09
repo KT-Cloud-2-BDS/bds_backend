@@ -1,0 +1,33 @@
+# 운영 서버용 인프라 (MySQL)
+# 실행: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: bds-payment-mysql-prod
+    env_file: .env.prod
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: Asia/Seoul
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --slow_query_log=ON
+      - --long_query_time=2
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bds-payment-net
+
+volumes:
+  mysql_data:

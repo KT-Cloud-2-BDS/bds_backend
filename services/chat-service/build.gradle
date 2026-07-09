@@ -4,5 +4,14 @@ dependencies {
     // web, validation은 common의 api로 자동 전파됨
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Flyway (Spring Boot 4.x에서 자동구성이 별도 모듈로 분리됨)
+    implementation 'org.springframework.boot:spring-boot-flyway'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+
+    // STOMP broker relay TCP 연결에 필요
+    implementation 'io.projectreactor.netty:reactor-netty'
 }
