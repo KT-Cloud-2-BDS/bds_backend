@@ -56,6 +56,8 @@ public class AccountService {
         Account account = getAccount(memberId);
         boolean isOk = client.confirmVerification(BankVerifyRequestDto.create(account.getAccountNumber(), dto));
         if (!isOk) throw new IllegalArgumentException("인증에 실패 했습니다.");
+        account.markVerified();
+        accountRepository.save(account);
         return "정상 처리되었습니다.";
     }
 

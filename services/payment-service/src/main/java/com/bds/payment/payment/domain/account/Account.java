@@ -36,5 +36,11 @@ public class Account {
         this.bankCode = dto.bankCode();
         this.holderName = dto.holderName();
         this.isVerified = false;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markVerified() {
+        this.isVerified = true;
+        this.updatedAt = LocalDateTime.now();
     }
 }
