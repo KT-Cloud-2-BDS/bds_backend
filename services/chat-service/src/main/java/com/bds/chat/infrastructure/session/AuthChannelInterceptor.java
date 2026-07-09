@@ -23,6 +23,7 @@ import java.util.Optional;
 public class AuthChannelInterceptor implements ChannelInterceptor {
 
     private static final String REFRESH_DESTINATION = "/app/auth/refresh";
+    private static final String APP_DESTINATION_PREFIX = "/app/";
     private static final String ROOM_TOPIC_PREFIX = "/topic/chat.room.";
     private static final String USER_QUEUE_PREFIX = "/user/queue/";
 
@@ -117,10 +118,16 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
     }
 
     private void guardSend(StompHeaderAccessor accessor){
-        if(REFRESH_DESTINATION.equals(accessor.getDestination())){
+        String destination = accessor.getDestination();
+        if (destination == null || !destination.startsWith(APP_DESTINATION_PREFIX)) {
+            log.warn("SEND 거부 — /app/** 외 destination={} sessionId={}",
+                    destination, accessor.getSessionId());
+            throw new MessagingException("허용되지 않은 SEND destination: " + destination);
+        }
+        if (REFRESH_DESTINATION.equals(destination)) {
             return;
         }
-        if(!sessionContextRegistry.isAuthValid(accessor.getSessionId())){
+        if (!sessionContextRegistry.isAuthValid(accessor.getSessionId())) {
             throw new MessagingException("인증되지 않았거나 만료된 세션의 message send");
         }
     }
