@@ -5,6 +5,7 @@ import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
 import com.bds.order.presentation.controller.OrderController;
 import com.bds.order.presentation.dto.BillingRequestDto;
+import com.bds.order.presentation.dto.OrderCreateRequestDto;
 import com.bds.order.presentation.dto.RewardQuantityDto;
 import com.bds.support.MockMvcTestSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -201,6 +202,71 @@ class OrderControllerExceptionUnitTest extends MockMvcTestSupport {
                             .header("X-User-Id", "1"))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("ORDER_STATUS_CHANGE_NOT_ALLOWED"));
+        }
+    }
+
+    @Nested
+    @DisplayName("주문 생성 예외 응답")
+    class CreateOrderExceptionTest {
+
+        @Test
+        void 주문이_존재하지_않으면_404를_응답한다() throws Exception {
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(999L, List.of(), 1L, true);
+
+            given(orderService.createOrder(eq(1L), any()))
+                    .willThrow(new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+            mockMvc.perform(post("/api/orders")
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(reqDto)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"));
+        }
+
+        @Test
+        void 본인의_주문이_아니면_403을_응답한다() throws Exception {
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+
+            given(orderService.createOrder(eq(1L), any()))
+                    .willThrow(new BusinessException(ErrorCode.ORDER_ACCESS_DENIED));
+
+            mockMvc.perform(post("/api/orders")
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(reqDto)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("ORDER_ACCESS_DENIED"));
+        }
+
+        @Test
+        void 상태_변경이_불가하면_400을_응답한다() throws Exception {
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+
+            given(orderService.createOrder(eq(1L), any()))
+                    .willThrow(new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED));
+
+            mockMvc.perform(post("/api/orders")
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(reqDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("ORDER_STATUS_CHANGE_NOT_ALLOWED"));
+        }
+
+        @Test
+        void 재고가_부족하면_409를_응답한다() throws Exception {
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+
+            given(orderService.createOrder(eq(1L), any()))
+                    .willThrow(new BusinessException(ErrorCode.REWARD_STOCK_INSUFFICIENT));
+
+            mockMvc.perform(post("/api/orders")
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(reqDto)))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.code").value("REWARD_STOCK_INSUFFICIENT"));
         }
     }
 }

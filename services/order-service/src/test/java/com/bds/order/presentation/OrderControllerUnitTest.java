@@ -138,4 +138,29 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
                     .andExpect(jsonPath("$.refundStatus").value("REFUND_REQUESTED"));
         }
     }
+
+    @Nested
+    @DisplayName("주문 생성 API")
+    class CreateOrderTest {
+
+        @Test
+        void 정상적으로_주문을_생성하면_200을_응답한다() throws Exception {
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(
+                    new RewardQuantityDto(1L, 2)
+            ), 1L, true);
+
+            OrderCreateResponseDto responseDto = new OrderCreateResponseDto(
+                    1L, "ORD-001", 36000L, null, null);
+
+            given(orderService.createOrder(eq(1L), any())).willReturn(responseDto);
+
+            mockMvc.perform(post("/api/orders")
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(reqDto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.orderNo").value("ORD-001"))
+                    .andExpect(jsonPath("$.totalBillingAmount").value(36000L));
+        }
+    }
 }

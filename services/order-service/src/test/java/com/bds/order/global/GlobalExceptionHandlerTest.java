@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -66,6 +67,13 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"));
     }
 
+    @Test
+    void PessimisticLockingFailureException_423() throws Exception {
+        mockMvc.perform(get("/test/lock-failure"))
+                .andExpect(status().isLocked())
+                .andExpect(jsonPath("$.code").value("RESOURCE_LOCKED"));
+    }
+
     @RestController
     @RequestMapping("/test")
     static class TestController {
@@ -87,6 +95,10 @@ class GlobalExceptionHandlerTest {
             throw new RuntimeException("예상치 못한 에러");
         }
 
+        @GetMapping("/lock-failure")
+        public void lockFailure() {
+            throw new PessimisticLockingFailureException("lock timeout");
+        }
     }
 
     static class TestDto {

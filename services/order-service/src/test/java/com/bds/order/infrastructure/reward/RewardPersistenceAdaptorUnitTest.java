@@ -68,4 +68,27 @@ class RewardPersistenceAdaptorUnitTest {
             verify(rewardJpaRepository).increaseRemainQty(1L, 3);
         }
     }
+
+    @Nested
+    @DisplayName("재고 차감")
+    class DecreaseStockTest {
+
+        @Test
+        void 재고_차감_성공_시_1을_반환한다() {
+            given(rewardJpaRepository.decreaseStock(1L, 2)).willReturn(1);
+
+            int result = rewardPersistenceAdaptor.decreaseStock(1L, 2);
+
+            assertThat(result).isEqualTo(1);
+        }
+
+        @Test
+        void 재고_부족_시_0을_반환한다() {
+            given(rewardJpaRepository.decreaseStock(1L, 100)).willReturn(0);
+
+            int result = rewardPersistenceAdaptor.decreaseStock(1L, 100);
+
+            assertThat(result).isEqualTo(0);
+        }
+    }
 }

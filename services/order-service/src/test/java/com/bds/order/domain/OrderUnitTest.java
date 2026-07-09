@@ -12,6 +12,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OrderUnitTest {
@@ -35,6 +37,14 @@ class OrderUnitTest {
             Order order = Order.create(1L, 33000L, 3000L, null);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+        }
+
+        @Test
+        void 생성_시_expiresAt이_설정된다() {
+            Order order = Order.create(1L, 33000L, 3000L, OrderStatus.PENDING);
+
+            assertThat(order.getExpiresAt()).isNotNull();
+            assertThat(order.getExpiresAt()).isAfter(LocalDateTime.now().plusMinutes(14));
         }
     }
 
@@ -88,6 +98,21 @@ class OrderUnitTest {
             Order order = Order.create(1L, 33000L, 3000L, OrderStatus.PENDING);
 
             assertThat(order.getTotalAmount()).isEqualTo(36000L);
+        }
+    }
+
+    @Nested
+    @DisplayName("결제 시작")
+    class StartPaymentTest {
+
+        @Test
+        void 결제_시작_시_expiresAt이_null이_된다() {
+            Order order = OrderFixture.createOrder(OrderStatus.PENDING);
+
+            order.startPayment();
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);
+            assertThat(order.getExpiresAt()).isNull();
         }
     }
 }

@@ -7,11 +7,13 @@ import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.domain.orderReward.OrderReward;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.fixture.OrderFixture;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.presentation.dto.BillingRequestDto;
+import com.bds.order.presentation.dto.OrderCreateRequestDto;
 import com.bds.order.presentation.dto.RewardQuantityDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -185,6 +187,87 @@ class OrderServiceExceptionUnitTest {
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
 
             assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L))
+                    .isInstanceOf(BusinessException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("주문 생성 예외")
+    class CreateOrderExceptionTest {
+
+        @Test
+        void 주문이_존재하지_않으면_예외를_던진다() {
+            LocalDateTime now = LocalDateTime.now();
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(999L, List.of(), 1L, true);
+
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
+                    0, 1000000L, 500000L, false, now, now);
+
+            given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
+            given(orderRepository.findByIdForUpdate(999L)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.createOrder(1L, reqDto))
+                    .isInstanceOf(BusinessException.class);
+        }
+
+        @Test
+        void 본인의_주문이_아니면_예외를_던진다() {
+            LocalDateTime now = LocalDateTime.now();
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
+                    0, 1000000L, 500000L, false, now, now);
+
+            Order order = OrderFixture.createOrder(2L, OrderStatus.PENDING);
+
+            given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
+            given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> orderService.createOrder(1L, reqDto))
+                    .isInstanceOf(BusinessException.class);
+        }
+
+        @Test
+        void 상태_전이가_불가하면_예외를_던진다() {
+            LocalDateTime now = LocalDateTime.now();
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
+                    0, 1000000L, 500000L, false, now, now);
+
+            Order order = OrderFixture.createOrder(1L, OrderStatus.PAID);
+
+            given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
+            given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> orderService.createOrder(1L, reqDto))
+                    .isInstanceOf(BusinessException.class);
+        }
+
+        @Test
+        void 재고가_부족하면_예외를_던진다() {
+            LocalDateTime now = LocalDateTime.now();
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(
+                    new RewardQuantityDto(1L, 2)
+            ), 1L, true);
+
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
+                    0, 1000000L, 500000L, false, now, now);
+
+            OrderReward orderReward = OrderReward.reconstitute(1L, 1L, 1L, 2, 3000L, 20000L);
+            Order order = Order.reconstitute(1L, "ORD-001", 1L, OrderStatus.PENDING,
+                    33000L, 3000L, List.of(orderReward),
+                    null, now, now, null, now.plusMinutes(15));
+
+            given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
+            given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
+            given(rewardRepository.decreaseStock(1L, 2)).willReturn(0);
+
+            assertThatThrownBy(() -> orderService.createOrder(1L, reqDto))
                     .isInstanceOf(BusinessException.class);
         }
     }

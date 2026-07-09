@@ -204,6 +204,36 @@ class OrderServiceUnitTest {
             assertThat(result.totalShippingCharge()).isEqualTo(8000L);
             assertThat(result.totalBillingAmount()).isEqualTo(48000L);
         }
+
+        @Test
+        void 예약_주문으로_빌링을_생성한다() {
+            Long memberId = 1L;
+            LocalDateTime now = LocalDateTime.now();
+
+            BillingRequestDto reqDto = new BillingRequestDto(1L, true, List.of(
+                    new RewardQuantityDto(1L, 2)
+            ));
+
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
+                    0, 1000000L, 500000L, false, now, now);
+
+            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 50,
+                    BadgeType.ULTRA_EARLY_BIRD, 10000L, now.plusDays(60), 3000L);
+
+            Order savedBilling = OrderFixture.createOrder(1L, OrderStatus.RESERVED);
+
+            given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
+            given(rewardRepository.findAllByIdAndFundingId(List.of(1L), 1L))
+                    .willReturn(List.of(reward));
+            given(orderRepository.save(any(Order.class))).willReturn(savedBilling);
+
+            BillingResponseDto result = orderService.createBilling(memberId, reqDto);
+
+            assertThat(result.memberId()).isEqualTo(1L);
+            assertThat(result.rewards()).hasSize(1);
+            assertThat(result.rewardAmount()).isEqualTo(20000L);
+        }
     }
 
     @Nested
@@ -229,6 +259,40 @@ class OrderServiceUnitTest {
             assertThat(result.cancelledAt()).isNotNull();
             assertThat(result.refundStatus()).isEqualTo("REFUND_REQUESTED");
             verify(rewardRepository).increaseRemainQty(1L, 2);
+        }
+    }
+
+    @Nested
+    @DisplayName("주문 생성 (결제 시작)")
+    class CreateOrderTest {
+
+        @Test
+        void 정상적으로_주문을_생성한다() {
+            Long memberId = 1L;
+            LocalDateTime now = LocalDateTime.now();
+
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(
+                    new RewardQuantityDto(1L, 2)
+            ), 1L, true);
+
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
+                    0, 1000000L, 500000L, false, now, now);
+
+            OrderReward orderReward = OrderReward.reconstitute(1L, 1L, 1L, 2, 3000L, 20000L);
+            Order order = Order.reconstitute(1L, "ORD-001", 1L, OrderStatus.PENDING,
+                    33000L, 3000L, List.of(orderReward),
+                    null, now, now, null, now.plusMinutes(15));
+
+            given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
+            given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
+            given(rewardRepository.decreaseStock(1L, 2)).willReturn(1);
+
+            OrderCreateResponseDto result = orderService.createOrder(memberId, reqDto);
+
+            assertThat(result.memberId()).isEqualTo(1L);
+            assertThat(result.orderNo()).isEqualTo("ORD-001");
+            assertThat(result.totalBillingAmount()).isEqualTo(36000L);
         }
     }
 }
