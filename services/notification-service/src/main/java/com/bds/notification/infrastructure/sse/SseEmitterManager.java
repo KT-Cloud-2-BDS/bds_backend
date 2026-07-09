@@ -16,9 +16,14 @@ public class SseEmitterManager {
   public SseEmitter create(Long memberId) {
     SseEmitter sseEmitter = new SseEmitter(SSE_TIMEOUT);
 
-    sseEmitter.onCompletion(() -> emitters.remove(memberId));
-    sseEmitter.onTimeout(() -> emitters.remove(memberId));
-    sseEmitter.onError(e -> emitters.remove(memberId));
+    SseEmitter existing = emitters.get(memberId);
+    if (existing != null) {
+      existing.complete();
+    }
+
+    sseEmitter.onCompletion(() -> emitters.remove(memberId, sseEmitter));
+    sseEmitter.onTimeout(() -> emitters.remove(memberId, sseEmitter));
+    sseEmitter.onError(e -> emitters.remove(memberId, sseEmitter));
 
     emitters.put(memberId, sseEmitter);
 
