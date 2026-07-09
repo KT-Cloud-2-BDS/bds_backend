@@ -2,7 +2,9 @@ package com.bds.order.infrastructure.order;
 
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.orderReward.OrderReward;
+import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import com.bds.order.infrastructure.orderReward.OrderRewardMapper;
+import com.bds.order.infrastructure.reward.RewardJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,7 @@ import java.util.List;
 public class OrderMapper {
 
     private final OrderRewardMapper orderRewardMapper;
+    private final RewardJpaRepository rewardJpaRepository;
 
     public Order toDomain(OrderJpaEntity entity) {
         List<OrderReward> orderRewards = entity.getOrderRewards().stream()
@@ -36,7 +39,7 @@ public class OrderMapper {
     }
 
     public OrderJpaEntity toJpaEntity(Order domain) {
-        return OrderJpaEntity.builder()
+        OrderJpaEntity entity = OrderJpaEntity.builder()
                 .id(domain.getId())
                 .memberId(domain.getMemberId())
                 .status(domain.getStatus())
@@ -44,6 +47,23 @@ public class OrderMapper {
                 .totalShippingCharge(domain.getTotalShippingCharge())
                 .cancelReason(domain.getCancelReason())
                 .cancelledAt(domain.getCancelledAt())
+                .expiresAt(domain.getExpiresAt())
                 .build();
+
+        if (domain.getOrderRewards() != null && !domain.getOrderRewards().isEmpty()) {
+            List<OrderRewardJpaEntity> rewardEntities = domain.getOrderRewards().stream()
+                    .map(orw -> new OrderRewardJpaEntity(
+                            orw.getId(),
+                            entity,
+                            rewardJpaRepository.getReferenceById(orw.getRewardId()),
+                            orw.getQty(),
+                            orw.getAmount(),
+                            orw.getShippingCharge()
+                    ))
+                    .toList();
+            entity.getOrderRewards().addAll(rewardEntities);
+        }
+
+        return entity;
     }
 }

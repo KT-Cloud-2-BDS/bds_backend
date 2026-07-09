@@ -44,7 +44,7 @@ public class OrderJpaEntity extends BaseEntity {
     private LocalDateTime expiresAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderRewardJpaEntity> orderRewards = new ArrayList<>();
 
     @PrePersist

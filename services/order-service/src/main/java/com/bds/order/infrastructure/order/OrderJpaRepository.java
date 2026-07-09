@@ -24,7 +24,7 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
             "WHERE o.memberId = :memberId")
     Page<OrderListProjection> findOrderListWithFunding(@Param("memberId") Long memberId, Pageable pageable);
 
-    @Query("SELECT new com.bds.order.infrastructure.order.OrderDetailProjection(" +
+    @Query("SELECT DISTINCT new com.bds.order.infrastructure.order.OrderDetailProjection(" +
             "o.id, o.orderNo, o.status, o.totalRewardAmount, o.totalShippingCharge, o.createdAt, " +
             "f.title, f.creatorId, f.holdTo, f.isSuccess," +
             "o.cancelledAt, o.cancelReason) " +

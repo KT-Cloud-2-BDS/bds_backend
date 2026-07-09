@@ -2,6 +2,7 @@ package com.bds.order.presentation.dto;
 
 import com.bds.order.domain.order.Order;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record BillingResponseDto(
@@ -10,7 +11,8 @@ public record BillingResponseDto(
         List<RewardItemDto> rewards,
         Long rewardAmount,
         Long totalShippingCharge,
-        Long totalBillingAmount
+        Long totalBillingAmount,
+        LocalDateTime expiresAt
 ) {
 
     public static BillingResponseDto from(Order billing, List<RewardItemDto> rewards) {
@@ -20,7 +22,8 @@ public record BillingResponseDto(
                 rewards,
                 billing.getTotalRewardAmount(),
                 billing.getTotalShippingCharge(),
-                billing.getTotalAmount()
+                billing.getTotalAmount(),
+                billing.getExpiresAt()
         );
     }
 }

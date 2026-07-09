@@ -92,8 +92,4 @@ public class Order {
         this.orderRewards = orderRewards;
     }
 
-    public void updateAmounts(Long rewardAmount, Long shippingCharge) {
-        this.totalRewardAmount = rewardAmount;
-        this.totalShippingCharge = shippingCharge;
-    }
 }

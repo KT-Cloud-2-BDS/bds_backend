@@ -11,7 +11,6 @@ import com.bds.order.domain.orderReward.OrderRewardRepository;
 import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
-import com.bds.order.fixture.OrderFixture;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
@@ -155,12 +154,19 @@ class OrderServiceUnitTest {
             Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 50,
                     BadgeType.ULTRA_EARLY_BIRD, 10000L, now.plusDays(60), 3000L);
 
-            Order savedBilling = OrderFixture.createOrder(1L, OrderStatus.PENDING);
-
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(rewardRepository.findAllByIdAndFundingId(List.of(1L), 1L))
                     .willReturn(List.of(reward));
-            given(orderRepository.save(any(Order.class))).willReturn(savedBilling);
+            given(orderRepository.save(any(Order.class))).willAnswer(invocation -> {
+                Order order = invocation.getArgument(0);
+                return Order.reconstitute(
+                        1L, "ORD-001", order.getMemberId(), order.getStatus(),
+                        order.getTotalRewardAmount(), order.getTotalShippingCharge(),
+                        order.getOrderRewards(),
+                        order.getCancelReason(), LocalDateTime.now(), LocalDateTime.now(),
+                        order.getCancelledAt(), order.getExpiresAt()
+                );
+            });
 
             BillingResponseDto result = orderService.createBilling(memberId, reqDto);
 
@@ -191,12 +197,19 @@ class OrderServiceUnitTest {
             Reward reward2 = Reward.of(2L, 1L, "리워드B", "설명", 50, 30,
                     BadgeType.EARLY_BIRD, 20000L, now.plusDays(60), 5000L);
 
-            Order savedBilling = OrderFixture.createOrder(1L, OrderStatus.PENDING);
-
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(rewardRepository.findAllByIdAndFundingId(any(), eq(1L)))
                     .willReturn(List.of(reward1, reward2));
-            given(orderRepository.save(any(Order.class))).willReturn(savedBilling);
+            given(orderRepository.save(any(Order.class))).willAnswer(invocation -> {
+                Order order = invocation.getArgument(0);
+                return Order.reconstitute(
+                        1L, "ORD-001", order.getMemberId(), order.getStatus(),
+                        order.getTotalRewardAmount(), order.getTotalShippingCharge(),
+                        order.getOrderRewards(),
+                        order.getCancelReason(), LocalDateTime.now(), LocalDateTime.now(),
+                        order.getCancelledAt(), order.getExpiresAt()
+                );
+            });
 
             BillingResponseDto result = orderService.createBilling(memberId, reqDto);
 
@@ -223,12 +236,19 @@ class OrderServiceUnitTest {
             Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 50,
                     BadgeType.ULTRA_EARLY_BIRD, 10000L, now.plusDays(60), 3000L);
 
-            Order savedBilling = OrderFixture.createOrder(1L, OrderStatus.RESERVED);
-
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(rewardRepository.findAllByIdAndFundingId(List.of(1L), 1L))
                     .willReturn(List.of(reward));
-            given(orderRepository.save(any(Order.class))).willReturn(savedBilling);
+            given(orderRepository.save(any(Order.class))).willAnswer(invocation -> {
+                Order order = invocation.getArgument(0);
+                return Order.reconstitute(
+                        1L, "ORD-001", order.getMemberId(), order.getStatus(),
+                        order.getTotalRewardAmount(), order.getTotalShippingCharge(),
+                        order.getOrderRewards(),
+                        order.getCancelReason(), LocalDateTime.now(), LocalDateTime.now(),
+                        order.getCancelledAt(), order.getExpiresAt()
+                );
+            });
 
             BillingResponseDto result = orderService.createBilling(memberId, reqDto);
 

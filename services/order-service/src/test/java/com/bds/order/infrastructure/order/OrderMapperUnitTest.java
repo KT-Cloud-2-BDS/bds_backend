@@ -3,9 +3,12 @@ package com.bds.order.infrastructure.order;
 import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.domain.orderReward.OrderReward;
 import com.bds.order.fixture.OrderFixture;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import com.bds.order.infrastructure.orderReward.OrderRewardMapper;
+import com.bds.order.infrastructure.reward.RewardJpaEntity;
+import com.bds.order.infrastructure.reward.RewardJpaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,14 +18,21 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class OrderMapperUnitTest {
 
     @Mock
     private OrderRewardMapper orderRewardMapper;
+
+    @Mock
+    private RewardJpaRepository rewardJpaRepository;
 
     @InjectMocks
     private OrderMapper orderMapper;
@@ -111,6 +121,50 @@ class OrderMapperUnitTest {
             assertThat(entity.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(entity.getCancelReason()).isEqualTo(CancelReason.USER_CANCEL);
             assertThat(entity.getCancelledAt()).isEqualTo(cancelledAt);
+        }
+
+        @Test
+        void OrderReward가_null인_주문을_JpaEntity로_변환한다() {
+            Order order = Order.reconstitute(
+                    1L, "ORD-001", 100L, OrderStatus.PENDING,
+                    20000L, 3000L, null,
+                    null, LocalDateTime.now(), LocalDateTime.now(), null, null
+            );
+
+            OrderJpaEntity entity = orderMapper.toJpaEntity(order);
+
+            assertThat(entity.getOrderRewards()).isEmpty();
+        }
+
+        @Test
+        void OrderReward가_빈_리스트인_주문을_JpaEntity로_변환한다() {
+            Order order = Order.reconstitute(
+                    1L, "ORD-001", 100L, OrderStatus.PENDING,
+                    20000L, 3000L, List.of(),
+                    null, LocalDateTime.now(), LocalDateTime.now(), null, null
+            );
+
+            OrderJpaEntity entity = orderMapper.toJpaEntity(order);
+
+            assertThat(entity.getOrderRewards()).isEmpty();
+        }
+
+        @Test
+        void OrderReward가_있는_주문을_JpaEntity로_변환한다() {
+            OrderReward orderReward = OrderReward.reconstitute(1L, 1L, 10L, 2, 3000L, 20000L);
+            Order order = Order.reconstitute(
+                    1L, "ORD-001", 100L, OrderStatus.PAYING,
+                    20000L, 3000L, List.of(orderReward),
+                    null, LocalDateTime.now(), LocalDateTime.now(), null, null
+            );
+
+            RewardJpaEntity rewardRef = mock(RewardJpaEntity.class);
+            given(rewardJpaRepository.getReferenceById(10L)).willReturn(rewardRef);
+
+            OrderJpaEntity entity = orderMapper.toJpaEntity(order);
+
+            assertThat(entity.getOrderRewards()).hasSize(1);
+            verify(rewardJpaRepository).getReferenceById(10L);
         }
     }
 }

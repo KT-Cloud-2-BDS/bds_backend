@@ -116,20 +116,5 @@ class OrderUnitTest {
         }
     }
 
-    @Nested
-    @DisplayName("금액 업데이트")
-    class UpdateAmountsTest {
-
-        @Test
-        void 리워드금액과_배송비를_업데이트한다() {
-            Order order = Order.create(1L, 0L, 0L, OrderStatus.PENDING);
-
-            order.updateAmounts(33000L, 3000L);
-
-            assertThat(order.getTotalRewardAmount()).isEqualTo(33000L);
-            assertThat(order.getTotalShippingCharge()).isEqualTo(3000L);
-            assertThat(order.getTotalAmount()).isEqualTo(36000L);
-        }
-    }
 }
 

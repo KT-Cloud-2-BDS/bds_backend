@@ -65,10 +65,6 @@ public class OrderService {
 
         List<OrderReward> orderRewardList = new ArrayList<>();
 
-        Order savedBilling = orderRepository.save(
-                Order.create(memberId, rewardAmount, totalShippingCharge, reqDto.isReservedOrder() ? OrderStatus.RESERVED : OrderStatus.PENDING)
-        );
-
         for (Reward reward : validatedRewards.rewards) {
             int qty = validatedRewards.qtyMap.get(reward.getId());
 
@@ -80,12 +76,15 @@ public class OrderService {
             rewardAmount += dto.amount();
             totalShippingCharge += dto.shippingCharge();
             RewardItemDtos.add(dto);
-            orderRewardList.add(OrderReward.of(dto, savedBilling.getId()));
+            orderRewardList.add(OrderReward.of(dto, null));
         }
-        savedBilling.saveOrderRewards(orderRewardList);
-        savedBilling.updateAmounts(rewardAmount, totalShippingCharge);
 
-        return BillingResponseDto.from(savedBilling, RewardItemDtos);
+        Order order = Order.create(memberId, rewardAmount, totalShippingCharge,
+                reqDto.isReservedOrder() ? OrderStatus.RESERVED : OrderStatus.PENDING);
+        order.saveOrderRewards(orderRewardList);
+
+        Order savedOrder = orderRepository.save(order);
+        return BillingResponseDto.from(savedOrder, RewardItemDtos);
     }
 
     @Transactional
@@ -114,10 +113,11 @@ public class OrderService {
 
 
         // TODO: Calling Payment API 결제 시작
-
+        orderRepository.save(order);
         return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), null, null);
     }
 
+    @Transactional
     public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId) {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
@@ -137,6 +137,7 @@ public class OrderService {
         });
 
         // TODO: Calling Refund API
+        orderRepository.save(order);
         return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
     }
 
