@@ -3,8 +3,10 @@ package com.bds.payment.payment.presentation.controller;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.presentation.request.FundingPaymentRequestDto;
 import com.bds.payment.payment.presentation.response.FundingPaymentResponseDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,7 +20,7 @@ public class FundingController {
     //TODO: Kafka를 사용함에 따라 컨트롤러 미사용으로 인지
 
     @PostMapping("/funding")
-    public FundingPaymentResponseDto funding(FundingPaymentRequestDto dto) {
+    public FundingPaymentResponseDto funding(@RequestBody @Valid FundingPaymentRequestDto dto) {
         return fundingService.funding(dto);
     }
 

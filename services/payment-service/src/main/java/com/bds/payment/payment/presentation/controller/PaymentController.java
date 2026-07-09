@@ -4,6 +4,7 @@ import com.bds.payment.payment.application.payment.PaymentService;
 import com.bds.payment.payment.presentation.request.AccountTransactionRequestDto;
 import com.bds.payment.payment.presentation.response.AccountTransactionResponseDto;
 import com.bds.payment.payment.presentation.response.PaymentHistoryPageResponseDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -21,12 +22,12 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/deposit")
-    public AccountTransactionResponseDto deposit(@RequestHeader("X-Member-Id") Long memberId, @RequestBody AccountTransactionRequestDto dto) {
+    public AccountTransactionResponseDto deposit(@RequestHeader("X-Member-Id") Long memberId, @RequestBody @Valid AccountTransactionRequestDto dto) {
         return paymentService.charge(memberId, dto);
     }
 
     @PostMapping("/withdraw")
-    public AccountTransactionResponseDto withdraw(@RequestHeader("X-Member-Id") Long memberId, @RequestBody AccountTransactionRequestDto dto) {
+    public AccountTransactionResponseDto withdraw(@RequestHeader("X-Member-Id") Long memberId, @RequestBody @Valid AccountTransactionRequestDto dto) {
         return paymentService.withdraw(memberId, dto);
     }
 
