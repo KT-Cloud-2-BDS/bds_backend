@@ -6,6 +6,7 @@ import com.bds.order.infrastructure.order.OrderListProjection;
 import java.time.LocalDateTime;
 
 public record OrderResponseDto(
+        Long orderId,
         String orderNo,
         OrderStatus orderStatus,
         LocalDateTime fundingDate,
@@ -19,6 +20,7 @@ public record OrderResponseDto(
 ) {
     public static OrderResponseDto from(OrderListProjection order) {
         return new OrderResponseDto(
+                order.orderId(),
                 order.orderNo(),
                 order.status(),
                 order.createdAt(),

@@ -83,8 +83,9 @@ public class OrderService {
             orderRewardList.add(OrderReward.of(dto, savedBilling.getId()));
         }
         savedBilling.saveOrderRewards(orderRewardList);
+        savedBilling.updateAmounts(rewardAmount, totalShippingCharge);
 
-        return new BillingResponseDto(memberId, RewardItemDtos, rewardAmount, totalShippingCharge, rewardAmount + totalShippingCharge);
+        return BillingResponseDto.from(savedBilling, RewardItemDtos);
     }
 
     @Transactional

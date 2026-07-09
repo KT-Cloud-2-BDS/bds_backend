@@ -166,6 +166,7 @@ class OrderServiceUnitTest {
 
             assertThat(result.memberId()).isEqualTo(1L);
             assertThat(result.rewards()).hasSize(1);
+            assertThat(result.orderId()).isEqualTo(1L);
             assertThat(result.rewardAmount()).isEqualTo(20000L);
             assertThat(result.totalShippingCharge()).isEqualTo(3000L);
             assertThat(result.totalBillingAmount()).isEqualTo(23000L);
@@ -200,6 +201,7 @@ class OrderServiceUnitTest {
             BillingResponseDto result = orderService.createBilling(memberId, reqDto);
 
             assertThat(result.rewards()).hasSize(2);
+            assertThat(result.orderId()).isEqualTo(1L);
             assertThat(result.rewardAmount()).isEqualTo(40000L);
             assertThat(result.totalShippingCharge()).isEqualTo(8000L);
             assertThat(result.totalBillingAmount()).isEqualTo(48000L);
@@ -232,6 +234,7 @@ class OrderServiceUnitTest {
 
             assertThat(result.memberId()).isEqualTo(1L);
             assertThat(result.rewards()).hasSize(1);
+            assertThat(result.orderId()).isEqualTo(1L);
             assertThat(result.rewardAmount()).isEqualTo(20000L);
         }
     }

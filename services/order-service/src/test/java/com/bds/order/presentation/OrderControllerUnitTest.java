@@ -1,6 +1,7 @@
 package com.bds.order.presentation;
 
 import com.bds.order.application.OrderService;
+import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.presentation.controller.OrderController;
@@ -37,7 +38,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
         void 주문_목록을_정상_응답한다() throws Exception {
             LocalDateTime now = LocalDateTime.now();
             OrderResponseDto dto = new OrderResponseDto(
-                    "ORD-001", OrderStatus.PENDING, now,
+                    1L, "ORD-001", OrderStatus.PENDING, now,
                     "테스트 펀딩", 100L, false,
                     36000L, null, null, false
             );
@@ -98,9 +99,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
             RewardItemDto rewardDto = new RewardItemDto(
                     1L, 2, "리워드A", 20000L, BadgeType.ULTRA_EARLY_BIRD, 3000L
             );
-            BillingResponseDto responseDto = new BillingResponseDto(
-                    1L, List.of(rewardDto), 20000L, 3000L, 23000L
-            );
+            BillingResponseDto responseDto = BillingResponseDto.from(Order.create(1L, 20000L, 3000L, OrderStatus.PENDING), List.of(rewardDto));
 
             given(orderService.createBilling(eq(1L), any())).willReturn(responseDto);
 

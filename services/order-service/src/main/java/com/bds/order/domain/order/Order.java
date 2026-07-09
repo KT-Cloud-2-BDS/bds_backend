@@ -91,4 +91,9 @@ public class Order {
     public void saveOrderRewards(List<OrderReward> orderRewards) {
         this.orderRewards = orderRewards;
     }
+
+    public void updateAmounts(Long rewardAmount, Long shippingCharge) {
+        this.totalRewardAmount = rewardAmount;
+        this.totalShippingCharge = shippingCharge;
+    }
 }
