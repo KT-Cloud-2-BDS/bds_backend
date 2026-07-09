@@ -1,13 +1,19 @@
 package com.bds.notification.presentation;
 
 import com.bds.notification.application.NotificationService;
+import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
 import com.bds.notification.presentation.dto.NotificationListResponse;
+import com.bds.notification.presentation.dto.NotificationSubscribeResponse;
 import com.bds.notification.presentation.dto.UnreadCountResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,6 +41,27 @@ public class NotificationController {
   @GetMapping("/unread-count")
   public UnreadCountResponse unreadCount(@RequestHeader("X-User-Id") Long memberId) {
     return notificationService.getUnreadCount(memberId);
+  }
+
+  @PostMapping("/subscriptions/{targetType}/{targetId}")
+  public NotificationSubscribeResponse subscribe(
+      @RequestHeader("X-User-Id") Long memberId,
+      @PathVariable String targetType,
+      @PathVariable("targetId") Long targetId
+  ) {
+    SubscriptionTargetType type = SubscriptionTargetType.valueOf(targetType.toUpperCase());
+    return notificationService.subscribe(memberId, type, targetId);
+  }
+
+  @DeleteMapping("/subscriptions/{targetType}/{targetId}")
+  public ResponseEntity<Void> unsubscribe(
+      @RequestHeader("X-User-Id") Long memberId,
+      @PathVariable String targetType,
+      @PathVariable("targetId") Long targetId
+  ) {
+    SubscriptionTargetType type = SubscriptionTargetType.valueOf(targetType.toUpperCase());
+    notificationService.unsubscribe(memberId, type, targetId);
+    return ResponseEntity.noContent().build();
   }
 
 }

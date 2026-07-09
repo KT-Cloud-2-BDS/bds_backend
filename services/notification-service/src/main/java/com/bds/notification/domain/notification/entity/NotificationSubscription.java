@@ -12,11 +12,13 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @NoArgsConstructor
 @Entity
 @Table(name = "notification_subscription")
+@SQLRestriction("is_deleted = false")  // 모든 쿼리에 자동 적용
 public class NotificationSubscription {
 
   @Id
@@ -36,11 +38,23 @@ public class NotificationSubscription {
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
+  @Column(nullable = false)
+  private Boolean isDeleted = false;
+
+  @Column(nullable = true)
+  private LocalDateTime deletedAt;
+
   @Builder
-  private NotificationSubscription(Long memberId, SubscriptionTargetType targetType, Long targetId) {
+  private NotificationSubscription(Long memberId, SubscriptionTargetType targetType,
+      Long targetId) {
     this.memberId = memberId;
     this.targetType = targetType;
     this.targetId = targetId;
     this.createdAt = LocalDateTime.now();
+  }
+
+  public void softDelete() {
+    this.isDeleted = true;
+    this.deletedAt = LocalDateTime.now();
   }
 }
