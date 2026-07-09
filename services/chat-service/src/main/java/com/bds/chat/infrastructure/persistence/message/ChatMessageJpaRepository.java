@@ -1,5 +1,6 @@
 package com.bds.chat.infrastructure.persistence.message;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,6 +11,16 @@ import java.util.Optional;
 interface ChatMessageJpaRepository extends JpaRepository<ChatMessageJpaEntity, Long> {
 
     List<ChatMessageJpaEntity> findByRoom_IdAndDeletedAtIsNullOrderByCreatedAtAsc(Long roomId);
+
+    Optional<ChatMessageJpaEntity> findByClientId(String clientId);
+
+    List<ChatMessageJpaEntity> findByRoom_IdAndDeletedAtIsNullOrderByIdDesc(Long roomId, Pageable pageable);
+
+    List<ChatMessageJpaEntity> findByRoom_IdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long roomId, Long cursor, Pageable pageable);
+
+    List<ChatMessageJpaEntity> findBySenderIdAndDeletedAtIsNullOrderByIdDesc(Long senderId, Pageable pageable);
+
+    List<ChatMessageJpaEntity> findBySenderIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long senderId, Long cursor, Pageable pageable);
 
     @Query(value = """
             SELECT
@@ -38,7 +49,7 @@ interface ChatMessageJpaRepository extends JpaRepository<ChatMessageJpaEntity, L
 
     @Query(value = """
             WITH room_thresholds AS (
-                SELECT * FROM unnest(:roomIds::bigint[], :lastReadIds::bigint[]) AS t(room_id, last_read_id)
+                SELECT * FROM unnest(CAST(:roomIds AS bigint[]), CAST(:lastReadIds AS bigint[])) AS t(room_id, last_read_id)
             ),
             latest_messages AS (
                 SELECT DISTINCT ON (room_id)

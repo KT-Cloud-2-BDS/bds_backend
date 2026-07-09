@@ -33,6 +33,7 @@ class ChatMessageMapper {
                 .type(domain.getType())
                 .status(domain.getStatus())
                 .deletedAt(domain.getDeletedAt())
+                .createdAt(domain.getCreatedAt())
                 .clientId(domain.getClientId())
                 .build();
     }

@@ -12,10 +12,12 @@ import com.bds.chat.infrastructure.persistence.chatroom.ChatRoomJpaEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -34,6 +36,34 @@ public class ChatMessagePersistenceAdapter implements ChatMessageRepository {
                 .stream()
                 .map(mapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public Optional<ChatMessage> findById(Long id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<ChatMessage> findByClientId(String clientId) {
+        return jpaRepository.findByClientId(clientId).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<ChatMessage> findByRoomIdBefore(Long roomId, Long cursor, int limit) {
+        PageRequest page = PageRequest.of(0, limit);
+        List<ChatMessageJpaEntity> results = cursor == null
+                ? jpaRepository.findByRoom_IdAndDeletedAtIsNullOrderByIdDesc(roomId, page)
+                : jpaRepository.findByRoom_IdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(roomId, cursor, page);
+        return results.stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public List<ChatMessage> findBySenderIdBefore(Long senderId, Long cursor, int limit) {
+        PageRequest page = PageRequest.of(0, limit);
+        List<ChatMessageJpaEntity> results = cursor == null
+                ? jpaRepository.findBySenderIdAndDeletedAtIsNullOrderByIdDesc(senderId, page)
+                : jpaRepository.findBySenderIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(senderId, cursor, page);
+        return results.stream().map(mapper::toDomain).toList();
     }
 
     @Override
