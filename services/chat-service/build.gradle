@@ -1,3 +1,21 @@
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = '0.8.13'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        html.required = true
+        xml.required = true  // CI 커버리지 도구 연동용
+    }
+}
+
+test {
+    finalizedBy jacocoTestReport
+}
+
 dependencies {
     implementation project(':modules:common')
 
@@ -14,4 +32,15 @@ dependencies {
 
     // STOMP broker relay TCP 연결에 필요
     implementation 'io.projectreactor.netty:reactor-netty'
+
+    // jwt parsing에 필요
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
+    testImplementation 'org.testcontainers:postgresql:1.21.4'
+    testImplementation 'org.testcontainers:rabbitmq:1.21.4'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.wiremock:wiremock-standalone:3.13.0'
 }
