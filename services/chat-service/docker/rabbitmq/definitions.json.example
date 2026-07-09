@@ -1,0 +1,43 @@
+{
+  "vhosts": [
+    { "name": "/" }
+  ],
+  "users": [
+    {
+      "name": "bds",
+      "password": "your_password_here",
+      "tags": ""
+    },
+    {
+      "name": "bds-admin",
+      "password": "your_admin_password_here",
+      "tags": "administrator"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "bds",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "bds-admin",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "/",
+      "name": "stomp-expiry",
+      "pattern": "^stomp-subscription-",
+      "definition": { "expires": 300000 },
+      "apply-to": "queues",
+      "priority": 0
+    }
+  ]
+}

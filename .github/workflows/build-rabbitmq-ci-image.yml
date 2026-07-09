@@ -1,0 +1,33 @@
+name: Build RabbitMQ CI Image
+
+# enabled_plugins 또는 Dockerfile.ci 변경 시에만 재빌드
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/chat-service/docker/rabbitmq/Dockerfile.ci'
+      - 'services/chat-service/docker/rabbitmq/enabled_plugins'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: services/chat-service/docker/rabbitmq
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: services/chat-service/docker/rabbitmq
+          file: services/chat-service/docker/rabbitmq/Dockerfile.ci
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/rabbitmq-ci:4
