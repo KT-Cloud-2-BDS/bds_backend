@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "auth-client", url = "http://localhost:8081")
 public interface AuthFeignClient {
 
-    @PostMapping("/api/auth/account")
+    @PostMapping("/api/auths/account")
     ResponseEntity<Long> createAuthAccount(@RequestBody AuthCreateRequestDto requestDto);
 
-    @PostMapping("/api/auth/login")
+    @PostMapping("/api/auths/login")
     ResponseEntity<AuthLoginResponseDto> login(@RequestBody AuthLoginRequestDto requestDto);
 
-    @DeleteMapping("/api/auth/{authId}")
+    @DeleteMapping("/api/auths/{authId}")
     ResponseEntity<Void> deleteAuth(@PathVariable("authId") Long authId);
 }

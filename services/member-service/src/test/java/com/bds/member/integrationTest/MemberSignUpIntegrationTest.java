@@ -94,7 +94,7 @@ public class MemberSignUpIntegrationTest {
 
         // when : MockMvc로 컨트롤러에 요청
         // DispatcherServlet을 거쳐 실제 컨트롤러와 서비스 로직이 정상적으로 연동되는지 검증
-        mockMvc.perform(post("/api/member/signup")
+        mockMvc.perform(post("/api/members/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
             .andDo(print())
@@ -103,7 +103,7 @@ public class MemberSignUpIntegrationTest {
         // then : 데이터 적재 확인
         // MemberAdapter를 통해 순수 도메인 member 검증
         Member savedMember = memberAdapter.findByAuthId(mockAuthId)
-            .orElseThrow(() -> new IllegalArgumentException("회원이 저장되지 않았습니다!"));
+            .orElseThrow(() -> new IllegalArgumentException("회원이 저장되지 않았습니다"));
 
         org.junit.jupiter.api.Assertions.assertNotNull(savedMember);
         org.junit.jupiter.api.Assertions.assertEquals(nickname, savedMember.getNickname());

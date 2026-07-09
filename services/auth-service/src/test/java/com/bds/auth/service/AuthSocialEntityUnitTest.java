@@ -1,5 +1,6 @@
-package com.bds.auth.domain.entity;
+package com.bds.auth.service;
 
+import com.bds.auth.domain.entity.AuthSocial;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -2,21 +2,21 @@
 
 ### 엔드포인트 목록
 
-| method | path                         | auth required | 설명                     |
-|--------|------------------------------|---------------|------------------------|
-| POST   | /api/member/signup           | N             | 플랫폼 자체 회원가입(1)         |
-| POST   | /api/member/social           | N             | 소셜 회원가입 및 로그인(2)       |
-| POST   | /api/member/login            | N             | 로그인(3)                 |
-| GET    | /api/member/info             | O             | 내 정보(이메일, 닉네임) 조회(6)   |
-| PATCH  | /api/member/info             | O             | 내 정보(닉네임) 수정(7)        |
-| PATCH  | /api/member/password/reset   | N             | 비밀번호 변경(8)             |
-| DELETE | /api/member/delete           | O             | 회원 탈퇴(10)              |
-| PATCH  | /api/member/role             | O             | 회원 권한 변경(서포터, 메이커)(11) |
+| method | path                        | auth required | 설명                     |
+|--------|-----------------------------|---------------|------------------------|
+| POST   | /api/members/signup         | N             | 플랫폼 자체 회원가입(1)         |
+| POST   | /api/members/social         | N             | 소셜 회원가입 및 로그인(2)       |
+| POST   | /api/members/login          | N             | 로그인(3)                 |
+| GET    | /api/members/info           | O             | 내 정보(이메일, 닉네임) 조회(6)   |
+| PATCH  | /api/members/info           | O             | 내 정보(닉네임) 수정(7)        |
+| PATCH  | /api/members/password/reset | N             | 비밀번호 변경(8)             |
+| DELETE | /api/members/delete         | O             | 회원 탈퇴(10)              |
+| PATCH  | /api/members/role           | O             | 회원 권한 변경(서포터, 메이커)(11) |
 
 ### 플랫폼 자체 회원가입
 
 ```
-POST /api/member/signup
+POST /api/members/signup
 ```
 
 Auth Required: **N**
@@ -49,7 +49,7 @@ Validation / Business Rules
 
 ### 소셜 회원가입 및 로그인
 ```
-POST /api/member/social
+POST /api/members/social
 ```
 Auth Required: **N**
 
@@ -81,7 +81,7 @@ Validation / Business Rules
 
 ### 로그인
 ```
-POST /api/member/login
+POST /api/members/login
 ```
 
 Auth Required: **N**
@@ -113,7 +113,7 @@ Validation / Business Rules
 
 ### 내 정보 조회
 ```
-GET /api/member/info
+GET /api/members/info
 ```
 Auth Required: **O**
 
@@ -133,7 +133,7 @@ Validation / Business Rules
 
 ### 내 정보 수정
 ```
-PATCH /api/member/info
+PATCH /api/members/info
 ```
 Auth Required: **O**
 
@@ -159,7 +159,7 @@ Validation / Business Rules
 
 ### 비밀번호 변경
 ```
-PATCH /api/member/password/reset
+PATCH /api/members/password/reset
 ```
 Auth Required: **N**
 
@@ -186,7 +186,7 @@ Validation / Business Rules
 
 ### 회원 탈퇴
 ```
-DELETE /api/member/delete
+DELETE /api/members/delete
 ```
 Auth Required: **O**
 
@@ -207,7 +207,7 @@ Validation / Business Rules
 ### 회원 권한 변경
 
 ```
-PATCH /api/member/role 
+PATCH /api/members/role 
 ```
 
 Auth Required: **O**

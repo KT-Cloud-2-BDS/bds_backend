@@ -90,7 +90,7 @@ public class AuthLoginIntegrationTest {
         String jsonContent = objectMapper.writeValueAsString(loginRequest);
 
         // when : 로그인 API 호출
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auths/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
             .andDo(print())

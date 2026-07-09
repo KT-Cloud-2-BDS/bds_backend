@@ -84,7 +84,7 @@ class MemberDeleteIntegrationTest {
 
 
         // when : 탈퇴 API 호출
-        mockMvc.perform(delete("/api/member/delete")
+        mockMvc.perform(delete("/api/members/delete")
                 .header("X-User-Id", String.valueOf(mockAuthId))
                 .contentType(MediaType.APPLICATION_JSON))
             .andDo(print())

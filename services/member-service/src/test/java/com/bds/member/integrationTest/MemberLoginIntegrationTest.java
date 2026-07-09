@@ -94,7 +94,7 @@ class MemberLoginIntegrationTest {
         // when&then : 컨트롤러 요청 및 응답 검증
         // 로그인은 DB 상태 변화(INSERT)가 목표가 아니라, 인증 토큰 반환이 목표
         // MockMvc의 jsonPath를 사용하여 응답 본문 검증
-        mockMvc.perform(post("/api/member/login")
+        mockMvc.perform(post("/api/members/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
             .andDo(print())

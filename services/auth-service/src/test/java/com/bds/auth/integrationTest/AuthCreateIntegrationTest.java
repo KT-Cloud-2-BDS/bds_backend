@@ -67,7 +67,7 @@ public class AuthCreateIntegrationTest {
 
 
         // when : 내부(Internal) API 컨트롤러 호출
-        mockMvc.perform(post("/api/auth/account")
+        mockMvc.perform(post("/api/auths/account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
             .andDo(print())

@@ -65,7 +65,7 @@ public class AuthDeleteIntegrationTest {
 
 
         // when : 탈퇴 API 호출
-        mockMvc.perform(delete("/api/auth/" + authId))
+        mockMvc.perform(delete("/api/auths/" + authId))
             .andDo(print())
 
             // then : 검증 (HTTP 상태 200 & DB 확인)

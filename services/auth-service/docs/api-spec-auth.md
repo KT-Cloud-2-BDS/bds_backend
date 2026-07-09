@@ -2,18 +2,18 @@
 
 ### 엔드포인트 목록
 
-| method | path                      | auth required | 설명                |
-|--------|---------------------------|---------------|-------------------|
-| POST   | /api/auth/mail            | N             | 이메일 인증 번호 발송(1)   |
-| POST   | /api/auth/mailCheck       | N             | 이메일 인증 번호 검증(2)   |
-| POST   | /api/auth/login           | N             | 로그인 및 토큰 발급(3)    |
-| POST   | /api/auth/token/refresh   | N             | refresh 토큰 재발급(5) |
-| POST   | /api/auth/password/verify | N             | 비밀번호 변경 권한 획득(6)  |
-| GET    | /api/auth/logout          | O             | 로그아웃(7)           |
+| method | path                       | auth required | 설명                |
+|--------|----------------------------|---------------|-------------------|
+| POST   | /api/auths/mail            | N             | 이메일 인증 번호 발송(1)   |
+| POST   | /api/auths/mailCheck       | N             | 이메일 인증 번호 검증(2)   |
+| POST   | /api/auths/login           | N             | 로그인 및 토큰 발급(3)    |
+| POST   | /api/auths/token/refresh   | N             | refresh 토큰 재발급(5) |
+| POST   | /api/auths/password/verify | N             | 비밀번호 변경 권한 획득(6)  |
+| GET    | /api/auths/logout          | O             | 로그아웃(7)           |
 
 ### 이메일 인증 번호 발송
 ```
-POST /api/auth/mail
+POST /api/auths/mail
 ```
   Auth Required: **N**
 
@@ -40,7 +40,7 @@ POST /api/auth/mail
 
 ### 이메일 인증 번호 검증
 ```
-POST /api/auth/mailCheck
+POST /api/auths/mailCheck
 ```
 Auth Required: **N**
 
@@ -68,7 +68,7 @@ Validation / Business Rules
 
 ### 로그인
 ```
-POST /api/auth/login/token
+POST /api/auths/login/token
 ```
 
 Request Body
@@ -98,7 +98,7 @@ Validation / Business Rules
 
 ### refresh 토큰 재발급
 ```
-POST /api/auth/token/refresh
+POST /api/auths/token/refresh
 ```
 Auth Required: **N**
 
@@ -128,7 +128,7 @@ Validation / Business Rules
 
 ### 비밀번호 변경 권한 획득
 ```
-POST /api/auth/password/verify
+POST /api/auths/password/verify
 ```
 Auth Required: **N**
 
@@ -156,7 +156,7 @@ Validation / Business Rules
 ### 로그아웃
 
 ```
-GET /api/auth/logout
+GET /api/auths/logout
 ```
 
 Auth Required: **O**
