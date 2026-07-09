@@ -10,6 +10,7 @@ import com.bds.chat.domain.chatRoom.ChatRoomRepository;
 import com.bds.chat.domain.chatRoom.ChatRoomType;
 import com.bds.chat.domain.member.InquiryChatMember;
 import com.bds.chat.domain.member.InquiryChatMemberRepository;
+import com.bds.chat.domain.member.ReadReceipt;
 import com.bds.chat.domain.message.ChatMessage;
 import com.bds.chat.domain.message.ChatMessageRepository;
 import com.bds.chat.domain.message.MessageType;
@@ -112,8 +113,15 @@ public class MessageService {
     }
 
 
+    @Transactional(readOnly = true)
+    public MessageResponseDto findByClientId(String clientId) {
+        return chatMessageRepository.findByClientId(clientId)
+                .map(MessageResponseDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "clientId=" + clientId));
+    }
+
     @Transactional
-    public void upsertAllReadReceipts(List<ReadReceiptDto> batch) {
+    public void upsertAllReadReceipts(List<ReadReceipt> batch) {
         if (batch.isEmpty()) {
             return;
         }

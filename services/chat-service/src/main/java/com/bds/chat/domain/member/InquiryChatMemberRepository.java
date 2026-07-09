@@ -1,7 +1,5 @@
 package com.bds.chat.domain.member;
 
-import com.bds.chat.application.message.dto.ReadReceiptDto;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -23,5 +21,5 @@ public interface InquiryChatMemberRepository {
 
     InquiryChatMember save(InquiryChatMember member);
 
-    void bulkUpdateLastRead(List<ReadReceiptDto> batch);
+    void bulkUpdateLastRead(List<ReadReceipt> batch);
 }

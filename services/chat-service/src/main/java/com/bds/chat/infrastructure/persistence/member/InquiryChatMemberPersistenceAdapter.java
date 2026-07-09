@@ -1,7 +1,7 @@
 package com.bds.chat.infrastructure.persistence.member;
 
-import com.bds.chat.application.message.dto.ReadReceiptDto;
 import com.bds.chat.domain.member.InquiryChatMember;
+import com.bds.chat.domain.member.ReadReceipt;
 import com.bds.chat.domain.member.InquiryChatMemberRepository;
 import com.bds.chat.domain.shared.InquiryChatMemberId;
 import com.bds.chat.infrastructure.persistence.chatroom.ChatRoomJpaEntity;
@@ -86,10 +86,10 @@ public class InquiryChatMemberPersistenceAdapter implements InquiryChatMemberRep
     }
 
     @Override
-    public void bulkUpdateLastRead(List<ReadReceiptDto> batch) {
-        Long[]          roomIds    = batch.stream().map(ReadReceiptDto::roomId).toArray(Long[]::new);
-        Long[]          memberIds  = batch.stream().map(ReadReceiptDto::userId).toArray(Long[]::new);
-        Long[]          messageIds = batch.stream().map(ReadReceiptDto::lastReadMessageId).toArray(Long[]::new);
+    public void bulkUpdateLastRead(List<ReadReceipt> batch) {
+        Long[]          roomIds    = batch.stream().map(ReadReceipt::roomId).toArray(Long[]::new);
+        Long[]          memberIds  = batch.stream().map(ReadReceipt::userId).toArray(Long[]::new);
+        Long[]          messageIds = batch.stream().map(ReadReceipt::lastReadMessageId).toArray(Long[]::new);
         LocalDateTime[] readAts    = batch.stream()
                 .map(r->LocalDateTime.ofInstant(r.readAt(), ZoneOffset.UTC))
                 .toArray(LocalDateTime[]::new);

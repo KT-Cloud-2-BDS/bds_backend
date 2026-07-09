@@ -1,7 +1,7 @@
 package com.bds.chat.infrastructure.session;
 
-import com.bds.chat.application.message.dto.ReadReceiptDto;
 import com.bds.chat.application.message.service.MessageService;
+import com.bds.chat.domain.member.ReadReceipt;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,13 +19,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class ReadReceiptBuffer {
 
-    private final ConcurrentHashMap<Key, ReadReceipt> buffer = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Key, Entry> buffer = new ConcurrentHashMap<>();
     private final MessageService messageService;
 
     public void mark(Long roomId, Long userId, Long lastReadMessageId, Instant readAt) {
         buffer.merge(
                 new Key(roomId, userId),
-                new ReadReceipt(roomId, userId, lastReadMessageId, readAt),
+                new Entry(roomId, userId, lastReadMessageId, readAt),
                 (old,incoming) -> incoming.readAt().isAfter(old.readAt()) ? incoming : old
         );
     }
@@ -55,11 +55,11 @@ public class ReadReceiptBuffer {
         flush();
     }
 
-    private List<ReadReceiptDto> drain() {
-        List<ReadReceiptDto> batch = new ArrayList<>();
+    private List<ReadReceipt> drain() {
+        List<ReadReceipt> batch = new ArrayList<>();
         buffer.forEach((key, value) -> {
             if (buffer.remove(key, value)) {
-                batch.add(new ReadReceiptDto(value.roomId(), value.userId(), value.lastReadMessageId(), value.readAt()));
+                batch.add(new ReadReceipt(value.roomId(), value.userId(), value.lastReadMessageId(), value.readAt()));
             }
         });
         return batch;
@@ -67,5 +67,5 @@ public class ReadReceiptBuffer {
 
     private record Key(Long roomId, Long userId) {}
 
-    public record ReadReceipt(Long roomId, Long userId, Long lastReadMessageId, Instant readAt) {}
+    private record Entry(Long roomId, Long userId, Long lastReadMessageId, Instant readAt) {}
 }
