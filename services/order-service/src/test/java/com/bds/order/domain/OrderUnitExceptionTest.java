@@ -12,7 +12,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class OrderExceptionUnitTest {
+class OrderUnitExceptionTest {
 
     @Nested
     @DisplayName("주문 생성 예외")

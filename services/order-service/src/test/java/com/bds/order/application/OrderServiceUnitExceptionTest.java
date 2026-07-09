@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
-class OrderServiceExceptionUnitTest {
+class OrderServiceUnitExceptionTest {
 
     @Mock
     private OrderRepository orderRepository;

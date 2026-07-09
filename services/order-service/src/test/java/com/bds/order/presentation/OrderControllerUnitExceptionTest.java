@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(OrderController.class)
-class OrderControllerExceptionUnitTest extends MockMvcTestSupport {
+class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
     @MockitoBean
     private OrderService orderService;
