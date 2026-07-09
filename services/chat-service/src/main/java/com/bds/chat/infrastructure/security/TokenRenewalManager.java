@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Component
@@ -31,6 +32,7 @@ public class TokenRenewalManager {
     private final SessionTerminationService sessionTermination;
     private final Map<String, ScheduledFuture<?>> renewalTasks = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> killTasks = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> generations = new ConcurrentHashMap<>();
 
     @Lazy
     @Autowired
@@ -42,6 +44,7 @@ public class TokenRenewalManager {
     private Duration grace;
 
     public void schedule(String sessionId, Instant expiresAt){
+        generations.computeIfAbsent(sessionId, k -> new AtomicLong()).incrementAndGet();
         cancel(sessionId);
         Instant requestAt = expiresAt.minus(renewBefore);
         if(!requestAt.isAfter(Instant.now())){
@@ -64,26 +67,34 @@ public class TokenRenewalManager {
 
     @EventListener
     public void onDisconnect(SessionDisconnectEvent event){
-        cancel(event.getSessionId());
+        String sessionId = event.getSessionId();
+        generations.remove(sessionId);
+        cancel(sessionId);
     }
 
     private void requestRenewal(String sessionId){
         if(!sessionContextRegistry.isAuthValid(sessionId)){
             return;
         }
+        long gen = generations.computeIfAbsent(sessionId, k -> new AtomicLong()).get();
         sendToSession(sessionId,
                 Map.of(
                         "type", "TOKEN_RENEWAL_REQUIRED",
                         "deadlineSeconds", grace.toSeconds()
                 ));
-        killTasks.put(sessionId,authTaskScheduler.schedule(()->
-            expire(sessionId), Instant.now().plus(grace)
+        killTasks.put(sessionId, authTaskScheduler.schedule(()->
+            expire(sessionId, gen), Instant.now().plus(grace)
         ));
-        log.debug("토큰 갱신 요청 발송 sessionId={} grace={}s", sessionId, grace.toSeconds());
+        log.debug("토큰 갱신 요청 발송 sessionId={} gen={} grace={}s", sessionId, gen, grace.toSeconds());
     }
 
-    private void expire(String sessionId){
-        log.info("갱신 시한 초과 - 세션 종료 sessionid={}",sessionId);
+    private void expire(String sessionId, long expectedGen){
+        AtomicLong current = generations.get(sessionId);
+        if (current == null || current.get() != expectedGen) {
+            log.debug("세대 불일치 - 만료 취소 sessionId={} expected={}", sessionId, expectedGen);
+            return;
+        }
+        log.info("갱신 시한 초과 - 세션 종료 sessionId={}", sessionId);
         sessionTermination.terminateSession(sessionId, "TOKEN_EXPIRED");
     }
 
