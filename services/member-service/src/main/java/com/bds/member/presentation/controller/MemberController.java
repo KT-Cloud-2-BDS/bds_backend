@@ -10,6 +10,7 @@ import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,6 +41,14 @@ public class MemberController {
         @RequestBody MemberInfoRequestDto requestDto
     ) {
         memberService.updateNickname(user.id(), requestDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteMember(
+        @LoginUser CurrentUser user
+    ) {
+        memberService.deleteMember(user.id());
         return ResponseEntity.ok().build();
     }
 }

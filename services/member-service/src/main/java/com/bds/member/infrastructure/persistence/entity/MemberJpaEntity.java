@@ -1,14 +1,15 @@
 package com.bds.member.infrastructure.persistence.entity;
 
-import com.bds.member.domain.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("is_deleted = false")
 @Table(name = "member")
 public class MemberJpaEntity {
 
@@ -22,10 +23,8 @@ public class MemberJpaEntity {
     @Column(nullable = false, length = 20)
     private String nickname;
 
-    public static MemberJpaEntity from(Member member) {
-        return MemberJpaEntity.builder()
-            .authId(member.getAuthId())
-            .nickname(member.getNickname())
-            .build();
-    }
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
 }

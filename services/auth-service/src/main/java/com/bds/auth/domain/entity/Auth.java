@@ -11,8 +11,8 @@ public class Auth {
 
     private final Long id;
     private final String email;
-    private final Status status;
-    private final Role role;
+    private  Status status;
+    private  Role role;
 
     private Auth(Long id, String email, Status status, Role role) {
         this.id = id;
@@ -30,5 +30,12 @@ public class Auth {
 
     public static Auth of(Long id, String email, Status status, Role role) {
         return new Auth(id, email, status, role);
+    }
+
+    public void changeStatus(Status status) {
+        if (status == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        this.status = status;
     }
 }

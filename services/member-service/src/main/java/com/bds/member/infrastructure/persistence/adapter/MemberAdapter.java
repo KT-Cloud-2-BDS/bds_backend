@@ -28,4 +28,12 @@ public class MemberAdapter {
         return memberRepo.findByAuthId(authId)
             .map(memberMapper::toDomain);
     }
+
+    public boolean existsByAuthId(Long authId) {
+        return memberRepo.existsByAuthId(authId);
+    }
+
+    public void softDeleteByAuthId(Long authId) {
+        memberRepo.softDeleteByAuthId(authId);
+    }
 }

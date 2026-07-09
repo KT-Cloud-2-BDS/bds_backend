@@ -12,7 +12,8 @@ public class MemberMapper {
         return Member.of(
             jpaEntity.getId(),
             jpaEntity.getAuthId(),
-            jpaEntity.getNickname()
+            jpaEntity.getNickname(),
+            jpaEntity.isDeleted()
         );
     }
 
@@ -23,6 +24,7 @@ public class MemberMapper {
             .id(domain.getId())
             .authId(domain.getAuthId())
             .nickname(domain.getNickname())
+            .isDeleted(domain.isDeleted())
             .build();
     }
 }

@@ -5,6 +5,7 @@ import com.bds.member.global.exception.BusinessException;
 import com.bds.member.global.exception.ErrorCode;
 import com.bds.member.infrastructure.persistence.adapter.MemberAdapter;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
+import com.bds.member.infrastructure.persistence.repository.MemberRepository;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
 import com.bds.member.presentation.dto.AuthLoginRequestDto;
 import com.bds.member.presentation.dto.AuthLoginResponseDto;
@@ -22,6 +23,7 @@ public class MemberService {
 
     private final AuthFeignClient authFeignClient;
     private final MemberAdapter memberAdapter;
+    private final MemberRepository memberRepo;
 
     @Transactional
     public void signUp(MemberSignupRequestDto requestDto) {
@@ -73,5 +75,19 @@ public class MemberService {
 
         member.changeNickname(requestDto.nickname());
         memberAdapter.save(member);
+    }
+
+    @Transactional
+    public void deleteMember(Long authId) {
+        if (!memberAdapter.existsByAuthId(authId)) {
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+        }
+
+        ResponseEntity<Void> response = authFeignClient.deleteAuth(authId);
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new BusinessException(ErrorCode.AUTH_SERVICE_ERROR);
+        }
+
+        memberAdapter.softDeleteByAuthId(authId);
     }
 }

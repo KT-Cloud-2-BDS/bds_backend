@@ -27,8 +27,12 @@ public class AuthAdapter {
 
     public Optional<Auth> findByEmail(String email){
         return authJpaRepo.findByEmail(email)
-            .map(AuthMapper::toDomain);
+            .map(entity -> authMapper.toDomain(entity));
     }
 
+    public Optional<Auth> findById(Long authId) {
+        return authJpaRepo.findById(authId)
+            .map(entity -> authMapper.toDomain(entity));
+    }
 
 }
