@@ -92,6 +92,28 @@ public class OrderService {
         return null;
     }
 
+    public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!memberId.equals(order.getMemberId())) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        try {
+            order.cancelOrder(CancelReason.USER_CANCEL);
+        } catch (IllegalStateException e) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
+        }
+
+        order.getOrderRewards().forEach(or -> {
+            rewardRepository.increaseRemainQty(or.getRewardId(), or.getQty());
+        });
+
+        // TODO: Calling Refund API
+        return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
+    }
+
     private Long validateFunding(Long fundingId) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FUNDING_NOT_FOUND));
@@ -121,28 +143,6 @@ public class OrderService {
         }
 
         return new ValidatedRewards(foundRewards, rewardIdQtyMap);
-    }
-
-    public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId) {
-        Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-
-        if (!memberId.equals(order.getMemberId())) {
-            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
-        }
-
-        try {
-            order.cancelOrder(CancelReason.USER_CANCEL);
-        } catch (IllegalStateException e) {
-            throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
-        }
-
-        order.getOrderRewards().forEach(or -> {
-            rewardRepository.increaseRemainQty(or.getRewardId(), or.getQty());
-        });
-
-        // TODO: Calling Refund API
-        return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
     }
 
     private record ValidatedRewards(List<Reward> rewards, Map<Long, Integer> qtyMap) {
