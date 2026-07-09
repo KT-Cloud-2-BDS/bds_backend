@@ -15,6 +15,8 @@ public class FundingController {
 
     private final FundingService fundingService;
 
+    //TODO: Kafka를 사용함에 따라 컨트롤러 미사용으로 인지
+
     @PostMapping("/funding")
     public FundingPaymentResponseDto funding(FundingPaymentRequestDto dto) {
         return fundingService.funding(dto);
