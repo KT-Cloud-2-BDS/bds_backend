@@ -35,7 +35,7 @@ class WalletServiceIntegrationExceptionTest {
         void 지갑이_없으면_getWalletResponseDto는_예외를_던진다() {
             Long memberId = Long.MAX_VALUE;
 
-            assertThatThrownBy(() -> walletService.getWallet(memberId))
+            assertThatThrownBy(() -> walletService.getWalletResponseDto(memberId))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
