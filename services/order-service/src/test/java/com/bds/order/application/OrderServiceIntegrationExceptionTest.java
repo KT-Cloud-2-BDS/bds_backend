@@ -79,7 +79,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
     @DisplayName("빌링 생성 예외 통합테스트")
     class CreateBillingExceptionIntegrationTest {
 
-        // 6. 존재하지 않는 펀딩 ID → 예외
+        // 존재하지 않는 펀딩 ID → 예외
         @Test
         void 존재하지_않는_펀딩이면_예외를_던진다() {
             BillingRequestDto reqDto = new BillingRequestDto(999L, false, List.of(
@@ -90,7 +90,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 7. 펀딩 기간 종료 → 예외
+        // 펀딩 기간 종료 → 예외
         @Test
         void 펀딩_기간이_종료되면_예외를_던진다() {
             BillingRequestDto reqDto = new BillingRequestDto(expiredFunding.getId(), false, List.of(
@@ -101,7 +101,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 8. 존재하지 않는 리워드 ID → 예외
+        // 존재하지 않는 리워드 ID → 예외
         @Test
         void 존재하지_않는_리워드이면_예외를_던진다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -112,7 +112,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 9. 재고 부족한 리워드 → 예외
+        // 재고 부족한 리워드 → 예외
         @Test
         void 빌링_생성_시_재고가_부족하면_예외를_던진다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -123,7 +123,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 10. 동일 리워드 중복 선택 → 예외
+        // 동일 리워드 중복 선택 → 예외
         @Test
         void 동일_리워드를_중복_선택하면_예외를_던진다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -148,7 +148,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             return billing.orderId();
         }
 
-        // 13. 본인 주문 아님 → 예외
+        // 본인 주문 아님 → 예외
         @Test
         void 본인의_주문이_아니면_예외를_던진다() {
             Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 1);
@@ -162,7 +162,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 14. 이미 PAYING 상태 → 상태 전이 불가 예외 (중복 결제 방지)
+        // 이미 PAYING 상태 → 상태 전이 불가 예외 (중복 결제 방지)
         @Test
         void 이미_PAYING_상태인_주문은_재결제할_수_없다() {
             Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 1);
@@ -178,7 +178,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 15. 재고 부족 → 예외 + 트랜잭션 롤백으로 이전 차감 없음 검증
+        // 재고 부족 → 예외 + 트랜잭션 롤백으로 이전 차감 없음 검증
         @Test
         void 재고_부족_시_예외를_던지고_차감이_롤백된다() {
             // 재고 2개짜리 리워드 생성
@@ -212,7 +212,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             assertThat(reward.getRemainQty()).isEqualTo(1);
         }
 
-        // 16. 존재하지 않는 orderId → 예외
+        // 존재하지 않는 orderId → 예외
         @Test
         void 존재하지_않는_주문이면_예외를_던진다() {
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
@@ -244,7 +244,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             return billing.orderId();
         }
 
-        // 18. 본인 주문 아님 → 예외
+        // 본인 주문 아님 → 예외
         @Test
         void 본인의_주문이_아니면_취소할_수_없다() {
             Long orderId = createAndStartOrder(1L);
@@ -253,7 +253,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 19. PENDING 상태 주문 취소 → 상태 전이 불가 예외
+        // PENDING 상태 주문 취소 → 상태 전이 불가 예외
         @Test
         void PENDING_상태에서는_취소할_수_없다() {
             BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -265,7 +265,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 20. 이미 취소된 주문 재취소 → 예외
+        // 이미 취소된 주문 재취소 → 예외
         @Test
         void 이미_취소된_주문은_다시_취소할_수_없다() {
             Long orderId = createAndStartOrder(1L);
@@ -275,7 +275,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // 25. 존재하지 않는 주문 상세 조회 → 예외
+        // 존재하지 않는 주문 상세 조회 → 예외
         @Test
         void 존재하지_않는_주문_상세_조회_시_예외를_던진다() {
             assertThatThrownBy(() -> orderService.getOrderDetail(1L, 999L))

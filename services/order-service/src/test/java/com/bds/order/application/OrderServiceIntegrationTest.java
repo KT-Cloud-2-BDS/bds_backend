@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OrderServiceIntegrationTest extends AbstractIntegrationTest {
 
@@ -81,7 +82,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("빌링 생성 통합테스트")
     class CreateBillingIntegrationTest {
 
-        // 1. 리워드 1개 선택 → 빌링 생성 → Order/OrderReward 저장 + 금액 정합성 검증
+        // 리워드 1개 선택 → 빌링 생성 → Order/OrderReward 저장 + 금액 정합성 검증
         @Test
         void 리워드_1개로_빌링_생성_시_금액이_정확히_저장된다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -98,7 +99,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(result.totalBillingAmount()).isEqualTo(23000L);
         }
 
-        // 2. 리워드 2개 선택 → 각 OrderReward 금액 합산 = Order 총금액 검증
+        // 리워드 2개 선택 → 각 OrderReward 금액 합산 = Order 총금액 검증
         @Test
         void 리워드_2개로_빌링_생성_시_금액_합산이_정확하다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -114,7 +115,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(result.totalBillingAmount()).isEqualTo(48000L);
         }
 
-        // 3. isReservedOrder=true → RESERVED 상태로 저장
+        // isReservedOrder=true → RESERVED 상태로 저장
         @Test
         void 예약_주문_빌링은_RESERVED_상태로_저장된다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), true, List.of(
@@ -127,7 +128,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(orders.get(0).orderStatus()).isEqualTo(OrderStatus.RESERVED);
         }
 
-        // 4. isReservedOrder=false → PENDING 상태로 저장
+        // isReservedOrder=false → PENDING 상태로 저장
         @Test
         void 일반_주문_빌링은_PENDING_상태로_저장된다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -140,7 +141,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(orders.get(0).orderStatus()).isEqualTo(OrderStatus.PENDING);
         }
 
-        // 5. 빌링 생성 시 expiresAt이 설정되는지 검증
+        // 빌링 생성 시 expiresAt이 설정되는지 검증
         @Test
         void 빌링_생성_시_expiresAt이_설정된다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -166,7 +167,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             return billing.orderId();
         }
 
-        // 11. 정상 빌링 → 결제하기 → 상태 PAYING + 재고 차감 검증
+        // 정상 빌링 → 결제하기 → 상태 PAYING + 재고 차감 검증
         @Test
         void 주문_생성_시_상태_PAYING으로_변경되고_재고가_차감된다() {
             Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 2);
@@ -206,7 +207,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             return billing.orderId();
         }
 
-        // 17. PAYING 상태 주문 취소 → CANCELLED + 재고 복구 검증
+        // PAYING 상태 주문 취소 → CANCELLED + 재고 복구 검증
         @Test
         void 주문_취소_시_CANCELLED_상태로_변경되고_재고가_복구된다() {
             Long orderId = createAndStartOrder(1L, 3);
@@ -225,7 +226,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("주문 조회 통합테스트")
     class GetOrdersIntegrationTest {
 
-        // 21. 회원 주문 목록 조회 → 본인 주문만 반환
+        // 회원 주문 목록 조회 → 본인 주문만 반환
         @Test
         void 본인의_주문_목록만_조회된다() {
             BillingRequestDto reqDto1 = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -243,7 +244,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(result).hasSize(2);
         }
 
-        // 23. 페이징 동작 검증
+        // 페이징 동작 검증
         @Test
         void 페이징이_정상_동작한다() {
             for (int i = 0; i < 5; i++) {
@@ -260,7 +261,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(page2).hasSize(2);
         }
 
-        // 24. 주문 상세 조회 → 금액/리워드 정보 일치
+        // 주문 상세 조회 → 금액/리워드 정보 일치
         @Test
         void 주문_상세_조회_시_금액과_리워드_정보가_일치한다() {
             BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -290,7 +291,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             ));
         }
 
-        // 26. 동일 유저가 동일 주문에 10번 동시 결제 요청 → Lock(NOWAIT)에 의해 1번만 성공 (더블클릭 시나리오)
+        // 동일 유저가 동일 주문에 10번 동시 결제 요청 → Lock(NOWAIT)에 의해 1번만 성공 (더블클릭 시나리오)
         @Test
         void 동일_유저가_동일_주문에_동시_요청_시_1건만_성공한다() throws InterruptedException {
             BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -329,7 +330,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(failCount.get()).isEqualTo(threadCount - 1);
         }
 
-        // 27. 재고 1개인 리워드에 5명 동시 주문 → CAS(remainQty >= qty)에 의해 1명만 성공
+        // 재고 1개인 리워드에 5명 동시 주문 → CAS(remainQty >= qty)에 의해 1명만 성공
         @Test
         void 재고_1개에_5명_동시_주문_시_CAS에_의해_1명만_성공한다() throws InterruptedException {
             RewardJpaEntity rewardStock1 = createRewardWithStock(1);
@@ -380,7 +381,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(updatedReward.getRemainQty()).isEqualTo(0);
         }
 
-        // 28. 재고 N개, 동시 요청 M명(각 1개씩) → 성공 수 = min(N, M), 최종 재고 = N - 성공 수
+        // 재고 N개, 동시 요청 M명(각 1개씩) → 성공 수 = min(N, M), 최종 재고 = N - 성공 수
         @ParameterizedTest(name = "재고 {0}개, 동시 {1}명 → {2}명 성공")
         @CsvSource({
                 "3, 5, 3",
@@ -433,7 +434,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(updatedReward.getRemainQty()).isEqualTo(stock - expectedSuccess);
         }
 
-        // 29. 주문 취소와 동일 주문 결제 요청 동시 진행 → Lock에 의해 하나만 성공
+        // 주문 취소와 동일 주문 결제 요청 동시 진행 → Lock에 의해 하나만 성공
         @Test
         void 취소와_결제_동시_요청_시_하나만_성공한다() throws InterruptedException {
             BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -481,7 +482,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(cancelSuccess.get() + retrySuccess.get()).isEqualTo(1);
         }
 
-        // 30. 빌링 5건 생성(재고 미차감) → 이후 주문 생성 시 CAS에 의해 재고 한도 내에서만 성공
+        // 빌링 5건 생성(재고 미차감) → 이후 주문 생성 시 CAS에 의해 재고 한도 내에서만 성공
         @ParameterizedTest(name = "빌링 {1}건 생성, 재고 {0}개 → 주문 {2}건만 성공")
         @CsvSource({
                 "3, 5, 3",
@@ -535,12 +536,12 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(updatedReward.getRemainQty()).isEqualTo(stock - expectedSuccess);
         }
     }
-    
+
     @Nested
     @DisplayName("전체 플로우 통합테스트")
     class FullFlowIntegrationTest {
 
-        // 31. 빌링 생성 → 주문 생성 → 취소 → 재고 복구까지 전체 플로우
+        // 빌링 생성 → 주문 생성 → 취소 → 재고 복구까지 전체 플로우
         @Test
         void 빌링_생성부터_취소까지_전체_플로우가_정상_동작한다() {
             // 1. 빌링 생성 (PENDING)
@@ -570,7 +571,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(afterCancel.getRemainQty()).isEqualTo(10); // 원복
         }
 
-        // 32. 취소된 주문에 다시 결제 시작 → 상태 전이 불가
+        // 취소된 주문에 다시 결제 시작 → 상태 전이 불가
         @Test
         void 취소된_주문은_다시_결제를_시작할_수_없다() {
             BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
@@ -586,7 +587,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             orderService.cancelOrder(1L, billing.orderId());
 
             // 취소 후 다시 결제 시도
-            org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () ->
+            assertThrows(Exception.class, () ->
                     orderService.createOrder(1L, createReqDto)
             );
         }
