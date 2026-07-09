@@ -32,10 +32,4 @@ public class AuthController {
 
     }
 
-    @DeleteMapping("/{authId}")
-    public ResponseEntity<Void> deleteAuth(@PathVariable Long authId) {
-        authService.deleteAuth(authId);
-        return ResponseEntity.ok().build();
-    }
-
 }

@@ -10,7 +10,6 @@ import com.bds.auth.global.exception.ErrorCode;
 import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.AuthLocalAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
-import com.bds.auth.infrastructure.persistence.repository.AuthJpaRepository;
 import com.bds.auth.infrastructure.persistence.repository.AuthLocalJpaRepository;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
@@ -31,7 +30,6 @@ public class AuthService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
-    private final AuthJpaRepository authJpaRepo;
     private final AuthLocalJpaRepository authLocalJpaRepo;
 
     @Transactional
@@ -52,7 +50,7 @@ public class AuthService {
         if (redisCode == null) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_EXPIRED);
         }
-        if (!redisCode.equals(code)) {
+        if (!code.equals(redisCode)) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_MISMATCH);
         }
 

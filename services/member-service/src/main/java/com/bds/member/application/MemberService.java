@@ -23,7 +23,6 @@ public class MemberService {
 
     private final AuthFeignClient authFeignClient;
     private final MemberAdapter memberAdapter;
-    private final MemberRepository memberRepo;
 
     @Transactional
     public void signUp(MemberSignupRequestDto requestDto) {

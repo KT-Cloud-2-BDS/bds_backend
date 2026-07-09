@@ -32,7 +32,7 @@ public class AuthInternalController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @DeleteMapping("/internal/{authId}")
+    @DeleteMapping("/{authId}")
     public ResponseEntity<Void> deleteAuth(@PathVariable("authId") Long authId) {
         authService.deleteAuth(authId);
         return ResponseEntity.ok().build();

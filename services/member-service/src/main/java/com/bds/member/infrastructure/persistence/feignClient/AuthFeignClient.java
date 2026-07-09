@@ -20,6 +20,6 @@ public interface AuthFeignClient {
     @PostMapping("/api/auth/login")
     ResponseEntity<AuthLoginResponseDto> login(@RequestBody AuthLoginRequestDto requestDto);
 
-    @DeleteMapping("/api/auth/internal/{authId}")
+    @DeleteMapping("/api/auth/{authId}")
     ResponseEntity<Void> deleteAuth(@PathVariable("authId") Long authId);
 }
