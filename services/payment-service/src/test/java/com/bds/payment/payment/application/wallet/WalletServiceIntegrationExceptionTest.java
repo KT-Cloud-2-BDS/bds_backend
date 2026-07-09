@@ -169,7 +169,7 @@ class WalletServiceIntegrationExceptionTest {
 
         @ParameterizedTest
         @ValueSource(longs = {0L, -1L, -10000L})
-        void 충전_시_금액이_0이하이면_예외가_발생한다(Long invalidAmount) {
+        void 출금_시_금액이_0이하이면_예외가_발생한다(Long invalidAmount) {
             // given
             Long memberId = 1L;
             WalletJpaEntity walletJpaEntity = WalletJpaEntity.builder()
@@ -190,7 +190,7 @@ class WalletServiceIntegrationExceptionTest {
 
         @ParameterizedTest
         @NullSource
-        void 충전_시_금액이_null이면_예외가_발생한다(Long nullAmount) {
+        void 출금_시_금액이_null이면_예외가_발생한다(Long nullAmount) {
             //given
             Long memberId = 1L;
             WalletJpaEntity walletJpaEntity = WalletJpaEntity.builder()
