@@ -20,7 +20,7 @@ public class ChatRoomController {
     private final InquiryRoomMemberService inquiryRoomMemberService;
 
     // 1:1 문의 채팅방 생성
-    @PostMapping("/inquiry")
+    @PostMapping("/Inquiries")
     public ResponseEntity<ChatRoomResponseDto> createInquiryRoom(
             @RequestBody ChatRoomCreateRequestDto request,
             @LoginUser CurrentUser currentUser
@@ -30,7 +30,7 @@ public class ChatRoomController {
     }
 
     // 내 참여 문의 채팅방 목록 조회
-    @GetMapping("/inquiry")
+    @GetMapping("/Inquiries")
     public ResponseEntity<InquiryRoomListResponseDto> getMyInquiryRooms(
             @RequestParam(required = false) Long cursor,
             @LoginUser CurrentUser currentUser
@@ -40,7 +40,7 @@ public class ChatRoomController {
     }
 
     // 1:1 문의 채팅방 상세 조회
-    @GetMapping("/inquiry/{roomId}")
+    @GetMapping("/Inquiries/{roomId}")
     public ResponseEntity<InquiryChatRoomDetailResponseDto> getInquiryRoom(
             @PathVariable Long roomId,
             @LoginUser CurrentUser currentUser
@@ -50,7 +50,7 @@ public class ChatRoomController {
     }
 
     // 공개 채팅방 삭제
-    @PatchMapping("/rooms/{roomId}/close")
+    @DeleteMapping("/rooms/{roomId}/close")
     public ResponseEntity<ChatRoomDeleteResponseDto> closeRoom(
             @PathVariable Long roomId,
             @LoginUser CurrentUser currentUser
@@ -60,7 +60,7 @@ public class ChatRoomController {
     }
 
     // 1:1 문의 채팅방 나가기
-    @DeleteMapping("/inquiry/{roomId}/members/me")
+    @DeleteMapping("/Inquiries/{roomId}/members/me")
     public ResponseEntity<InquiryMemberLeaveResponseDto> leaveInquiryRoom(
             @PathVariable Long roomId,
             @LoginUser CurrentUser currentUser
@@ -69,7 +69,7 @@ public class ChatRoomController {
     }
 
     // 공개 채팅방 조회
-    @GetMapping("/funding/{productId}")
+    @GetMapping("/fundings/{productId}")
     public ResponseEntity<ChatRoomResponseDto> getFundingRoom(
             @PathVariable Long productId
     ) {
