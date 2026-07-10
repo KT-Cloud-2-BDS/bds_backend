@@ -198,7 +198,7 @@ class OrderServiceUnitExceptionTest {
         @Test
         void 주문이_존재하지_않으면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(999L, List.of(), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(999L, 1L, true);
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
@@ -214,7 +214,7 @@ class OrderServiceUnitExceptionTest {
         @Test
         void 본인의_주문이_아니면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
@@ -232,7 +232,7 @@ class OrderServiceUnitExceptionTest {
         @Test
         void 상태_전이가_불가하면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
@@ -250,9 +250,7 @@ class OrderServiceUnitExceptionTest {
         @Test
         void 재고가_부족하면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(
-                    new RewardQuantityDto(1L, 2)
-            ), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),

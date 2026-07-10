@@ -173,8 +173,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 2);
 
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    orderId, List.of(new RewardQuantityDto(savedReward.getId(), 2)),
-                    savedFunding.getId(), true
+                    orderId, savedFunding.getId(), true
             );
 
             OrderCreateResponseDto result = orderService.createOrder(1L, reqDto);
@@ -199,8 +198,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             BillingResponseDto billing = orderService.createBilling(memberId, billingReqDto);
 
             OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
-                    billing.orderId(), List.of(new RewardQuantityDto(savedReward.getId(), qty)),
-                    savedFunding.getId(), true
+                    billing.orderId(), savedFunding.getId(), true
             );
             orderService.createOrder(memberId, createReqDto);
 
@@ -300,8 +298,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
 
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    billing.orderId(), List.of(new RewardQuantityDto(savedReward.getId(), 1)),
-                    savedFunding.getId(), true
+                    billing.orderId(), savedFunding.getId(), true
             );
 
             int threadCount = 10;
@@ -358,8 +355,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
                 executor.submit(() -> {
                     try {
                         OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                                orderId, List.of(new RewardQuantityDto(rewardStock1.getId(), 1)),
-                                savedFunding.getId(), true
+                                orderId, savedFunding.getId(), true
                         );
                         orderService.createOrder(memberId, reqDto);
                         successCount.incrementAndGet();
@@ -412,8 +408,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
                 executor.submit(() -> {
                     try {
                         OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                                orderId, List.of(new RewardQuantityDto(rewardWithStock.getId(), 1)),
-                                savedFunding.getId(), true
+                                orderId, savedFunding.getId(), true
                         );
                         orderService.createOrder(memberId, reqDto);
                         successCount.incrementAndGet();
@@ -443,8 +438,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
 
             OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
-                    billing.orderId(), List.of(new RewardQuantityDto(savedReward.getId(), 2)),
-                    savedFunding.getId(), true
+                    billing.orderId(), savedFunding.getId(), true
             );
             orderService.createOrder(1L, createReqDto);
 
@@ -514,8 +508,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
                 executor.submit(() -> {
                     try {
                         OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                                orderId, List.of(new RewardQuantityDto(rewardWithStock.getId(), 1)),
-                                savedFunding.getId(), true
+                                orderId, savedFunding.getId(), true
                         );
                         orderService.createOrder(memberId, reqDto);
                         successCount.incrementAndGet();
@@ -553,8 +546,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
 
             // 2. 주문 생성 (PAYING), 재고 차감
             OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
-                    billingResult.orderId(), List.of(new RewardQuantityDto(savedReward.getId(), 2)),
-                    savedFunding.getId(), true
+                    billingResult.orderId(), savedFunding.getId(), true
             );
             OrderCreateResponseDto createResult = orderService.createOrder(1L, createReqDto);
             assertThat(createResult.orderNo()).isNotNull();
@@ -580,8 +572,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
 
             OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
-                    billing.orderId(), List.of(new RewardQuantityDto(savedReward.getId(), 1)),
-                    savedFunding.getId(), true
+                    billing.orderId(), savedFunding.getId(), true
             );
             orderService.createOrder(1L, createReqDto);
             orderService.cancelOrder(1L, billing.orderId());

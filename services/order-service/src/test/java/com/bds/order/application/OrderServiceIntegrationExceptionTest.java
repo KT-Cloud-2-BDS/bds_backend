@@ -154,8 +154,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 1);
 
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    orderId, List.of(new RewardQuantityDto(savedReward.getId(), 1)),
-                    savedFunding.getId(), true
+                    orderId, savedFunding.getId(), true
             );
 
             assertThatThrownBy(() -> orderService.createOrder(999L, reqDto))
@@ -168,8 +167,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 1);
 
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    orderId, List.of(new RewardQuantityDto(savedReward.getId(), 1)),
-                    savedFunding.getId(), true
+                    orderId, savedFunding.getId(), true
             );
 
             orderService.createOrder(1L, reqDto); // 첫 번째 성공
@@ -193,15 +191,13 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             // 회원B: 빌링 생성 + 주문 생성 (1개 차감) → 잔여 재고 1개
             Long orderIdB = createBillingAndGetOrderId(2L, rewardStock2.getId(), 1);
             OrderCreateRequestDto reqDtoB = new OrderCreateRequestDto(
-                    orderIdB, List.of(new RewardQuantityDto(rewardStock2.getId(), 1)),
-                    savedFunding.getId(), true
+                    orderIdB, savedFunding.getId(), true
             );
             orderService.createOrder(2L, reqDtoB);
 
             // 회원A: 주문 생성 시도 (2개 필요한데 잔여 1개 → 실패)
             OrderCreateRequestDto reqDtoA = new OrderCreateRequestDto(
-                    orderIdA, List.of(new RewardQuantityDto(rewardStock2.getId(), 2)),
-                    savedFunding.getId(), true
+                    orderIdA, savedFunding.getId(), true
             );
 
             assertThatThrownBy(() -> orderService.createOrder(1L, reqDtoA))
@@ -216,8 +212,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         @Test
         void 존재하지_않는_주문이면_예외를_던진다() {
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    999L, List.of(new RewardQuantityDto(savedReward.getId(), 1)),
-                    savedFunding.getId(), true
+                    999L, savedFunding.getId(), true
             );
 
             assertThatThrownBy(() -> orderService.createOrder(1L, reqDto))
@@ -236,8 +231,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             BillingResponseDto billing = orderService.createBilling(memberId, billingReqDto);
 
             OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
-                    billing.orderId(), List.of(new RewardQuantityDto(savedReward.getId(), 1)),
-                    savedFunding.getId(), true
+                    billing.orderId(), savedFunding.getId(), true
             );
             orderService.createOrder(memberId, createReqDto);
 

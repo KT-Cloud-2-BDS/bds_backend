@@ -211,7 +211,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 주문이_존재하지_않으면_404를_응답한다() throws Exception {
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(999L, List.of(), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(999L, 1L, true);
 
             given(orderService.createOrder(eq(1L), any()))
                     .willThrow(new BusinessException(ErrorCode.ORDER_NOT_FOUND));
@@ -226,7 +226,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 본인의_주문이_아니면_403을_응답한다() throws Exception {
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
             given(orderService.createOrder(eq(1L), any()))
                     .willThrow(new BusinessException(ErrorCode.ORDER_ACCESS_DENIED));
@@ -241,7 +241,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 상태_변경이_불가하면_400을_응답한다() throws Exception {
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
             given(orderService.createOrder(eq(1L), any()))
                     .willThrow(new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED));
@@ -256,7 +256,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 재고가_부족하면_409를_응답한다() throws Exception {
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
             given(orderService.createOrder(eq(1L), any()))
                     .willThrow(new BusinessException(ErrorCode.REWARD_STOCK_INSUFFICIENT));

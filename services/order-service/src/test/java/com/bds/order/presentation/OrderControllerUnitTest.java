@@ -144,9 +144,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
 
         @Test
         void 정상적으로_주문을_생성하면_200을_응답한다() throws Exception {
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(
-                    new RewardQuantityDto(1L, 2)
-            ), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
             OrderCreateResponseDto responseDto = new OrderCreateResponseDto(
                     1L, "ORD-001", 36000L, null, null);

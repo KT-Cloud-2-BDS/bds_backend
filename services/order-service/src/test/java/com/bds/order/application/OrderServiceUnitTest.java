@@ -294,9 +294,7 @@ class OrderServiceUnitTest {
             Long memberId = 1L;
             LocalDateTime now = LocalDateTime.now();
 
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, List.of(
-                    new RewardQuantityDto(1L, 2)
-            ), 1L, true);
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
