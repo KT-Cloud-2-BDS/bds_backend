@@ -30,6 +30,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -173,7 +175,8 @@ public class NotificationServiceTest {
       Pageable pageable = PageRequest.of(0, 20);
 
       Notification notification = mock(Notification.class);
-      List<Notification> notifications = List.of(notification);
+      Page<Notification> notifications = new PageImpl<>(List.of(notification));
+      // Page<Notification> notifications = mock(Page.class);
 
       when(notificationRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable))
           .thenReturn(notifications);
@@ -183,7 +186,7 @@ public class NotificationServiceTest {
           pageable);
 
       //then
-      assertThat(responseDto.notifications().size()).isEqualTo(notifications.size());
+      assertThat(responseDto.notifications().size()).isEqualTo(notifications.getContent().size());
       verify(notificationRepository).markAllAsReadByMemberId(memberId);
     }
   }

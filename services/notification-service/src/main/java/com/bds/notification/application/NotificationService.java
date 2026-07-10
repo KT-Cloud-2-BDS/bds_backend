@@ -15,6 +15,7 @@ import com.bds.notification.presentation.dto.UnreadCountResponseDto;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,18 +50,18 @@ public class NotificationService {
   // 알림 리스트 반환
   @Transactional
   public NotificationListResponseDto getNotifications(Long memberId, Pageable pageable) {
-    List<Notification> notifications = notificationRepository.findByMemberIdOrderByCreatedAtDesc(
+    Page<Notification> notifications = notificationRepository.findByMemberIdOrderByCreatedAtDesc(
         memberId, pageable);
 
     long unReadCount = notificationRepository.countByMemberIdAndIsReadFalse(memberId);
 
-    List<NotificationResponseDto> responses = notifications.stream()
+    List<NotificationResponseDto> responses = notifications.getContent().stream()
         .map(NotificationResponseDto::from)
         .toList();
 
     notificationRepository.markAllAsReadByMemberId(memberId);
 
-    return NotificationListResponseDto.of(responses, notifications.size(), unReadCount);
+    return NotificationListResponseDto.of(responses, notifications.getTotalElements(), unReadCount);
   }
 
   // 읽지 않은 알림 반환
