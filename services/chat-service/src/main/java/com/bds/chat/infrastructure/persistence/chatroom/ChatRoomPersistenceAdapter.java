@@ -56,6 +56,7 @@ public class ChatRoomPersistenceAdapter implements ChatRoomRepository {
         ChatRoomJpaEntity saved = jpaRepository.save(mapper.toJpaEntity(chatRoom));
         if (chatRoom.getId() == null) {
             chatRoom.assignId(ChatRoomId.of(saved.getId()));
+            return chatRoom;
         }
         return mapper.toDomain(saved);
     }
