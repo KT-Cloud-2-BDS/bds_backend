@@ -15,6 +15,7 @@ import com.bds.notification.presentation.dto.UnreadCountResponseDto;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -85,8 +86,11 @@ public class NotificationService {
         .memberId(memberId)
         .targetId(targetId)
         .build();
-
-    notificationSubscriptionRepository.save(notificationSubscription);
+    try {
+      notificationSubscriptionRepository.save(notificationSubscription);
+    } catch (DataIntegrityViolationException e) {
+      throw new BusinessException(ErrorCode.SUBSCRIPTION_ALREADY_EXISTS);
+    }
 
     return new NotificationSubscribeResponseDto(targetType, targetId, true);
   }
