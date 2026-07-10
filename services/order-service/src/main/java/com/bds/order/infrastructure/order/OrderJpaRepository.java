@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> {
 
-    @Query("SELECT new com.bds.order.infrastructure.order.OrderListProjection(" +
+    @Query("SELECT DISTINCT new com.bds.order.infrastructure.order.OrderListProjection(" +
             "o.id, o.orderNo, o.status, o.totalRewardAmount, o.totalShippingCharge, o.createdAt, " +
             "f.title, f.creatorId, f.holdTo, f.isSuccess) " +
             "FROM OrderJpaEntity o " +

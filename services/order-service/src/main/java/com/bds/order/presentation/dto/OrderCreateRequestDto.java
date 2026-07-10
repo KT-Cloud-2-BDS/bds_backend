@@ -1,11 +1,10 @@
 package com.bds.order.presentation.dto;
 
-import java.util.List;
+import jakarta.validation.constraints.NotNull;
 
 public record OrderCreateRequestDto(
-        Long orderId,
-        List<RewardQuantityDto> rewards,
-        Long fundingId,
+        @NotNull Long orderId,
+        @NotNull Long fundingId,
         Boolean isNowPay
 ) {
 }

@@ -3,6 +3,7 @@ package com.bds.order.global.exception;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -78,9 +79,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException e) {
+        HttpStatus status = HttpStatus.valueOf(e.getStatusCode().value());
         return ResponseEntity
-                .status(e.getStatusCode())
-                .body(new ErrorResponse(e.getStatusCode().toString(), e.getReason(), null));
+                .status(status)
+                .body(new ErrorResponse(status.name(), status.getReasonPhrase(), e.getReason()));
     }
 
     @ExceptionHandler(PessimisticLockingFailureException.class)

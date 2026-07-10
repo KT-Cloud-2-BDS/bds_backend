@@ -91,14 +91,11 @@ POST /api/orders
 
 #### Request Body
 
-| 필드               | 타입       | 필수 | 설명                    |
-|------------------|----------|----|-----------------------|
-| `orderId`        | Long     | Y  | 주문 ID                 |
-| `rewards`        | Object[] | Y  | 주문 리워드 목록             |
-| `rewards[].id`   | Long     | Y  | 리워드 ID                |
-| `rewards[].qty`  | Integer  | Y  | 수량                    |
-| `idempotencyKey` | String   | Y  | 멱등성 키 (클라이언트 생성 UUID) |
-| `isNowPay`       | Boolean  | N  | 예약 주문 여부              |
+| 필드          | 타입       | 필수 | 설명       |
+|-------------|----------|----|----------|
+| `orderId`   | Long     | Y  | 주문 ID    |
+| `fundingId` | Long     | Y  | 펀딩 ID    |
+| `isNowPay`  | Boolean  | N  | 예약 주문 여부 |
 
 #### Response Body
 

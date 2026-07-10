@@ -14,6 +14,6 @@ public record OrderListProjection(
         String fundingTitle,
         Long hostId,
         LocalDateTime holdTo,
-        boolean isSuccess
+        Boolean isSuccess
 ) {
 }

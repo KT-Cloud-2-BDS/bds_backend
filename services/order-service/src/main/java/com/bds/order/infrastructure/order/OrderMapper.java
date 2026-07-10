@@ -41,6 +41,7 @@ public class OrderMapper {
     public OrderJpaEntity toJpaEntity(Order domain) {
         OrderJpaEntity entity = OrderJpaEntity.builder()
                 .id(domain.getId())
+                .orderNo(domain.getOrderNo())
                 .memberId(domain.getMemberId())
                 .status(domain.getStatus())
                 .totalRewardAmount(domain.getTotalRewardAmount())
