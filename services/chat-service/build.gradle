@@ -15,6 +15,10 @@ jacocoTestReport {
 test {
     finalizedBy jacocoTestReport
     systemProperty 'spring.profiles.active', 'local'
+    testLogging {
+                exceptionFormat 'full'
+                events 'failed'
+        }
 }
 
 dependencies {
