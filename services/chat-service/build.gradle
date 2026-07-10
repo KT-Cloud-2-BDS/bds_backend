@@ -14,7 +14,7 @@ jacocoTestReport {
 
 test {
     finalizedBy jacocoTestReport
-    environment 'SPRING_PROFILES_ACTIVE', ''
+    systemProperty 'spring.profiles.active', 'local'
 }
 
 dependencies {
