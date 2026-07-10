@@ -114,7 +114,7 @@ public class OrderService {
 
         // TODO: Calling Payment API 결제 시작
         orderRepository.save(order);
-        return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), null, null);
+        return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), order.getStatus(), LocalDateTime.now());
     }
 
     @Transactional

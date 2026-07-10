@@ -104,8 +104,8 @@ POST /api/orders
     "memberId": 1,
     "orderNo": "ORD-20250201-00001",
     "totalBillingAmount": 187400,
-    "paymentStatus": "PAID",
-    "paidAt": "2025-02-01T14:30:00"
+    "orderStatus": "PAYING",
+    "payRequestedAt": "2025-02-01T14:30:00"
 }
 ```
 
