@@ -81,7 +81,7 @@ jobs:
           RABBITMQ_USERNAME: bds
           RABBITMQ_PASSWORD: bds1234
           CORS_ALLOWED_ORIGINS: http://localhost:3000
-        run: ./gradlew :services:chat-service:clean :services:chat-service:build :services:chat-service:jacocoTestReport
+        run: ./gradlew :services:chat-service:clean :services:chat-service:build :services:chat-service:jacocoTestReport --stacktrace
 
       - name: Upload Coverage Report
         if: always()
