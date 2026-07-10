@@ -14,6 +14,9 @@ import com.bds.notification.domain.notification.repository.NotificationSubscript
 import com.bds.notification.presentation.dto.NotificationListResponseDto;
 import com.bds.notification.presentation.dto.NotificationSubscribeResponseDto;
 import com.bds.notification.presentation.dto.UnreadCountResponseDto;
+import javax.sql.DataSource;
+import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,6 +43,15 @@ public class NotificationServiceIntegrationTest {
     registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
     registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
     registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
+  }
+
+  @BeforeAll
+  static void runMigration(@Autowired DataSource dataSource) {
+    Flyway.configure()
+        .dataSource(dataSource)
+        .locations("classpath:db/migration")
+        .load()
+        .migrate();
   }
 
   @Autowired
