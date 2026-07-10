@@ -2,17 +2,16 @@ plugins {
     id 'jacoco'
 }
 
-
 dependencies {
     // 공통 모듈 의존성 주입
     implementation project(':modules:common')
 
-    // 인증 서비스 전용 의존성 주입
+    // 회원 서비스 전용 의존성 주입
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.postgresql:postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    //spring security
+    // spring security
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
     // JWT 토큰 라이브러리
@@ -20,18 +19,16 @@ dependencies {
     runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly    'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
-    //SMTP 메일 발송
+    // SMTP 메일 발송
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-    //테스트 라이브러리
+    // 테스트 라이브러리
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.mockito:mockito-junit-jupiter'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     testImplementation 'com.h2database:h2'
-
-
 }
 
 jacoco {
@@ -44,6 +41,16 @@ test {
     finalizedBy jacocoTestReport
 }
 
+def jacocoExcludeFilter = [
+        "**/*Exception*",
+        "**/global/exception/**",
+        "**/infrastructure/persistence/**",
+        "**/infrastructure/security/**",
+        "**/presentation/**",
+        "**/domain/entity/enums/**",
+        "**/*Application*"
+]
+
 jacocoTestReport {
     dependsOn test
 
@@ -53,18 +60,10 @@ jacocoTestReport {
         csv.required = false
     }
 
-    // DTO, global, Exception 클래스들을 커버리지 측정 대상에서 제외
+    // 리포트 생성 시 대상 파일 트리에서 제외
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                    "**/*Exception*",
-                    "**/global/exception/**",
-                    "**/infrastructure/persistence/**",
-                    "**/infrastructure/security/**",
-                    "**/presentation/**",
-                    "**/domain/entity/enums/**",
-                    "**/*Application*"
-            ])
+            fileTree(dir: it, exclude: jacocoExcludeFilter)
         }))
     }
 }
@@ -72,6 +71,12 @@ jacocoTestReport {
 // 자코코 커버리지 80% 충족 여부 검증 설정
 jacocoTestCoverageVerification {
     dependsOn jacocoTestReport
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoExcludeFilter)
+        }))
+    }
 
     violationRules {
         rule {
@@ -91,15 +96,6 @@ jacocoTestCoverageVerification {
                 minimum = 0.80
             }
 
-            excludes = [// 모든 DTO 파일 제외
-                    "**/*Exception*",
-                    "**/global/exception/**",
-                    "**/infrastructure/persistence/**",
-                    "**/infrastructure/security/**",
-                    "**/presentation/**",
-                    "**/domain/entity/enums/**",
-                    "**/*Application*"
-            ]
         }
     }
 }
