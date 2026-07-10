@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class EmailService {
 
     private final JavaMailSender mailSender;
@@ -32,10 +31,8 @@ public class EmailService {
                 "3분 이내에 입력해 주세요. 감사합니다.");
 
             mailSender.send(message);
-            log.info("[메일 발송 성공] to={}", toEmail);
 
         } catch (MailException e) {
-            log.error("[메일 발송 실패] 인증 메일 전송 중 예외 발생: to={}, 원인={}", toEmail, e.getMessage(), e);
         }
     }
 }

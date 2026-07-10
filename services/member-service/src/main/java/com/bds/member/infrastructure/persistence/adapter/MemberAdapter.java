@@ -17,7 +17,7 @@ public class MemberAdapter {
 
     public void save(Member member) {
         MemberJpaEntity jpaEntity =memberMapper.toJpaEntity(member);
-        memberRepo.save(jpaEntity);
+        memberRepo.saveAndFlush(jpaEntity);
     }
 
     public boolean existsByNickname(String nickname) {

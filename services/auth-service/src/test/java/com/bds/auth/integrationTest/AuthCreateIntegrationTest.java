@@ -90,7 +90,7 @@ public class AuthCreateIntegrationTest {
             .getSingleResult();
 
         org.junit.jupiter.api.Assertions.assertNotNull(savedEncodedPassword);
-        org.junit.jupiter.api.Assertions.assertNotEquals(password, savedEncodedPassword, "비밀번호는 평문이 아니라 암호화 되어 저장되어야 합니다!");
+        org.junit.jupiter.api.Assertions.assertNotEquals(password, savedEncodedPassword, "비밀번호는 평문이 아니라 암호화 되어 저장되어야 합니다.");
     }
 
     @Test
@@ -132,7 +132,7 @@ public class AuthCreateIntegrationTest {
             .setParameter("email", email)
             .getSingleResult();
 
-        org.junit.jupiter.api.Assertions.assertEquals("ACTIVE", currentStatus, "기존 DELETED 상태였던 계정이 ACTIVE 상태로 복구되어야 합니다!");
+        org.junit.jupiter.api.Assertions.assertEquals("ACTIVE", currentStatus, "기존 DELETED 상태였던 계정이 ACTIVE 상태로 복구되어야 합니다.");
 
         // 비밀번호 매칭 검증
         String savedEncodedPassword = (String) em.createNativeQuery(
@@ -142,5 +142,6 @@ public class AuthCreateIntegrationTest {
             .getSingleResult();
 
         org.junit.jupiter.api.Assertions.assertNotNull(savedEncodedPassword);
+        org.junit.jupiter.api.Assertions.assertNotEquals(password, savedEncodedPassword, "복구 시에도 비밀번호는 암호화 되어 저장되어야 합니다.");
     }
 }
