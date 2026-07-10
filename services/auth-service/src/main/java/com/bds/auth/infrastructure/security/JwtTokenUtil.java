@@ -16,13 +16,16 @@ public class JwtTokenUtil {
 
     private final SecretKey signingKey;
     private final long accessTokenExpirationPeriod;
+    private final long refreshTokenExpirationPeriod;
 
     public JwtTokenUtil(
         @Value("${jwt.secret}") String secretKey,
-        @Value("${jwt.expiration.access}") long accessTokenExpirationPeriod
+        @Value("${jwt.expiration.access}") long accessTokenExpirationPeriod,
+        @Value("${jwt.expiration.refresh}") long refreshTokenExpirationPeriod
     ){
         this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         this.accessTokenExpirationPeriod = accessTokenExpirationPeriod;
+        this.refreshTokenExpirationPeriod = refreshTokenExpirationPeriod;
     }
 
     public String createAccessToken(Long authId, String email, Role role) {
@@ -43,7 +46,7 @@ public class JwtTokenUtil {
 
     public String createRefreshToken(Long authId) {
         Instant now = Instant.now();
-        Instant expiry = now.plus(7, ChronoUnit.DAYS);
+        Instant expiry = now.plus(refreshTokenExpirationPeriod, ChronoUnit.MILLIS);
 
         return Jwts.builder()
             .subject(String.valueOf(authId))

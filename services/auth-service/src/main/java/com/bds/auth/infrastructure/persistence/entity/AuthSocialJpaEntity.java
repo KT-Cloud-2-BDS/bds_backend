@@ -33,7 +33,7 @@ public class AuthSocialJpaEntity {
     @Column(nullable = false, length = 50)
     private String email;
 
-    @JoinColumn(nullable = false)
+    @Column(nullable = false)
     private Long authId;
 
 }

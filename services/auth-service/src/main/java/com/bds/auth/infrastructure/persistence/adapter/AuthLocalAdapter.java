@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 public class AuthLocalAdapter {
 
     private final AuthLocalJpaRepository authLocalJpaRepo;
-    private final AuthLocalMapper authLocalMapper;
 
     public AuthLocal save(AuthLocal authLocal) {
         AuthLocalJpaEntity jpaEntity = AuthLocalMapper.toJpaEntity(authLocal);
@@ -24,5 +23,9 @@ public class AuthLocalAdapter {
     public Optional<AuthLocal> findByAuthId(Long authId) {
         return authLocalJpaRepo.findByAuthId(authId)
             .map(AuthLocalMapper::toDomain);
+    }
+
+    public void deleteByAuthId(Long authId) {
+        authLocalJpaRepo.deleteByAuthId(authId);
     }
 }

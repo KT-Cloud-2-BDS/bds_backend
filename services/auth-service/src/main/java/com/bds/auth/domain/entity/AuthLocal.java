@@ -12,6 +12,9 @@ public class AuthLocal {
     private Long authId;
 
     public static AuthLocal create(Long authId, String password) {
+        if (authId == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
         if (password == null || password.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }

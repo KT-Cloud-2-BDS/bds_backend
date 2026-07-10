@@ -13,6 +13,7 @@ import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
 import com.bds.auth.infrastructure.persistence.repository.AuthLocalJpaRepository;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
+import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,12 +33,15 @@ public class AuthService {
     private final JwtTokenUtil jwtTokenUtil;
     private final AuthLocalJpaRepository authLocalJpaRepo;
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     @Transactional
     public void sendSignUpVerificationCode(String email) {
         if (authAdapter.existsByEmail(email)) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
-        String verificationCode = String.valueOf((int)(Math.random() * 899999) + 100000);
+
+        String verificationCode = String.valueOf(SECURE_RANDOM.nextInt(900_000) + 100_000);
 
         redisAdapter.put("verify:" + email, verificationCode, 3);
         emailService.sendVerificationEmail(email, verificationCode);
@@ -66,6 +70,10 @@ public class AuthService {
             throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
         }
 
+        if (authAdapter.existsByEmail(email)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
         Auth newAuth = Auth.create(
             email,
             Status.ACTIVE,
@@ -79,6 +87,7 @@ public class AuthService {
             encodedPassword
         );
         authLocalAdapter.save(newAuthLocal);
+        redisAdapter.delete("verified:" + email);
 
         return savedAuth.getId();
     }
@@ -87,6 +96,10 @@ public class AuthService {
     public AuthLoginResponseDto login(String email, String password) {
         Auth auth = authAdapter.findByEmail(email)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        if (auth.getStatus() != Status.ACTIVE) {
+            throw new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
 
         AuthLocal authLocal = authLocalAdapter.findByAuthId(auth.getId())
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
@@ -113,6 +126,9 @@ public class AuthService {
         auth.changeStatus(Status.DELETED);
         authAdapter.save(auth);
 
-        authLocalJpaRepo.deleteByAuthId(authId);
+        authLocalAdapter.deleteByAuthId(authId);
+
+        redisAdapter.delete("refresh:" + authId);
+
     }
 }
