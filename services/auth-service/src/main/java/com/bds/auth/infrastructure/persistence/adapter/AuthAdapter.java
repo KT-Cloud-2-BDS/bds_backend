@@ -1,6 +1,7 @@
 package com.bds.auth.infrastructure.persistence.adapter;
 
 import com.bds.auth.domain.entity.Auth;
+import com.bds.auth.domain.entity.enums.Status;
 import com.bds.auth.infrastructure.persistence.entity.AuthJpaEntity;
 import com.bds.auth.infrastructure.persistence.mapper.AuthMapper;
 import com.bds.auth.infrastructure.persistence.repository.AuthJpaRepository;
@@ -15,8 +16,8 @@ public class AuthAdapter {
     private final AuthJpaRepository authJpaRepo;
     private final AuthMapper authMapper;
 
-    public boolean existsByEmail(String email) {
-        return authJpaRepo.existsByEmail(email);
+    public boolean existsByEmailAndStatus(String email, Status status) {
+        return authJpaRepo.existsByEmailAndStatus(email, status);
     }
 
     public Auth save(Auth auth) {

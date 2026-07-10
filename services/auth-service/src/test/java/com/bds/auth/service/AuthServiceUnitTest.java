@@ -66,7 +66,7 @@ public class AuthServiceUnitTest {
         public void 인증코드발송_성공() {
             // given
             String email = "yeojin@email.com";
-            given(authAdapter.existsByEmail(anyString())).willReturn(false);
+            given(authAdapter.existsByEmailAndStatus(anyString(), eq(Status.ACTIVE))).willReturn(false);
 
             // when
             authService.sendSignUpVerificationCode(email);
@@ -101,8 +101,8 @@ public class AuthServiceUnitTest {
     @DisplayName("계정 생성 기능")
     public class CreateAccount {
         @Test
-        @DisplayName("이메일 인증 확인 티켓이 유효하고 중복 이메일이 없으면 계정이 정상 생성된다")
-        public void 계정생성_성공() {
+        @DisplayName("이메일 인증 확인 티켓이 유효하고 중복 이메일이 없으면 신규 계정이 정상 생성된다")
+        public void 계정생성_신규_성공() {
             // given
             String email = "yeojin@email.com";
             String password = "password123!";
@@ -111,7 +111,9 @@ public class AuthServiceUnitTest {
             given(mockAuth.getId()).willReturn(1L);
 
             given(redisAdapter.get("verified:" + email)).willReturn("true");
-            given(authAdapter.existsByEmail(email)).willReturn(false);
+            given(authAdapter.existsByEmailAndStatus(email, Status.ACTIVE)).willReturn(false);
+
+            given(authAdapter.findByEmail(email)).willReturn(Optional.empty());
             given(authAdapter.save(any(Auth.class))).willReturn(mockAuth);
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
 
@@ -121,6 +123,34 @@ public class AuthServiceUnitTest {
             // then
             assertEquals(1L, savedId);
             verify(authAdapter, times(1)).save(any(Auth.class));
+            verify(authLocalAdapter, times(1)).save(any(AuthLocal.class));
+            verify(redisAdapter, times(1)).delete("verified:" + email);
+        }
+
+        @Test
+        @DisplayName("탈퇴한 기존 계정이 존재하면 상태를 ACTIVE로 복구하여 가입을 처리한다")
+        public void 계정생성_기존탈퇴회원_복구_성공() {
+            // given
+            String email = "jinjinjala312@naver.com";
+            String password = "password123!";
+
+            Auth mockExistingAuth = mock(Auth.class);
+            given(mockExistingAuth.getId()).willReturn(24L);
+
+            given(redisAdapter.get("verified:" + email)).willReturn("true");
+            given(authAdapter.existsByEmailAndStatus(email, Status.ACTIVE)).willReturn(false);
+
+            given(authAdapter.findByEmail(email)).willReturn(Optional.of(mockExistingAuth));
+            given(authAdapter.save(mockExistingAuth)).willReturn(mockExistingAuth);
+            given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
+
+            // when
+            Long savedId = authService.createAccount(email, password);
+
+            // then
+            assertEquals(24L, savedId);
+            verify(mockExistingAuth, times(1)).changeStatus(Status.ACTIVE);
+            verify(authAdapter, times(1)).save(mockExistingAuth);
             verify(authLocalAdapter, times(1)).save(any(AuthLocal.class));
             verify(redisAdapter, times(1)).delete("verified:" + email);
         }

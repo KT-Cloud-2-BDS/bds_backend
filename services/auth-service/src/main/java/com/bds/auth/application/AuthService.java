@@ -14,6 +14,7 @@ import com.bds.auth.infrastructure.persistence.repository.AuthLocalJpaRepository
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
 import java.security.SecureRandom;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,13 +32,12 @@ public class AuthService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
-    private final AuthLocalJpaRepository authLocalJpaRepo;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Transactional
     public void sendSignUpVerificationCode(String email) {
-        if (authAdapter.existsByEmail(email)) {
+        if (authAdapter.existsByEmailAndStatus(email, Status.ACTIVE)) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
@@ -70,22 +70,26 @@ public class AuthService {
             throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
         }
 
-        if (authAdapter.existsByEmail(email)) {
+        if (authAdapter.existsByEmailAndStatus(email, Status.ACTIVE)) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        Auth newAuth = Auth.create(
-            email,
-            Status.ACTIVE,
-            Role.SUPPORTER
-        );
-        Auth savedAuth = authAdapter.save(newAuth);
+        Optional<Auth> existingDeletedAuth = authAdapter.findByEmail(email);
+
+
+        Auth savedAuth;
+        if (existingDeletedAuth.isPresent()) {
+            savedAuth = existingDeletedAuth.get();
+            savedAuth.changeStatus(Status.ACTIVE);
+            authAdapter.save(savedAuth);
+        } else {
+            Auth newAuth = Auth.create(email, Status.ACTIVE, Role.SUPPORTER);
+            savedAuth = authAdapter.save(newAuth);
+        }
 
         String encodedPassword = passwordEncoder.encode(password);
-        AuthLocal newAuthLocal = AuthLocal.create(
-            savedAuth.getId(),
-            encodedPassword
-        );
+
+        AuthLocal newAuthLocal = AuthLocal.create(savedAuth.getId(), encodedPassword);
         authLocalAdapter.save(newAuthLocal);
         redisAdapter.delete("verified:" + email);
 

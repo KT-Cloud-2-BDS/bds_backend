@@ -9,6 +9,7 @@ import com.bds.auth.global.exception.ErrorCode;
 import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.AuthLocalAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
+import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,9 @@ public class AuthServiceUnitExceptionTest {
     @Mock
     public PasswordEncoder passwordEncoder;
 
+    @Mock
+    public JwtTokenUtil jwtTokenUtil;
+
     @Nested
     @DisplayName("회원가입 인증 코드 발송 예외")
     public class SendSignUpVerificationCodeException {
@@ -50,7 +54,7 @@ public class AuthServiceUnitExceptionTest {
         public void 이메일_중복_예외() {
             // given
             String email = "duplicate@email.com";
-            given(authAdapter.existsByEmail(anyString())).willReturn(true);
+            given(authAdapter.existsByEmailAndStatus(anyString(), eq(Status.ACTIVE))).willReturn(true);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -115,7 +119,7 @@ public class AuthServiceUnitExceptionTest {
             // given
             String email = "yeojin@email.com";
             given(redisAdapter.get("verified:" + email)).willReturn("true");
-            given(authAdapter.existsByEmail(email)).willReturn(true);
+            given(authAdapter.existsByEmailAndStatus(email, Status.ACTIVE)).willReturn(true);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {

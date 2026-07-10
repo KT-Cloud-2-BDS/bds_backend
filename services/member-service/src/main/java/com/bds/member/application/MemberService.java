@@ -40,7 +40,15 @@ public class MemberService {
             requestDto.nickname()
         );
 
-        memberAdapter.save(newMember);
+        try {
+            memberAdapter.save(newMember);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            authFeignClient.deleteAuth(authId);
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        } catch (Exception e) {
+            authFeignClient.deleteAuth(authId);
+            throw e;
+        }
     }
 
     @Transactional
@@ -82,11 +90,11 @@ public class MemberService {
             throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
 
+        memberAdapter.softDeleteByAuthId(authId);
+
         ResponseEntity<Void> response = authFeignClient.deleteAuth(authId);
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new BusinessException(ErrorCode.AUTH_SERVICE_ERROR);
         }
-
-        memberAdapter.softDeleteByAuthId(authId);
     }
 }

@@ -16,5 +16,8 @@ jwt:
     access: 3600000
     refresh: 604800000
 
-MAIL_USERNAME: "test-user@naver.com"
-MAIL_PASSWORD: "test-password"
+mail:
+  host: smtp.naver.com
+  port: 465
+  username: test-user
+  password: test-password

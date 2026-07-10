@@ -49,8 +49,8 @@ public class AuthCreateIntegrationTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    @DisplayName("Member 서버로부터 계정 생성 요청이 오면, 이메일 인증을 확인하고 DB에 계정을 생성한다.")
-    void authCreateLifecycleScenario() throws Exception {
+    @DisplayName("신규 유저 가입: Redis 인증이 확인되면 DB에 완전히 새로운 계정을 생성한다.")
+    void authCreateNewAccountScenario() throws Exception {
 
         // given : 테스트 데이터 및 가짜 Redis 세팅
         String email = "yeojin@email.com";
@@ -66,7 +66,7 @@ public class AuthCreateIntegrationTest {
         String jsonContent = objectMapper.writeValueAsString(authCreateRequest);
 
 
-        // when : 내부(Internal) API 컨트롤러 호출
+        // when : 내부(Internal) API 컨트롤러 호출 (신규 가입)
         mockMvc.perform(post("/api/auths/account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
@@ -91,5 +91,56 @@ public class AuthCreateIntegrationTest {
 
         org.junit.jupiter.api.Assertions.assertNotNull(savedEncodedPassword);
         org.junit.jupiter.api.Assertions.assertNotEquals(password, savedEncodedPassword, "비밀번호는 평문이 아니라 암호화 되어 저장되어야 합니다!");
+    }
+
+    @Test
+    @DisplayName("기존 탈퇴 유저 가입: 이미 DELETED 상태로 존재하는 계정이 있다면, 복구(ACTIVE)하여 처리한다.")
+    void authRestoreAccountScenario() throws Exception {
+
+        // given : 1. DB에 기존 탈퇴(DELETED) 회원 데이터를 미리 쑤셔 넣어 둡니다.
+        String email = "jinjinjala312@naver.com";
+        String password = "password123!";
+
+        em.createNativeQuery("INSERT INTO auth (email, role, status) VALUES (:email, 'SUPPORTER', 'DELETED')")
+            .setParameter("email", email)
+            .executeUpdate();
+
+        em.flush();
+        em.clear();
+
+        // 2. 가짜 Redis 및 요청 바디 세팅
+        String redisKey = "verified:" + email;
+        Mockito.when(redisAdapter.get(redisKey)).thenReturn("true");
+
+        Map<String, String> authCreateRequest = new HashMap<>();
+        authCreateRequest.put("email", email);
+        authCreateRequest.put("password", password);
+
+        String jsonContent = objectMapper.writeValueAsString(authCreateRequest);
+
+
+        // when : 내부 API 호출 (탈퇴 유저가 동일 이메일로 재가입 시도)
+        mockMvc.perform(post("/api/auths/account")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonContent))
+            .andDo(print())
+            .andExpect(status().isOk());
+
+
+        // then : 데이터가 새로 insert된 게 아니라 기존 데이터의 status가 ACTIVE로 '복구'되었는지 검증
+        String currentStatus = (String) em.createNativeQuery("SELECT status FROM auth WHERE email = :email")
+            .setParameter("email", email)
+            .getSingleResult();
+
+        org.junit.jupiter.api.Assertions.assertEquals("ACTIVE", currentStatus, "기존 DELETED 상태였던 계정이 ACTIVE 상태로 복구되어야 합니다!");
+
+        // 비밀번호 매칭 검증
+        String savedEncodedPassword = (String) em.createNativeQuery(
+                "SELECT al.password FROM auth_local al JOIN auth a ON al.auth_id = a.id WHERE a.email = :email"
+            )
+            .setParameter("email", email)
+            .getSingleResult();
+
+        org.junit.jupiter.api.Assertions.assertNotNull(savedEncodedPassword);
     }
 }
