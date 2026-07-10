@@ -1,5 +1,16 @@
 package com.bds.auth.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import com.bds.auth.application.AuthService;
 import com.bds.auth.application.EmailService;
 import com.bds.auth.domain.entity.Auth;
@@ -9,9 +20,10 @@ import com.bds.auth.domain.entity.enums.Status;
 import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.AuthLocalAdapter;
 import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
-import com.bds.auth.infrastructure.persistence.repository.AuthLocalJpaRepository;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,12 +32,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthService 단위 테스트 - 성공 케이스")
@@ -51,9 +57,6 @@ public class AuthServiceUnitTest {
 
     @Mock
     public JwtTokenUtil jwtTokenUtil;
-
-    @Mock
-    public AuthLocalJpaRepository authLocalJpaRepo;
 
     @Nested
     @DisplayName("회원가입 인증 코드 발송")
@@ -98,7 +101,7 @@ public class AuthServiceUnitTest {
     @DisplayName("계정 생성 기능")
     public class CreateAccount {
         @Test
-        @DisplayName("이메일 인증 확인 티켓이 유효하면 암호화된 비밀번호와 함께 계정이 정상 생성된다")
+        @DisplayName("이메일 인증 확인 티켓이 유효하고 중복 이메일이 없으면 계정이 정상 생성된다")
         public void 계정생성_성공() {
             // given
             String email = "yeojin@email.com";
@@ -108,6 +111,7 @@ public class AuthServiceUnitTest {
             given(mockAuth.getId()).willReturn(1L);
 
             given(redisAdapter.get("verified:" + email)).willReturn("true");
+            given(authAdapter.existsByEmail(email)).willReturn(false);
             given(authAdapter.save(any(Auth.class))).willReturn(mockAuth);
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
 
@@ -118,6 +122,7 @@ public class AuthServiceUnitTest {
             assertEquals(1L, savedId);
             verify(authAdapter, times(1)).save(any(Auth.class));
             verify(authLocalAdapter, times(1)).save(any(AuthLocal.class));
+            verify(redisAdapter, times(1)).delete("verified:" + email);
         }
     }
 
@@ -125,7 +130,7 @@ public class AuthServiceUnitTest {
     @DisplayName("로그인 기능")
     public class Login {
         @Test
-        @DisplayName("이메일과 비밀번호가 일치하면 토큰 세트가 정상 발급되고 레디스에 저장된다")
+        @DisplayName("이메일과 비밀번호가 일치하고 ACTIVE 계정이면 토큰 세트가 정상 발급된다")
         public void 로그인_성공() {
             // given
             String email = "yeojin@email.com";
@@ -135,6 +140,7 @@ public class AuthServiceUnitTest {
             given(mockAuth.getId()).willReturn(1L);
             given(mockAuth.getEmail()).willReturn(email);
             given(mockAuth.getRole()).willReturn(Role.SUPPORTER);
+            given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
 
             AuthLocal mockAuthLocal = mock(AuthLocal.class);
             given(mockAuthLocal.getPassword()).willReturn("encodedPassword");
@@ -156,22 +162,25 @@ public class AuthServiceUnitTest {
         }
     }
 
+    @Nested
+    @DisplayName("계정 삭제 기능")
+    public class DeleteAuth {
+        @Test
+        @DisplayName("계정이 존재하면 상태를 DELETED로 변경하고 로컬 로그인 정보 및 리프레시 토큰을 삭제한다")
+        public void 계정삭제_성공() {
+            // given
+            Long authId = 1L;
+            Auth mockAuth = mock(Auth.class);
+            given(authAdapter.findById(anyLong())).willReturn(Optional.of(mockAuth));
 
-    @Test
-    @DisplayName("계정이 존재하면 상태를 DELETED로 변경하고 로컬 로그인 정보를 삭제한다")
-    public void 계정삭제_성공() {
-        // given
-        Long authId = 1L;
-        Auth mockAuth = mock(Auth.class);
-        given(authAdapter.findById(anyLong())).willReturn(Optional.of(mockAuth));
+            // when
+            authService.deleteAuth(authId);
 
-        // when
-        authService.deleteAuth(authId);
-
-        // then
-        verify(mockAuth, times(1)).changeStatus(Status.DELETED);
-        verify(authAdapter, times(1)).save(mockAuth);
-
-        verify(authLocalJpaRepo, times(1)).deleteByAuthId(anyLong());
+            // then
+            verify(mockAuth, times(1)).changeStatus(Status.DELETED);
+            verify(authAdapter, times(1)).save(mockAuth);
+            verify(authLocalAdapter, times(1)).deleteByAuthId(authId);
+            verify(redisAdapter, times(1)).delete("refresh:" + authId);
+        }
     }
 }

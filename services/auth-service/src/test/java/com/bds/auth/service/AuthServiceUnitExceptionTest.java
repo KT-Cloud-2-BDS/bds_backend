@@ -3,6 +3,7 @@ package com.bds.auth.service;
 import com.bds.auth.application.AuthService;
 import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
+import com.bds.auth.domain.entity.enums.Status;
 import com.bds.auth.global.exception.BusinessException;
 import com.bds.auth.global.exception.ErrorCode;
 import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
@@ -60,7 +61,7 @@ public class AuthServiceUnitExceptionTest {
     }
 
     @Nested
-    @DisplayName("인증 코드 검증 예외")
+    @DisplayName("인증 코드 검증")
     public class VerifyCodeException {
         @Test
         @DisplayName("Redis에 인증 코드가 만료되어 존재하지 않으면 VERIFICATION_CODE_EXPIRED 예외가 터진다")
@@ -85,7 +86,7 @@ public class AuthServiceUnitExceptionTest {
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                authService.verifyCode(email, "999999"); // 틀린 코드 주입
+                authService.verifyCode(email, "999999");
             });
             assertEquals(ErrorCode.VERIFICATION_CODE_MISMATCH, exception.getErrorCode());
         }
@@ -107,6 +108,21 @@ public class AuthServiceUnitExceptionTest {
             });
             assertEquals(ErrorCode.UNVERIFIED_EMAIL, exception.getErrorCode());
         }
+
+        @Test
+        @DisplayName("인증은 완료되었으나 가입 직전 이메일이 중복되면 DUPLICATE_EMAIL 예외가 터진다")
+        public void 인증후_가입시점_이메일_중복_예외() {
+            // given
+            String email = "yeojin@email.com";
+            given(redisAdapter.get("verified:" + email)).willReturn("true");
+            given(authAdapter.existsByEmail(email)).willReturn(true);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.createAccount(email, "password123!");
+            });
+            assertEquals(ErrorCode.DUPLICATE_EMAIL, exception.getErrorCode());
+        }
     }
 
     @Nested
@@ -127,12 +143,30 @@ public class AuthServiceUnitExceptionTest {
         }
 
         @Test
-        @DisplayName("이메일은 존재하나 로컬 로그인 정보(AuthLocal)가 존재하지 않으면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        @DisplayName("계정은 존재하나 ACTIVE 상태가 아니라면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        public void 비활성화_계정_로그인_차단_예외() {
+            // given
+            String email = "yeojin@email.com";
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getStatus()).willReturn(Status.DELETED);
+
+            given(authAdapter.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.login(email, "password123!");
+            });
+            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("이메일과 ACTIVE 상태는 유효하나 로컬 로그인 정보(AuthLocal)가 존재하지 않으면 ACCOUNT_NOT_FOUND 예외가 터진다")
         public void 계정_로그인정보_누락_예외() {
             // given
             String email = "yeojin@email.com";
             Auth mockAuth = mock(Auth.class);
             given(mockAuth.getId()).willReturn(1L);
+            given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
 
             given(authAdapter.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
             given(authLocalAdapter.findByAuthId(anyLong())).willReturn(Optional.empty());
@@ -153,13 +187,14 @@ public class AuthServiceUnitExceptionTest {
 
             Auth mockAuth = mock(Auth.class);
             given(mockAuth.getId()).willReturn(1L);
+            given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
 
             AuthLocal mockAuthLocal = mock(AuthLocal.class);
             given(mockAuthLocal.getPassword()).willReturn("encodedPassword");
 
             given(authAdapter.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
             given(authLocalAdapter.findByAuthId(anyLong())).willReturn(Optional.of(mockAuthLocal));
-            given(passwordEncoder.matches(anyString(), anyString())).willReturn(false); // ◀ 매칭 실패
+            given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
