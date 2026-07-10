@@ -1,6 +1,8 @@
 package com.bds.notification.presentation;
 
 import com.bds.notification.application.NotificationService;
+import com.bds.notification.common.exception.BusinessException;
+import com.bds.notification.common.exception.ErrorCode;
 import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
 import com.bds.notification.presentation.dto.NotificationListResponseDto;
 import com.bds.notification.presentation.dto.NotificationSubscribeResponseDto;
@@ -49,7 +51,12 @@ public class NotificationController {
       @PathVariable String targetType,
       @PathVariable Long targetId
   ) {
-    SubscriptionTargetType type = SubscriptionTargetType.valueOf(targetType.toUpperCase());
+    SubscriptionTargetType type;
+    try {
+      type = SubscriptionTargetType.valueOf(targetType.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw new BusinessException(ErrorCode.INVALID_TARGET_TYPE);
+    }
     return notificationService.subscribe(memberId, type, targetId);
   }
 
@@ -59,7 +66,13 @@ public class NotificationController {
       @PathVariable String targetType,
       @PathVariable Long targetId
   ) {
-    SubscriptionTargetType type = SubscriptionTargetType.valueOf(targetType.toUpperCase());
+    SubscriptionTargetType type;
+    try {
+      type = SubscriptionTargetType.valueOf(targetType.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw new BusinessException(ErrorCode.INVALID_TARGET_TYPE);
+    }
+
     notificationService.unsubscribe(memberId, type, targetId);
     return ResponseEntity.noContent().build();
   }
