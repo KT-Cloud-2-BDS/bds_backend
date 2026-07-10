@@ -51,7 +51,7 @@ class ChatRoomPersistenceAdapterUnitExceptionTest {
 
         @Test
         void 펀딩_채팅방이_없으면_빈_Optional을_반환한다() {
-            given(jpaRepository.findByProductIdAndType(99L, ChatRoomType.FUNDING)).willReturn(Optional.empty());
+            given(jpaRepository.findByProductIdAndTypeAndDeletedAtIsNull(99L, ChatRoomType.FUNDING)).willReturn(Optional.empty());
 
             Optional<ChatRoom> result = adapter.findFundingRoomByProduct(99L);
 
@@ -79,7 +79,7 @@ class ChatRoomPersistenceAdapterUnitExceptionTest {
 
         @Test
         void 문의_채팅방이_없으면_빈_Optional을_반환한다() {
-            given(jpaRepository.findByProductIdAndCreatorIdAndType(1L, 99L, ChatRoomType.INQUIRY))
+            given(jpaRepository.findByProductIdAndCreatorIdAndTypeAndDeletedAtIsNull(1L, 99L, ChatRoomType.INQUIRY))
                     .willReturn(Optional.empty());
 
             Optional<ChatRoom> result = adapter.findInquiryRoomByProductAndBuyer(1L, 99L);

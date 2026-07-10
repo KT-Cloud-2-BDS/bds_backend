@@ -80,7 +80,7 @@ class ChatRoomPersistenceAdapterUnitTest {
         void 펀딩_채팅방을_도메인으로_반환한다() {
             ChatRoomJpaEntity entity = roomEntity(20L);
             ChatRoom domain = roomDomain(20L);
-            given(jpaRepository.findByProductIdAndType(1L, ChatRoomType.FUNDING)).willReturn(Optional.of(entity));
+            given(jpaRepository.findByProductIdAndTypeAndDeletedAtIsNull(1L, ChatRoomType.FUNDING)).willReturn(Optional.of(entity));
             given(mapper.toDomain(entity)).willReturn(domain);
 
             Optional<ChatRoom> result = adapter.findFundingRoomByProduct(1L);
@@ -90,7 +90,7 @@ class ChatRoomPersistenceAdapterUnitTest {
 
         @Test
         void 펀딩방이_없으면_빈_Optional을_반환한다() {
-            given(jpaRepository.findByProductIdAndType(1L, ChatRoomType.FUNDING)).willReturn(Optional.empty());
+            given(jpaRepository.findByProductIdAndTypeAndDeletedAtIsNull(1L, ChatRoomType.FUNDING)).willReturn(Optional.empty());
 
             Optional<ChatRoom> result = adapter.findFundingRoomByProduct(1L);
 
