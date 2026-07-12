@@ -53,7 +53,7 @@ class AccountServiceUnitTest {
             given(client.requestVerification(any(BankAccountRequestDto.class))).willReturn(bankAccountResponseDto);
 
             // when
-            String result = accountService.registerAccount(memberId, dto);
+            String result = accountService.registerAccount(memberId, dto).message();
 
             // then
             assertEquals("정상 처리되었습니다.", result);
@@ -84,7 +84,7 @@ class AccountServiceUnitTest {
             given(client.requestVerification(any(BankAccountRequestDto.class)))
                     .willReturn(new BankAccountResponseDto("9999999999", "홍길동"));
 
-            String result = accountService.registerAccount(memberId, dto);
+            String result = accountService.registerAccount(memberId, dto).message();
 
             assertEquals("인증 요청을 재전송했습니다.", result);
             verify(accountRepository).save(account);
@@ -111,7 +111,7 @@ class AccountServiceUnitTest {
             when(client.confirmVerification(any(BankVerifyRequestDto.class))).thenReturn(true);
 
             // when
-            String result = accountService.verifyAccount(memberId, dto);
+            String result = accountService.verifyAccount(memberId, dto).message();
 
             // then
             assertEquals("정상 처리되었습니다.", result);

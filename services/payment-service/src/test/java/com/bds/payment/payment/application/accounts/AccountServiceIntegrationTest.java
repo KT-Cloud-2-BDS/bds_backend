@@ -50,7 +50,7 @@ class AccountServiceIntegrationTest {
 
         given(client.requestVerification(any(BankAccountRequestDto.class))).willReturn(new BankAccountResponseDto(dto.accountNumber(), dto.holderName()));
 
-        String result = accountService.registerAccount(memberId, dto);
+        String result = accountService.registerAccount(memberId, dto).message();
 
         assertThat(result).isEqualTo("정상 처리되었습니다.");
         assertThat(accountRepository.findById(walletService.getWalletId(memberId))).isPresent();
@@ -76,7 +76,7 @@ class AccountServiceIntegrationTest {
 
         given(client.confirmVerification(any())).willReturn(true);
 
-        String result = accountService.verifyAccount(memberId, dto);
+        String result = accountService.verifyAccount(memberId, dto).message();
 
         assertThat(result).isEqualTo("정상 처리되었습니다.");
         verify(client).confirmVerification(any());
