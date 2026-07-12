@@ -40,18 +40,18 @@ POST /api/orders/billing
 
 #### Request Body
 
-| 필드 | 타입 | 필수 | 설명 |
-|------|------|------|------|
-| `rewards` | Object[] | Y | 주문 리워드 목록 |
-| `rewards[].id` | Long | Y | 리워드 ID |
-| `rewards[].qty` | Integer | Y | 수량 |
+| 필드                | 타입       | 필수 | 설명        |
+|-------------------|----------|----|-----------|
+| `fundingId`       | Long     | Y  | 펀딩 ID     |
+| `isReservedOrder` | Boolean  | N  | 예약 주문 여부  |
+| `rewards`         | Object[] | Y  | 주문 리워드 목록 |
+| `rewards[].id`    | Long     | Y  | 리워드 ID    |
+| `rewards[].qty`   | Integer  | Y  | 수량        |
 
 #### Response Body
 
 ```json
 {
-  "status": 200,
-  "data": {
     "memberId": 1,
     "rewards": [
       {
@@ -66,14 +66,12 @@ POST /api/orders/billing
     "rewardAmount": 182400,
     "totalShippingCharge": 5000,
     "totalBillingAmount": 187400
-  }
 }
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 미리보기 전용으로 DB 저장 X
-- 미인증된 사용자 호출: 401 Unauthorized
 - `rewards.size() < 1`: 400 Bad Request
 - `qty < 1`: 400 Bad Request
 - 존재하지 않는 리워드: 404 Not Found
@@ -93,49 +91,30 @@ POST /api/orders
 
 #### Request Body
 
-| 필드               | 타입       | 필수 | 설명                    |
-|------------------|----------|----|-----------------------|
-| `rewards`        | Object[] | Y  | 주문 리워드 목록             |
-| `rewards[].id`   | Long     | Y  | 리워드 ID                |
-| `rewards[].qty`  | Integer  | Y  | 수량                    |
-| `idempotencyKey` | String   | Y  | 멱등성 키 (클라이언트 생성 UUID) |
-| `isNowPay`       | Boolean  | N  | 예약 주문 여부              |
+| 필드          | 타입       | 필수 | 설명       |
+|-------------|----------|----|----------|
+| `orderId`   | Long     | Y  | 주문 ID    |
+| `fundingId` | Long     | Y  | 펀딩 ID    |
+| `isNowPay`  | Boolean  | N  | 예약 주문 여부 |
 
 #### Response Body
 
 ```json
 {
-  "status": 200,
-  "data": {
     "memberId": 1,
     "orderNo": "ORD-20250201-00001",
-    "rewards": [
-      {
-        "id": 192412,
-        "qty": 2,
-        "name": "선크림 4병 + 쿠션 퍼프 1개",
-        "amount": 182400,
-        "badgeType": "ULTRA_EARLY_BIRD",
-        "shippingCharge": 5000
-      }
-    ],
-    "totalShippingCharge": 5000,
     "totalBillingAmount": 187400,
-    "paymentStatus": "PAID",
-    "paidAt": "2025-02-01T14:30:00"
-  }
+    "orderStatus": "PAYING",
+    "payRequestedAt": "2025-02-01T14:30:00"
 }
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
-- 미인증된 사용자 호출: 401 Unauthorized
-- 금액은 서버에서 재계산 (클라이언트 금액 신뢰 X)
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 재고 차감: CAS(Compare-And-Swap) Update로 동시성 처리
 - 재고 부족: 409 Conflict
 - 펀딩 기간 재확인 (billing → 주문 사이 마감 가능): 403 Forbidden
-- 중복 주문 방지: `idempotencyKey` 기반, 중복 시 기존 주문 응답 반환
-- 결제 실패 시 롤백: 재고 복구 + 주문 상태 `FAILED`
+- 결제 실패 시 롤백: 재고 복구 + 주문 상태 `CANCELLED`
 
 #### 내부 처리 시퀀스
 
@@ -169,15 +148,13 @@ GET /api/orders
 
 ```json
 {
-  "status": 200,
-  "data": {
     "content": [
       {
         "orderNo": "ORD-20250201-00001",
         "orderStatus": "PAID",
         "fundingDate": "2025-01-10T04:54:42+09:00",
         "title": "선글라스",
-        "hostName": "(주)스토어",
+        "hostId": 20112,
         "isEnded": false,
         "billingAmount": 51800,
         "paymentStatus": "PAID",
@@ -189,14 +166,13 @@ GET /api/orders
     "size": 20,
     "totalElements": 3,
     "totalPages": 1
-  }
 }
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 미인증된 사용자 호출: 401 Unauthorized
-- 본인 주문만 조회 (JWT 기반)
+- 본인 주문만 조회
 - 최신순 정렬 (default)
 - 페이지네이션 적용
 
@@ -220,14 +196,11 @@ GET /api/orders/{orderId}
 
 ```json
 {
-  "status": 200,
-  "data": {
     "orderNo": "ORD-20250201-00001",
     "fundingDate": "2025-01-10T04:54:42+09:00",
     "title": "선글라스",
-    "hostName": "(주)스토어",
+    "hostId": 21103,
     "isEnded": false,
-    "billingAmount": 51800,
     "isFundingSucceeded": true,
     "memberId": 1,
     "orderStatus": "PAID",
@@ -241,19 +214,17 @@ GET /api/orders/{orderId}
         "shippingCharge": 5000
       }
     ],
+    "rewardAmount": 182400,
     "totalShippingCharge": 5000,
     "totalBillingAmount": 187400,
     "paymentStatus": "PAID",
     "paidAt": "2025-02-01T14:30:00",
-    "createdAt": "2025-02-01T14:29:50",
     "cancelledAt": null
-  }
 }
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
-- 미인증된 사용자 호출: 401 Unauthorized
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
 - 타인 주문 접근: 403 Forbidden
 - 존재하지 않는 orderId: 404 Not Found
 
@@ -277,20 +248,16 @@ PATCH /api/orders/{orderId}/cancel
 
 ```json
 {
-  "status": 200,
-  "data": {
     "orderNo": "ORD-20250201-00001",
     "orderStatus": "CANCELLED",
     "cancelledAt": "2025-02-03T10:00:00",
     "refundStatus": "REFUND_REQUESTED"
-  }
 }
 ```
 
 #### Validation / Business Rules
-- `memberId`는 JWT에서 추출
-- 미인증된 사용자 호출: 401 Unauthorized
-- 타인 주문 취소 시도: 403 Forbidden
+- `memberId`는 Gateway에서 decrypt되어 헤더에 포함된 값 사용
+- 타인 주문 접근: 403 Forbidden
 - 존재하지 않는 orderId: 404 Not Found
 - 취소 불가 상태 (PAID 상태만 취소 가능): 400 Bad Request
 - 이미 취소된 주문 재취소: 409 Conflict
@@ -370,7 +337,7 @@ RESERVED → CANCELLED  (펀딩 실패 / 사용자 취소 / 타임아웃)
 
 # 공통
 PAYING → PAID         (결제 성공)
-PAYING → FAILED       (결제 실패)
+PAYING → CANCELLED       (결제 실패)
 PAID → CANCELLED      (사용자 취소)
 CANCELLED → REFUNDED  (환불 완료)
 ```

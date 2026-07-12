@@ -53,7 +53,17 @@ subprojects {
 // Spring Boot 플러그인은 실행 가능한 JAR이 필요한 서비스에만 적용
 // modules:common은 라이브러리이므로 제외
 configure(subprojects.findAll {
-    it.path.startsWith(':services') || it.path.startsWith(':platform')
+    it.path.startsWith(':services:') || it.path.startsWith(':platform:')
 }) {
     apply plugin: 'org.springframework.boot'
+}
+
+// 계층형 모듈 구조를 위한 bootJar task 선별 비활성화
+// 해당 모듈에 스프링 부트 플러그인이 '실제로 존재할 때만' 내부 로직을 실행하도록 격리
+subprojects {
+    plugins.withType(org.springframework.boot.gradle.plugin.SpringBootPlugin) {
+        tasks.named('bootJar') {
+            enabled = childProjects.size() == 0
+        }
+    }
 }
