@@ -14,7 +14,7 @@ public record PaymentHistoryResponseDto(
         Long amount,
         Long balanceAfter,
         PaymentHistoryStatus status,
-        LocalDateTime createAt
+        LocalDateTime createdAt
 ) {
     public static PaymentHistoryResponseDto from(PaymentHistory history) {
         return new PaymentHistoryResponseDto(
