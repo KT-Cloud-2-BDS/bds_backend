@@ -93,15 +93,17 @@ class FundingServiceUnitTest {
             // given
             Long memberId = 1L;
             Long orderId = 1L;
+            Long walletId = 1L;
+
             FundingPayment fundingPayment = FundingPayment.builder()
                     .orderId(orderId)
-                    .walletId(1L)
+                    .walletId(walletId)
                     .amount(10000L)
                     .paymentType(PaymentType.INSTANT)
                     .status(FundingPaymentStatus.SUCCESS)
                     .build();
             given(fundingPaymentRepository.findByOrderId(orderId)).willReturn(Optional.of(fundingPayment));
-
+            given(walletService.getWalletId(memberId)).willReturn(walletId);
             // when
             fundingService.refund(memberId, orderId);
 
@@ -115,15 +117,17 @@ class FundingServiceUnitTest {
             // given
             Long memberId = 1L;
             Long orderId = 1L;
+            Long walletId = 1L;
+
             FundingPayment fundingPayment = FundingPayment.builder()
                     .orderId(orderId)
-                    .walletId(1L)
+                    .walletId(walletId)
                     .amount(10000L)
                     .paymentType(PaymentType.RESERVED)
                     .status(FundingPaymentStatus.SUCCESS)
                     .build();
             given(fundingPaymentRepository.findByOrderId(orderId)).willReturn(Optional.of(fundingPayment));
-
+            given(walletService.getWalletId(memberId)).willReturn(walletId);
             // when
             fundingService.refund(memberId, orderId);
 

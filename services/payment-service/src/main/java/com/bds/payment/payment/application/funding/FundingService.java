@@ -5,6 +5,8 @@ import com.bds.payment.payment.domain.common.FundingPaymentStatus;
 import com.bds.payment.payment.domain.common.PaymentType;
 import com.bds.payment.payment.domain.fundingPayment.FundingPayment;
 import com.bds.payment.payment.domain.fundingPayment.FundingPaymentRepository;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.presentation.request.FundingPaymentRequestDto;
 import com.bds.payment.payment.presentation.response.FundingPaymentResponseDto;
 import com.github.f4b6a3.uuid.UuidCreator;
@@ -42,10 +44,12 @@ public class FundingService {
 
     public void refund(Long memberId, Long orderId) {
         FundingPayment fundingPayment = fundingPaymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 거래입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.FUNDING_NOT_FOUND));
 
+        if (!fundingPayment.getWalletId().equals(walletService.getWalletId(memberId)))
+            throw new BusinessException(ErrorCode.FUNDING_ACCESS_DENIED);
         if (fundingPayment.getStatus() == FundingPaymentStatus.REFUNDED)
-            throw new IllegalArgumentException("이미 환불된 거래입니다.");
+            throw new BusinessException(ErrorCode.FUNDING_ALREADY_REFUNDED);
 
         if (fundingPayment.getPaymentType() == PaymentType.INSTANT) {
             walletService.charge(memberId, fundingPayment.getAmount());
@@ -58,6 +62,6 @@ public class FundingService {
 
     private void validateDuplicated(Long orderId) {
         if (fundingPaymentRepository.existsByOrderId(orderId))
-            throw new IllegalArgumentException("중복된 거래입니다.");
+            throw new BusinessException(ErrorCode.FUNDING_DUPLICATED);
     }
 }

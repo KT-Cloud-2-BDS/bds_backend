@@ -2,6 +2,8 @@ package com.bds.payment.payment.application.wallet;
 
 import com.bds.payment.payment.domain.wallet.Wallet;
 import com.bds.payment.payment.domain.wallet.WalletRepository;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -42,8 +45,11 @@ class WalletServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.getWalletResponseDto(memberId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
+
         }
 
         @Test
@@ -54,8 +60,10 @@ class WalletServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.getWallet(memberId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
         }
 
         @Test
@@ -66,8 +74,10 @@ class WalletServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.getWalletId(memberId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
         }
     }
 
@@ -83,8 +93,10 @@ class WalletServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.createWallet(memberId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_ALREADY_EXISTS);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_ALREADY_EXISTS.getMessage());
+                    });
 
             verify(walletRepository, never()).save(any(Wallet.class));
         }
@@ -103,8 +115,10 @@ class WalletServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.charge(memberId, amount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
 
             verify(walletRepository, never()).save(any(Wallet.class));
         }
@@ -117,8 +131,10 @@ class WalletServiceUnitExceptionTest {
             Wallet.create(memberId);
             //when then
             assertThatThrownBy(() -> walletService.charge(memberId, invalidAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("금액은 0보다 커야 합니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_AMOUNT_INVALID);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_AMOUNT_INVALID.getMessage());
+                    });
 
             verify(walletRepository, never()).findByMemberIdWithLock(any());
             verify(walletRepository, never()).save(any());
@@ -132,8 +148,10 @@ class WalletServiceUnitExceptionTest {
             Wallet.create(memberId);
             //when then
             assertThatThrownBy(() -> walletService.charge(memberId, nullAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("금액은 null일 수 없습니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_AMOUNT_REQUIRED);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_AMOUNT_REQUIRED.getMessage());
+                    });
 
             verify(walletRepository, never()).findByMemberIdWithLock(any());
             verify(walletRepository, never()).save(any());
@@ -154,8 +172,10 @@ class WalletServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.decrease(memberId, amount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
 
             verify(walletRepository, never()).save(any(Wallet.class));
         }
@@ -168,8 +188,10 @@ class WalletServiceUnitExceptionTest {
             Wallet.create(memberId);
             //when then
             assertThatThrownBy(() -> walletService.decrease(memberId, invalidAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("금액은 0보다 커야 합니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_AMOUNT_INVALID);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_AMOUNT_INVALID.getMessage());
+                    });
 
             verify(walletRepository, never()).findByMemberIdWithLock(any());
             verify(walletRepository, never()).save(any());
@@ -183,8 +205,10 @@ class WalletServiceUnitExceptionTest {
             Wallet.create(memberId);
             //when then
             assertThatThrownBy(() -> walletService.decrease(memberId, nullAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("금액은 null일 수 없습니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_AMOUNT_REQUIRED);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_AMOUNT_REQUIRED.getMessage());
+                    });
 
             verify(walletRepository, never()).findByMemberIdWithLock(any());
             verify(walletRepository, never()).save(any());
@@ -198,8 +222,10 @@ class WalletServiceUnitExceptionTest {
             given(walletRepository.findByMemberIdWithLock(memberId)).willReturn(Optional.ofNullable(wallet));
             //when then
             assertThatThrownBy(() -> walletService.decrease(memberId, 5000L))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("잔액이 부족 합니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_INSUFFICIENT_BALANCE.getMessage());
+                    });
 
             verify(walletRepository, never()).save(any());
         }

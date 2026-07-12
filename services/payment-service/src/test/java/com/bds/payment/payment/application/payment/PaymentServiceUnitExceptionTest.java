@@ -4,6 +4,8 @@ import com.bds.payment.payment.application.accounts.AccountService;
 import com.bds.payment.payment.application.wallet.WalletService;
 import com.bds.payment.payment.domain.account.Account;
 import com.bds.payment.payment.domain.paymentHistory.PaymentHistoryRepository;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.external.BankClient;
 import com.bds.payment.payment.infrastructure.external.request.BankTransactionRequestDto;
 import com.bds.payment.payment.presentation.request.AccountTransactionRequestDto;
@@ -19,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -104,7 +107,10 @@ class PaymentServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> paymentService.getHistory(memberId, from, to, pageable))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_DATE_RANGE);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.INVALID_DATE_RANGE.getMessage());
+                    });
             verify(paymentHistoryRepository, never()).findByWalletIdAndCreatedAtBetween(
                     any(), any(), any(), any()
             );

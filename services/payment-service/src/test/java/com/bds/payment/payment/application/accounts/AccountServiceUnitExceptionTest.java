@@ -3,6 +3,8 @@ package com.bds.payment.payment.application.accounts;
 import com.bds.payment.payment.application.wallet.WalletService;
 import com.bds.payment.payment.domain.account.Account;
 import com.bds.payment.payment.domain.account.AccountRepository;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.external.BankClient;
 import com.bds.payment.payment.infrastructure.external.request.BankVerifyRequestDto;
 import com.bds.payment.payment.presentation.request.AccountVerifyRequestDto;
@@ -16,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -44,7 +47,10 @@ class AccountServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> accountService.verifyAccount(memberId, dto))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND.getMessage());
+                    });
             verify(client, never()).confirmVerification(any(BankVerifyRequestDto.class));
         }
 
@@ -64,7 +70,10 @@ class AccountServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> accountService.verifyAccount(memberId, dto))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_VERIFICATION_FAILED);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.ACCOUNT_VERIFICATION_FAILED.getMessage());
+                    });
         }
     }
 
@@ -82,7 +91,10 @@ class AccountServiceUnitExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> accountService.getAccount(memberId))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND.getMessage());
+                    });
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.bds.payment.payment.application.wallet;
 
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.persistence.wallet.WalletJpaEntity;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +38,10 @@ class WalletServiceIntegrationExceptionTest {
             Long memberId = Long.MAX_VALUE;
 
             assertThatThrownBy(() -> walletService.getWalletResponseDto(memberId))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
         }
 
         @Test
@@ -45,8 +50,10 @@ class WalletServiceIntegrationExceptionTest {
             Long memberId = 1L;
             // when & then
             assertThatThrownBy(() -> walletService.getWallet(memberId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
         }
 
         @Test
@@ -56,8 +63,10 @@ class WalletServiceIntegrationExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.getWalletId(memberId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
         }
 
     }
@@ -82,8 +91,10 @@ class WalletServiceIntegrationExceptionTest {
             em.clear();
             // when & then
             assertThatThrownBy(() -> walletService.createWallet(memberId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_ALREADY_EXISTS);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_ALREADY_EXISTS.getMessage());
+                    });
 
             int walletCount = em.createQuery("select w from WalletJpaEntity w", WalletJpaEntity.class)
                     .getResultList().size();
@@ -104,8 +115,10 @@ class WalletServiceIntegrationExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.charge(memberId, amount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
         }
 
         @ParameterizedTest
@@ -125,8 +138,10 @@ class WalletServiceIntegrationExceptionTest {
             em.clear();
             // when then
             assertThatThrownBy(() -> walletService.charge(memberId, invalidAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("금액은 0보다 커야 합니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_AMOUNT_INVALID);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_AMOUNT_INVALID.getMessage());
+                    });
         }
 
         @ParameterizedTest
@@ -146,8 +161,10 @@ class WalletServiceIntegrationExceptionTest {
             em.clear();
             //when then
             assertThatThrownBy(() -> walletService.charge(memberId, nullAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("금액은 null일 수 없습니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_AMOUNT_REQUIRED);
+                assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_AMOUNT_REQUIRED.getMessage());
+            });
         }
     }
 
@@ -163,8 +180,10 @@ class WalletServiceIntegrationExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> walletService.decrease(memberId, amount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("잘못된 접근입니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                    });
         }
 
         @ParameterizedTest
@@ -184,8 +203,10 @@ class WalletServiceIntegrationExceptionTest {
             em.clear();
             // when then
             assertThatThrownBy(() -> walletService.decrease(memberId, invalidAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("금액은 0보다 커야 합니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_AMOUNT_INVALID);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_AMOUNT_INVALID.getMessage());
+                    });
         }
 
         @ParameterizedTest
@@ -205,8 +226,10 @@ class WalletServiceIntegrationExceptionTest {
             em.clear();
             //when then
             assertThatThrownBy(() -> walletService.decrease(memberId, nullAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("금액은 null일 수 없습니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_AMOUNT_REQUIRED);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_AMOUNT_REQUIRED.getMessage());
+                    });
         }
 
         @Test
@@ -225,8 +248,10 @@ class WalletServiceIntegrationExceptionTest {
             em.clear();
             //when then
             assertThatThrownBy(() -> walletService.decrease(memberId, 5000L))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("잔액이 부족 합니다.");
+                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
+                        assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_INSUFFICIENT_BALANCE.getMessage());
+                    });
         }
     }
 }

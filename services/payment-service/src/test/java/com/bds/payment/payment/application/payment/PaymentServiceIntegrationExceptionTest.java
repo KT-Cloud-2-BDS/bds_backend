@@ -5,6 +5,8 @@ import com.bds.payment.payment.domain.account.Account;
 import com.bds.payment.payment.domain.account.AccountRepository;
 import com.bds.payment.payment.domain.wallet.Wallet;
 import com.bds.payment.payment.domain.wallet.WalletRepository;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.external.BankClient;
 import com.bds.payment.payment.infrastructure.external.request.BankTransactionRequestDto;
 import com.bds.payment.payment.presentation.request.AccountTransactionRequestDto;
@@ -15,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -42,12 +45,34 @@ class PaymentServiceIntegrationExceptionTest {
     private BankClient bankClient;
 
     @Test
-    void 계좌를_찾을_수_없으면_charge_수행_중_예외가_발생한다() {
+    void 지갑를_찾을_수_없으면_charge_수행_중_예외가_발생한다() {
         Long memberId = 1L;
         AccountTransactionRequestDto dto = new AccountTransactionRequestDto(10000L);
 
         assertThatThrownBy(() -> paymentService.charge(memberId, dto))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
+                    assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_NOT_FOUND.getMessage());
+                });
+
+        verify(bankClient, never()).withdraw(any(BankTransactionRequestDto.class));
+    }
+
+    @Test
+    void 계좌를_찾을_수_없으면_charge_수행_중_예외가_발생한다() {
+        Long memberId = 1L;
+        Wallet wallet = Wallet.builder()
+                .memberId(memberId)
+                .balance(0L)
+                .build();
+        walletRepository.save(wallet);
+        AccountTransactionRequestDto dto = new AccountTransactionRequestDto(10000L);
+
+        assertThatThrownBy(() -> paymentService.charge(memberId, dto))
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND);
+                    assertThat(ex.getMessage()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND.getMessage());
+                });
 
         verify(bankClient, never()).withdraw(any(BankTransactionRequestDto.class));
     }
@@ -73,9 +98,12 @@ class PaymentServiceIntegrationExceptionTest {
         accountRepository.save(account);
 
         AccountTransactionRequestDto dto = new AccountTransactionRequestDto(10000L);
-        given(bankClient.withdraw(any(BankTransactionRequestDto.class))).willThrow(new IllegalStateException("bank unavailable"));
+        given(bankClient.withdraw(any(BankTransactionRequestDto.class))).willThrow(new BusinessException(ErrorCode.BANK_WITHDRAW_FAILED));
 
         assertThatThrownBy(() -> paymentService.charge(memberId, dto))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.BANK_WITHDRAW_FAILED);
+                    assertThat(ex.getMessage()).isEqualTo(ErrorCode.BANK_WITHDRAW_FAILED.getMessage());
+                });
     }
 }

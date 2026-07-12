@@ -9,6 +9,8 @@ import com.bds.payment.payment.domain.common.TransactionType;
 import com.bds.payment.payment.domain.paymentHistory.PaymentHistory;
 import com.bds.payment.payment.domain.paymentHistory.PaymentHistoryRepository;
 import com.bds.payment.payment.domain.wallet.Wallet;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.external.BankClient;
 import com.bds.payment.payment.infrastructure.external.request.BankTransactionRequestDto;
 import com.bds.payment.payment.presentation.request.AccountTransactionRequestDto;
@@ -69,8 +71,8 @@ public class PaymentService {
         PaymentHistoryCommand command = PaymentHistoryCommand.of(
                 updatedWallet,
                 tranSeqNo,
-                TransactionType.DEPOSIT,
-                TransactionReason.CHARGE,
+                TransactionType.WITHDRAWAL,
+                TransactionReason.WITHDRAW,
                 dto.amount(),
                 PaymentHistoryStatus.SUCCESS);
         paymentHistoryRepository.save(PaymentHistory.create(command));
@@ -84,9 +86,9 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public PaymentHistoryPageResponseDto getHistory(Long memberId, LocalDate from, LocalDate to, Pageable pageable) {
-        if (from == null) from = LocalDate.now().minusMonths(1);
         if (to == null) to = LocalDate.now();
-        if (from.isAfter(to)) throw new IllegalArgumentException("from이 to보다 늦을 수 없습니다.");
+        if (from == null) from = to.minusMonths(1);
+        if (from.isAfter(to)) throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
 
         Long walletId = walletService.getWalletId(memberId);
 

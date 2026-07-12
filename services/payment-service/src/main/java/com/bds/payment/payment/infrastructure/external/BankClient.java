@@ -1,5 +1,7 @@
 package com.bds.payment.payment.infrastructure.external;
 
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.external.request.BankAccountRequestDto;
 import com.bds.payment.payment.infrastructure.external.request.BankTransactionRequestDto;
 import com.bds.payment.payment.infrastructure.external.request.BankVerifyRequestDto;
@@ -31,8 +33,8 @@ public class BankClient {
                     .retrieve()
                     .body(BankAccountResponseDto.class);
         } catch (RestClientException e) {
-            log.error("은행 계좌 인증코드 요청 실패.");
-            throw new IllegalArgumentException("은행 계좌 인증코드 요청 실패", e);
+            log.error("은행 계좌 인증코드 요청 실패.",e);
+            throw new BusinessException(ErrorCode.BANK_VERIFICATION_REQUEST_FAILED);
         }
     }
 
@@ -47,8 +49,8 @@ public class BankClient {
                             .body(BankVerifyResponseDto.class))
                     .verified();
         } catch (RestClientException e) {
-            log.error("은행 계좌 인증 실패");
-            throw new IllegalArgumentException("은행 계좌 인증코드 대조 실패", e);
+            log.error("은행 계좌 인증 실패",e);
+            throw new BusinessException(ErrorCode.BANK_VERIFICATION_CONFIRM_FAILED);
         }
     }
 
@@ -62,8 +64,8 @@ public class BankClient {
                     .retrieve()
                     .body(BankTransactionResponseDto.class);
         } catch (RestClientException e) {
-            log.error("은행으로부터 충전 실패");
-            throw new IllegalArgumentException("은행 계좌로부터 충전 실패", e);
+            log.error("은행으로부터 충전 실패",e);
+            throw new BusinessException(ErrorCode.BANK_WITHDRAW_FAILED);
         }
     }
 
@@ -77,8 +79,8 @@ public class BankClient {
                     .retrieve()
                     .body(BankTransactionResponseDto.class);
         } catch (RestClientException e) {
-            log.error("은행으로 출금 실패");
-            throw new IllegalArgumentException("은행 계좌로부터 환불 실패", e);
+            log.error("은행으로 출금 실패",e);
+            throw new BusinessException(ErrorCode.BANK_DEPOSIT_FAILED);
         }
     }
 }

@@ -4,6 +4,8 @@ import com.bds.payment.payment.domain.account.Account;
 import com.bds.payment.payment.domain.account.AccountRepository;
 import com.bds.payment.payment.domain.wallet.Wallet;
 import com.bds.payment.payment.domain.wallet.WalletRepository;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.external.BankClient;
 import com.bds.payment.payment.presentation.request.AccountRegisterRequestDto;
 import com.bds.payment.payment.presentation.request.AccountVerifyRequestDto;
@@ -14,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -77,8 +80,10 @@ class AccountServiceIntegrationExceptionTest {
                 new AccountRegisterRequestDto("088", "9999999999", "홍길동");
 
         assertThatThrownBy(() -> accountService.registerAccount(memberId, dto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("이미 인증된 계좌가 등록되어 있습니다.");
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_ALREADY_VERIFIED);
+                    assertThat(ex.getMessage()).isEqualTo(ErrorCode.ACCOUNT_ALREADY_VERIFIED.getMessage());
+                });
     }
 
     @Test
@@ -99,6 +104,9 @@ class AccountServiceIntegrationExceptionTest {
         given(client.confirmVerification(any())).willReturn(false);
 
         assertThatThrownBy(() -> accountService.verifyAccount(memberId, dto))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_VERIFICATION_FAILED);
+                    assertThat(ex.getMessage()).isEqualTo(ErrorCode.ACCOUNT_VERIFICATION_FAILED.getMessage());
+                });
     }
 }

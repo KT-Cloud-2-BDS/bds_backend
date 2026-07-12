@@ -6,6 +6,8 @@ import com.bds.payment.payment.domain.fundingPayment.FundingPayment;
 import com.bds.payment.payment.domain.fundingPayment.FundingPaymentRepository;
 import com.bds.payment.payment.domain.wallet.Wallet;
 import com.bds.payment.payment.domain.wallet.WalletRepository;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.presentation.request.FundingPaymentRequestDto;
 import com.github.f4b6a3.uuid.UuidCreator;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
@@ -38,7 +41,10 @@ class FundingServiceIntegrationExceptionTest {
         fundingPaymentRepository.save(saved);
 
         assertThatThrownBy(() -> fundingService.funding(dto))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_DUPLICATED);
+                    assertThat(ex.getMessage()).isEqualTo(ErrorCode.FUNDING_DUPLICATED.getMessage());
+                });
     }
 
     @Test
@@ -47,7 +53,10 @@ class FundingServiceIntegrationExceptionTest {
         Long orderId = 1L;
 
         assertThatThrownBy(() -> fundingService.refund(memberId, orderId))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_NOT_FOUND);
+                    assertThat(ex.getMessage()).isEqualTo(ErrorCode.FUNDING_NOT_FOUND.getMessage());
+                });
     }
 
     @Test
@@ -67,6 +76,9 @@ class FundingServiceIntegrationExceptionTest {
         fundingPaymentRepository.save(fundingPayment);
 
         assertThatThrownBy(() -> fundingService.refund(memberId, orderId))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_ALREADY_REFUNDED);
+                    assertThat(ex.getMessage()).isEqualTo(ErrorCode.FUNDING_ALREADY_REFUNDED.getMessage());
+                });
     }
 }

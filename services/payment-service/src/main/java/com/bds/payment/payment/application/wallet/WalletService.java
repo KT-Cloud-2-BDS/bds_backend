@@ -2,6 +2,8 @@ package com.bds.payment.payment.application.wallet;
 
 import com.bds.payment.payment.domain.wallet.Wallet;
 import com.bds.payment.payment.domain.wallet.WalletRepository;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.presentation.response.WalletResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,26 +20,26 @@ public class WalletService {
     @Transactional(readOnly = true)
     public WalletResponseDto getWalletResponseDto(Long memberId) {
         Wallet wallet = walletRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.WALLET_NOT_FOUND));
         return WalletResponseDto.from(wallet);
     }
 
     @Transactional(readOnly = true)
     public Wallet getWallet(Long memberId) {
         return walletRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.WALLET_NOT_FOUND));
     }
 
     @Transactional(readOnly = true)
     public Long getWalletId(Long memberId) {
         Wallet wallet = walletRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.WALLET_NOT_FOUND));
         return wallet.getId();
     }
 
     @Transactional
     public WalletResponseDto createWallet(Long memberId) {
-        if (walletRepository.existsByMemberId(memberId)) throw new IllegalArgumentException("잘못된 접근입니다.");
+        if (walletRepository.existsByMemberId(memberId)) throw new BusinessException(ErrorCode.WALLET_ALREADY_EXISTS);
         return WalletResponseDto.from(walletRepository.save(Wallet.create(memberId)));
     }
 
@@ -45,7 +47,7 @@ public class WalletService {
     public Wallet charge(Long memberId, Long amount) {
         validateAmount(amount);
         Wallet wallet = walletRepository.findByMemberIdWithLock(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.WALLET_NOT_FOUND));
         wallet.charge(amount);
         return walletRepository.save(wallet);
     }
@@ -54,17 +56,17 @@ public class WalletService {
     public Wallet decrease(Long memberId, Long amount) {
         validateAmount(amount);
         Wallet wallet = walletRepository.findByMemberIdWithLock(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("잘못된 접근입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.WALLET_NOT_FOUND));
         wallet.withdraw(amount);
         return walletRepository.save(wallet);
     }
 
     private void validateAmount(Long amount) {
         if (amount == null) {
-            throw new IllegalArgumentException("금액은 null일 수 없습니다.");
+            throw new BusinessException(ErrorCode.WALLET_AMOUNT_REQUIRED);
         }
         if (amount <= 0) {
-            throw new IllegalArgumentException("금액은 0보다 커야 합니다.");
+            throw new BusinessException(ErrorCode.WALLET_AMOUNT_INVALID);
         }
     }
 }
