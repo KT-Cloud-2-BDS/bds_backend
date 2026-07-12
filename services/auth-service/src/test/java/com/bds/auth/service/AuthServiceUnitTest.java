@@ -106,7 +106,6 @@ public class AuthServiceUnitTest {
             given(mockAuth.getId()).willReturn(1L);
 
             given(tokenCacheRepository.get("verified:" + email)).willReturn("true");
-            given(authRepository.existsByEmailAndStatus(email, Status.ACTIVE)).willReturn(false);
 
             given(authRepository.findByEmail(email)).willReturn(Optional.empty());
             given(authRepository.save(any(Auth.class))).willReturn(mockAuth);
@@ -130,7 +129,6 @@ public class AuthServiceUnitTest {
             given(mockExistingAuth.getId()).willReturn(24L);
 
             given(tokenCacheRepository.get("verified:" + email)).willReturn("true");
-            given(authRepository.existsByEmailAndStatus(email, Status.ACTIVE)).willReturn(false);
 
             given(authRepository.findByEmail(email)).willReturn(Optional.of(mockExistingAuth));
             given(authRepository.save(mockExistingAuth)).willReturn(mockExistingAuth);

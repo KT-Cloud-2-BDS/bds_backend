@@ -118,8 +118,12 @@ public class AuthServiceUnitExceptionTest {
         public void 인증후_가입시점_이메일_중복_예외() {
             // given
             String email = "yeojin@email.com";
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
+
             given(tokenCacheRepository.get("verified:" + email)).willReturn("true");
-            given(authRepository.existsByEmailAndStatus(email, Status.ACTIVE)).willReturn(true);
+
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {

@@ -69,17 +69,20 @@ public class AuthService {
             throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
         }
 
-        if (authRepository.existsByEmailAndStatus(email, Status.ACTIVE)) {
-            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
-        }
-
-        Optional<Auth> existingDeletedAuth = authRepository.findByEmail(email);
+        Optional<Auth> existingAuth = authRepository.findByEmail(email);
 
         Auth savedAuth;
-        if (existingDeletedAuth.isPresent()) {
-            savedAuth = existingDeletedAuth.get();
-            savedAuth.changeStatus(Status.ACTIVE);
-            authRepository.save(savedAuth);
+
+        if (existingAuth.isPresent()) {
+            Auth auth = existingAuth.get();
+
+            if (auth.getStatus() == Status.ACTIVE) {
+                throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+            }
+
+            auth.changeStatus(Status.ACTIVE);
+            savedAuth = authRepository.save(auth);
+
         } else {
             Auth newAuth = Auth.create(email, Status.ACTIVE, Role.SUPPORTER);
             savedAuth = authRepository.save(newAuth);
