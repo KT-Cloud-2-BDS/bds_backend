@@ -96,6 +96,8 @@ class WalletServiceIntegrationExceptionTest {
                         assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_ALREADY_EXISTS.getMessage());
                     });
 
+            em.clear();
+
             int walletCount = em.createQuery("select w from WalletJpaEntity w", WalletJpaEntity.class)
                     .getResultList().size();
 

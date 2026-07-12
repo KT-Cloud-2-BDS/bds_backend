@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Optional;
 
@@ -89,7 +90,7 @@ class WalletServiceUnitExceptionTest {
         void 이미_지갑이_있으면_예외를_던지고_저장하지_않는다() {
             // given
             Long memberId = 1L;
-            given(walletRepository.existsByMemberId(memberId)).willReturn(true);
+            given(walletRepository.save(any(Wallet.class))).willThrow(new DataIntegrityViolationException("unique constraint"));
 
             // when & then
             assertThatThrownBy(() -> walletService.createWallet(memberId))
@@ -98,7 +99,6 @@ class WalletServiceUnitExceptionTest {
                         assertThat(ex.getMessage()).isEqualTo(ErrorCode.WALLET_ALREADY_EXISTS.getMessage());
                     });
 
-            verify(walletRepository, never()).save(any(Wallet.class));
         }
     }
 

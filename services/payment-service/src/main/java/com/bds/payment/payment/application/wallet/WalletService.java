@@ -7,6 +7,7 @@ import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.presentation.response.WalletResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +40,11 @@ public class WalletService {
 
     @Transactional
     public WalletResponseDto createWallet(Long memberId) {
-        if (walletRepository.existsByMemberId(memberId)) throw new BusinessException(ErrorCode.WALLET_ALREADY_EXISTS);
-        return WalletResponseDto.from(walletRepository.save(Wallet.create(memberId)));
+        try {
+            return WalletResponseDto.from(walletRepository.save(Wallet.create(memberId)));
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.WALLET_ALREADY_EXISTS);
+        }
     }
 
     @Transactional

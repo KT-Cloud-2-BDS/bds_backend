@@ -63,7 +63,6 @@ class WalletServiceUnitTest {
                     .memberId(memberId)
                     .balance(0L)
                     .build();
-            given(walletRepository.existsByMemberId(memberId)).willReturn(false);
             given(walletRepository.save(any(Wallet.class))).willReturn(wallet);
             // when
             WalletResponseDto result = walletService.createWallet(memberId);
