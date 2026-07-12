@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import java.util.Objects;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -42,12 +40,15 @@ public class BankClient {
         log.info("은행 계좌에 인증 확인");
 
         try {
-            return Objects.requireNonNull(restClient.post()
-                            .uri("/api/banks/accounts/verify")
-                            .body(requestDto)
-                            .retrieve()
-                            .body(BankVerifyResponseDto.class))
-                    .verified();
+            BankVerifyResponseDto response = restClient.post()
+                    .uri("/api/banks/accounts/verify")
+                    .body(requestDto)
+                    .retrieve()
+                    .body(BankVerifyResponseDto.class);
+
+            if (response == null) throw new BusinessException(ErrorCode.BANK_VERIFICATION_CONFIRM_FAILED);
+
+            return response.verified();
         } catch (RestClientException e) {
             log.error("은행 계좌 인증 실패",e);
             throw new BusinessException(ErrorCode.BANK_VERIFICATION_CONFIRM_FAILED);
