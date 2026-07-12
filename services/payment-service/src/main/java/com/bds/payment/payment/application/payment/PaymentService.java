@@ -46,9 +46,6 @@ public class PaymentService {
 
         Wallet updatedWallet = walletService.charge(memberId, dto.amount());
 
-        BankTransactionRequestDto requestDto = BankTransactionRequestDto.create(account.getAccountNumber(), dto.amount(), tranSeqNo);
-        bankClient.withdraw(requestDto);
-
         PaymentHistoryCommand command = PaymentHistoryCommand.of(
                 updatedWallet,
                 tranSeqNo,
@@ -58,6 +55,9 @@ public class PaymentService {
                 PaymentHistoryStatus.SUCCESS);
 
         paymentHistoryRepository.save(PaymentHistory.create(command));
+
+        BankTransactionRequestDto requestDto = BankTransactionRequestDto.create(account.getAccountNumber(), dto.amount(), tranSeqNo);
+        bankClient.withdraw(requestDto);
 
         return new AccountTransactionResponseDto(updatedWallet.getBalance(), tranSeqNo);
     }
