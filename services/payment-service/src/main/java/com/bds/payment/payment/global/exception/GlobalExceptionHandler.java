@@ -2,13 +2,13 @@ package com.bds.payment.payment.global.exception;
 
 import com.bds.payment.payment.presentation.response.ErrorResponseDto;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
-import java.net.BindException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -29,11 +29,17 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponseDto.of(ErrorCode.INVALID_INPUT, validationErrors));
     }
 
+    @ExceptionHandler(BusinessException.class)
+    protected ResponseEntity<ErrorResponseDto<String>> apiCustomException(BusinessException ex) {
+        return ResponseEntity
+                .status(ex.getErrorCode().getHttpStatus())
+                .body(ErrorResponseDto.of(ex.getErrorCode(),null));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto<String>> handleException(Exception ex) {
 
         ErrorCode resultCode = switch (ex) {
-            case BusinessException e -> e.getErrorCode();
             case NoHandlerFoundException _ -> ErrorCode.NOT_FOUND;
             case BindException _ -> ErrorCode.INVALID_INPUT;
             default -> ErrorCode.INTERNAL_SERVER_ERROR;
@@ -41,6 +47,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(resultCode.getHttpStatus())
-                .body(ErrorResponseDto.of(resultCode, ex.getMessage()));
+                .body(ErrorResponseDto.of(resultCode, null));
     }
 }
