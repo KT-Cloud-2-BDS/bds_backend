@@ -2,23 +2,23 @@
 
 ### payment 도메인 엔드포인트 목록
 
-| method | path                                    | auth required | 설명                                                      |
-|--------|-----------------------------------------|---------------|----------------------------------------------------------|
-| GET    | /api/payment/wallet                     | O             | 월렛 잔액 조회                                             |
-| POST   | /api/payment/accounts                   | O             | 계좌 등록                                                 |
-| POST   | /api/payment/accounts/verify            | O             | 1원 인증                                                  |
-| POST   | /api/payment/deposit                    | O             | 페이 충전                                                 |
-| POST   | /api/payment/withdraw                   | O             | 페이 출금                                                 |
-| GET    | /api/payment/history                    | O             | 개인 월렛 거래 내역 조회                                     |
-| POST   | /api/payment/funding                    | X             | 펀딩 결제 (`FundingController` 구현)                          |
-| POST   | /api/payment/funding/settlement         | X             | 펀딩 정산 요청 (미구현)                                      |
-| POST   | /api/payment/funding/batch-refund       | X             | 펀딩 배치 환불 요청 (미구현)                                 |
-| POST   | /api/payment/refund                     | O             | 수동 환불 (미구현)                                           |
+| method | path                                    | auth required | 설명                              |
+|--------|------------------------------------------|---------------|---------------------------------|
+| GET    | /api/payment/wallet                     | O             | 월렛 잔액 조회                        |
+| POST   | /api/payment/accounts                   | O             | 계좌 등록                           |
+| POST   | /api/payment/accounts/verify            | O             | 1원 인증                           |
+| POST   | /api/payment/deposit                    | O             | 페이 충전                           |
+| POST   | /api/payment/withdraw                   | O             | 페이 출금                           |
+| GET    | /api/payment/history                    | O             | 개인 월렛 거래 내역 조회                  |
+| POST   | /api/payment/funding                    | X             | 펀딩 결제 (`RabbitMQ`로 구현 예정)       |
+| POST   | /api/payment/funding/settlement         | X             | 펀딩 정산 요청 (`RabbitMQ`로 구현 예정)    |
+| POST   | /api/payment/funding/batch-refund       | X             | 펀딩 배치 환불 요청 (`RabbitMQ`로 구현 예정) |
+| POST   | /api/payment/refund                     | O             | 수동 환불 (`RabbitMQ`로 구현 예정)       |
 
 ### 가상 금융망 엔드포인트 목록
 
 | method | path                                   | auth required | 설명                    |
-|--------|----------------------------------------|---------------|------------------------|
+|--------|------------------------------------------|---------------|------------------------|
 | POST   | /api/banks/accounts                    | X             | 계좌 실명 조회 + 1원 송금 |
 | POST   | /api/banks/accounts/verify             | X             | 인증 코드 조회           |
 | POST   | /api/banks/withdraw                    | X             | 계좌 출금 (페이 충전)    |
@@ -35,7 +35,7 @@ GET /api/payment/wallet
 
 Auth Required: **O**
 
-Request Body: 없음 (`X-User-Id` 헤더로 사용자 식별)
+Request Body: 없음 (`@LoginUser`로 주입된 `CurrentUser`로 사용자 식별)
 
 Response Body
 
@@ -49,7 +49,7 @@ Response Body
 Validation / Business Rules
 
 - 인증된 사용자 본인의 월렛 잔액만 조회 가능.
-- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
+- 인증 정보는 `@LoginUser` 어노테이션을 통해 컨트롤러 파라미터로 `CurrentUser` 객체로 주입됩니다.
 
 ---
 
@@ -61,7 +61,7 @@ POST /api/payment/accounts
 
 Auth Required: **O**
 
-Request Body (`X-User-Id` 헤더로 사용자 식별)
+Request Body (`@LoginUser`로 주입된 `CurrentUser`로 사용자 식별)
 
 | 필드              | 타입     | 필수 | 설명      |
 |------------------|--------|-----|---------|
@@ -72,7 +72,9 @@ Request Body (`X-User-Id` 헤더로 사용자 식별)
 Response Body
 
 ```json
-"정상 처리되었습니다."
+{
+  "message" : "정상 처리되었습니다."
+}
 ```
 
 Validation / Business Rules
@@ -94,7 +96,7 @@ POST /api/payment/accounts/verify
 
 Auth Required: **O**
 
-Request Body
+Request Body (`@LoginUser`로 주입된 `CurrentUser`로 사용자 식별)
 
 | 필드     | 타입     | 필수 | 설명        |
 |--------|--------|-----|-----------|
@@ -103,7 +105,9 @@ Request Body
 Response Body
 
 ```json
-"정상 처리되었습니다."
+{
+  "message": "정상 처리되었습니다."
+}
 ```
 
 Validation / Business Rules
@@ -111,7 +115,7 @@ Validation / Business Rules
 - 인증된 사용자만 요청 가능.
 - 가상 은행에 인증 코드 조회 후 일치 시 계좌 등록 완료.
 - 코드 불일치 시 인증 실패 처리.
-- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
+- 인증 정보는 `@LoginUser` 어노테이션을 통해 컨트롤러 파라미터로 `CurrentUser` 객체로 주입됩니다.
 
 ---
 
@@ -123,7 +127,7 @@ POST /api/payment/deposit
 
 Auth Required: **O**
 
-Request Body (`X-User-Id` 헤더로 사용자 식별)
+Request Body (`@LoginUser`로 주입된 `CurrentUser`로 사용자 식별)
 
 | 필드       | 타입   | 필수 | 설명     |
 |----------|------|-----|--------|
@@ -146,7 +150,7 @@ Validation / Business Rules
 - `tranSeqNo` 중복 검증으로 이중 충전 방지.
 - `tranSeqNo`는 UUID v7 사용.
 - 처리 완료 시 `payment_history`에 `type: DEPOSIT`으로 기록.
-- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
+- 인증 정보는 `@LoginUser` 어노테이션을 통해 컨트롤러 파라미터로 `CurrentUser` 객체로 주입됩니다.
 
 ---
 
@@ -158,7 +162,7 @@ POST /api/payment/withdraw
 
 Auth Required: **O**
 
-Request Body (`X-User-Id` 헤더로 사용자 식별)
+Request Body (`@LoginUser`로 주입된 `CurrentUser`로 사용자 식별)
 
 | 필드       | 타입   | 필수 | 설명     |
 |----------|------|-----|--------|
@@ -185,7 +189,7 @@ Validation / Business Rules
 - `tranSeqNo` 중복 검증으로 이중 출금 방지.
 - `tranSeqNo`는 UUID v7 사용.
 - 처리 완료 시 `payment_history`에 `TransactionType.WITHDRAW` 및 `TransactionReason.WITHDRAW`로 기록됩니다.
-- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
+- 인증 정보는 `@LoginUser` 어노테이션을 통해 컨트롤러 파라미터로 `CurrentUser` 객체로 주입됩니다.
 
 ---
 
@@ -197,7 +201,7 @@ GET /api/payment/history
 
 Auth Required: **O**
 
-Request Body: 없음 (`X-User-Id` 헤더로 사용자 식별)
+Request Body: 없음 (`@LoginUser`로 주입된 `CurrentUser`로 사용자 식별)
 
 Query Parameter
 
@@ -220,7 +224,7 @@ Response Body
       "amount": 10000,
       "balanceAfter": 60000,
       "status": "SUCCESS",
-      "createAt": "2026-06-01T10:00:00"
+      "createdAt": "2026-06-01T10:00:00"
     },
     {
       "tranSeqNo": "018e5678-abcd-7xxx-xxxx-xxxxxxxxxxxx",
@@ -229,7 +233,7 @@ Response Body
       "amount": 10000,
       "balanceAfter": 50000,
       "status": "SUCCESS",
-      "createAt": "2026-05-30T15:20:00"
+      "createdAt": "2026-05-30T15:20:00"
     }
   ],
   "page": 0,
@@ -243,9 +247,9 @@ Validation / Business Rules
 - 인증된 사용자 본인의 거래 내역만 조회 가능.
 - `from`, `to` 미지정 시 기본 조회 범위는 현재 시각 기준 최근 1개월.
 - `from`이 `to`보다 늦을 경우 400 응답.
-- `createAt` 기준 최신순 정렬.
+- `createdAt` 기준 최신순 정렬.
 - 월렛 거래(`payment_history`)를 반환.
-- 인증 정보는 인증 도메인에서 `X-User-Id` 헤더로 전달됩니다.
+- 인증 정보는 `@LoginUser` 어노테이션을 통해 컨트롤러 파라미터로 `CurrentUser` 객체로 주입됩니다.
 
 ---
 
@@ -375,7 +379,7 @@ POST /api/payment/refund
 
 Auth Required: **O**
 
-Request Body (`X-User-Id` 헤더로 사용자 식별)
+Request Body
 
 | 필드        | 타입   | 필수 | 설명    |
 |-----------|------|-----|-------|
