@@ -10,6 +10,7 @@ import com.bds.payment.payment.infrastructure.external.request.BankAccountReques
 import com.bds.payment.payment.infrastructure.external.request.BankVerifyRequestDto;
 import com.bds.payment.payment.presentation.request.AccountRegisterRequestDto;
 import com.bds.payment.payment.presentation.request.AccountVerifyRequestDto;
+import com.bds.payment.payment.presentation.response.AccountVerifyResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class AccountService {
 
     //TODO: 보안을 위한 값의 암호화가 진행되어야한다.
 
-    public String registerAccount(Long memberId, AccountRegisterRequestDto dto) {
+    public AccountVerifyResponseDto registerAccount(Long memberId, AccountRegisterRequestDto dto) {
         Long walletId = walletService.getWalletId(memberId);
 
         Optional<Account> accountOptional = accountRepository.findById(walletId);
@@ -45,22 +46,22 @@ public class AccountService {
             accountRepository.save(account);
 
             client.requestVerification(BankAccountRequestDto.to(dto));
-            return "인증 요청을 재전송했습니다.";
+            return AccountVerifyResponseDto.init("인증 요청을 재전송했습니다.");
         }
 
         accountRepository.save(Account.create(walletId, dto));
         client.requestVerification(BankAccountRequestDto.to(dto));
 
-        return "정상 처리되었습니다.";
+        return AccountVerifyResponseDto.init("정상 처리되었습니다.");
     }
 
-    public String verifyAccount(Long memberId, AccountVerifyRequestDto dto) {
+    public AccountVerifyResponseDto verifyAccount(Long memberId, AccountVerifyRequestDto dto) {
         Account account = getAccount(memberId);
         boolean isOk = client.confirmVerification(BankVerifyRequestDto.create(account.getAccountNumber(), dto));
         if (!isOk) throw new BusinessException(ErrorCode.ACCOUNT_VERIFICATION_FAILED);
         account.markVerified();
         accountRepository.save(account);
-        return "정상 처리되었습니다.";
+        return AccountVerifyResponseDto.init("정상 처리되었습니다.");
     }
 
     public Account getAccount(Long memberId) {
