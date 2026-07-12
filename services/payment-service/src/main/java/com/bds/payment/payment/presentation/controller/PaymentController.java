@@ -1,5 +1,7 @@
 package com.bds.payment.payment.presentation.controller;
 
+import com.bds.common.annotation.LoginUser;
+import com.bds.common.dto.CurrentUser;
 import com.bds.payment.payment.application.payment.PaymentService;
 import com.bds.payment.payment.presentation.request.AccountTransactionRequestDto;
 import com.bds.payment.payment.presentation.response.AccountTransactionResponseDto;
@@ -22,22 +24,22 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/deposit")
-    public AccountTransactionResponseDto deposit(@RequestHeader("X-Member-Id") Long memberId, @RequestBody @Valid AccountTransactionRequestDto dto) {
-        return paymentService.charge(memberId, dto);
+    public AccountTransactionResponseDto deposit(@LoginUser CurrentUser currentUser, @RequestBody @Valid AccountTransactionRequestDto dto) {
+        return paymentService.charge(currentUser.id(), dto);
     }
 
     @PostMapping("/withdraw")
-    public AccountTransactionResponseDto withdraw(@RequestHeader("X-Member-Id") Long memberId, @RequestBody @Valid AccountTransactionRequestDto dto) {
-        return paymentService.withdraw(memberId, dto);
+    public AccountTransactionResponseDto withdraw(@LoginUser CurrentUser currentUser, @RequestBody @Valid AccountTransactionRequestDto dto) {
+        return paymentService.withdraw(currentUser.id(), dto);
     }
 
     @GetMapping("/history")
     public PaymentHistoryPageResponseDto getHistory(
-            @RequestHeader("X-Member-Id") Long memberId,
+            @LoginUser CurrentUser currentUser,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return paymentService.getHistory(memberId, from, to, pageable);
+        return paymentService.getHistory(currentUser.id(), from, to, pageable);
     }
 }
