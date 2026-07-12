@@ -1,6 +1,7 @@
 package com.bds.payment.payment.global.exception;
 
 import com.bds.payment.payment.presentation.response.ErrorResponseDto;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.net.BindException;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,6 +35,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto<String>> handleException(Exception ex) {
 
         ErrorCode resultCode = switch (ex) {
+            case BusinessException e -> e.getErrorCode();
             case NoHandlerFoundException _ -> ErrorCode.NOT_FOUND;
             case BindException _ -> ErrorCode.INVALID_INPUT;
             default -> ErrorCode.INTERNAL_SERVER_ERROR;
@@ -40,6 +43,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(resultCode.getHttpStatus())
-                .body(ErrorResponseDto.of(resultCode, null));
+                .body(ErrorResponseDto.of(resultCode, ex.getMessage()));
     }
 }
