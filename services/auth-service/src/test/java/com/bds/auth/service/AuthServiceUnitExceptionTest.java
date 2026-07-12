@@ -4,11 +4,11 @@ import com.bds.auth.application.AuthService;
 import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
 import com.bds.auth.domain.entity.enums.Status;
+import com.bds.auth.domain.repository.AuthRepository;
+import com.bds.auth.domain.repository.AuthLocalRepository;
+import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.bds.auth.global.exception.BusinessException;
 import com.bds.auth.global.exception.ErrorCode;
-import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
-import com.bds.auth.infrastructure.persistence.adapter.AuthLocalAdapter;
-import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,13 +32,13 @@ public class AuthServiceUnitExceptionTest {
     public AuthService authService;
 
     @Mock
-    public AuthAdapter authAdapter;
+    public AuthRepository authRepository;
 
     @Mock
-    public AuthLocalAdapter authLocalAdapter;
+    public AuthLocalRepository authLocalRepository;
 
     @Mock
-    public RedisAdapter redisAdapter;
+    public TokenCacheRepository tokenCacheRepository;
 
     @Mock
     public PasswordEncoder passwordEncoder;
@@ -54,7 +54,7 @@ public class AuthServiceUnitExceptionTest {
         public void 이메일_중복_예외() {
             // given
             String email = "duplicate@email.com";
-            given(authAdapter.existsByEmailAndStatus(anyString(), eq(Status.ACTIVE))).willReturn(true);
+            given(authRepository.existsByEmailAndStatus(anyString(), eq(Status.ACTIVE))).willReturn(true);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -72,7 +72,7 @@ public class AuthServiceUnitExceptionTest {
         public void 인증코드_만료_예외() {
             // given
             String email = "yeojin@email.com";
-            given(redisAdapter.get(anyString())).willReturn(null);
+            given(tokenCacheRepository.get(anyString())).willReturn(null);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -86,7 +86,7 @@ public class AuthServiceUnitExceptionTest {
         public void 인증코드_불일치_예외() {
             // given
             String email = "yeojin@email.com";
-            given(redisAdapter.get("verify:" + email)).willReturn("123456");
+            given(tokenCacheRepository.get("verify:" + email)).willReturn("123456");
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -104,7 +104,7 @@ public class AuthServiceUnitExceptionTest {
         public void 이메일_미인증_예외() {
             // given
             String email = "yeojin@email.com";
-            given(redisAdapter.get("verified:" + email)).willReturn(null);
+            given(tokenCacheRepository.get("verified:" + email)).willReturn(null);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -118,8 +118,8 @@ public class AuthServiceUnitExceptionTest {
         public void 인증후_가입시점_이메일_중복_예외() {
             // given
             String email = "yeojin@email.com";
-            given(redisAdapter.get("verified:" + email)).willReturn("true");
-            given(authAdapter.existsByEmailAndStatus(email, Status.ACTIVE)).willReturn(true);
+            given(tokenCacheRepository.get("verified:" + email)).willReturn("true");
+            given(authRepository.existsByEmailAndStatus(email, Status.ACTIVE)).willReturn(true);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -137,7 +137,7 @@ public class AuthServiceUnitExceptionTest {
         public void 계정_존재하지않음_이메일오류_예외() {
             // given
             String email = "wrong@email.com";
-            given(authAdapter.findByEmail(anyString())).willReturn(Optional.empty());
+            given(authRepository.findByEmail(anyString())).willReturn(Optional.empty());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -154,7 +154,7 @@ public class AuthServiceUnitExceptionTest {
             Auth mockAuth = mock(Auth.class);
             given(mockAuth.getStatus()).willReturn(Status.DELETED);
 
-            given(authAdapter.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
+            given(authRepository.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -172,8 +172,8 @@ public class AuthServiceUnitExceptionTest {
             given(mockAuth.getId()).willReturn(1L);
             given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
 
-            given(authAdapter.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
-            given(authLocalAdapter.findByAuthId(anyLong())).willReturn(Optional.empty());
+            given(authRepository.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
+            given(authLocalRepository.findByAuthId(anyLong())).willReturn(Optional.empty());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -196,8 +196,8 @@ public class AuthServiceUnitExceptionTest {
             AuthLocal mockAuthLocal = mock(AuthLocal.class);
             given(mockAuthLocal.getPassword()).willReturn("encodedPassword");
 
-            given(authAdapter.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
-            given(authLocalAdapter.findByAuthId(anyLong())).willReturn(Optional.of(mockAuthLocal));
+            given(authRepository.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
+            given(authLocalRepository.findByAuthId(anyLong())).willReturn(Optional.of(mockAuthLocal));
             given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
 
             // when & then
@@ -216,7 +216,7 @@ public class AuthServiceUnitExceptionTest {
         public void 존재하지않는계정_탈퇴시도_예외() {
             // given
             Long authId = 999L;
-            given(authAdapter.findById(anyLong())).willReturn(Optional.empty());
+            given(authRepository.findById(anyLong())).willReturn(Optional.empty());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {

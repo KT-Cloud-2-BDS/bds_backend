@@ -1,11 +1,10 @@
 package com.bds.member.application;
 
 import com.bds.member.domain.entity.Member;
+import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.global.exception.BusinessException;
 import com.bds.member.global.exception.ErrorCode;
-import com.bds.member.infrastructure.persistence.adapter.MemberAdapter;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
-import com.bds.member.infrastructure.persistence.repository.MemberRepository;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
 import com.bds.member.presentation.dto.AuthLoginRequestDto;
 import com.bds.member.presentation.dto.AuthLoginResponseDto;
@@ -22,26 +21,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
 
     private final AuthFeignClient authFeignClient;
-    private final MemberAdapter memberAdapter;
+    private final MemberRepository memberRepository;
 
     @Transactional
     public void signUp(MemberSignupRequestDto requestDto) {
-
-        if (memberAdapter.existsByNickname(requestDto.nickname())) {
+        if (memberRepository.existsByNickname(requestDto.nickname())) {
             throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
         }
 
         AuthCreateRequestDto authRequest = new AuthCreateRequestDto(requestDto.email(), requestDto.password());
-
         Long authId = authFeignClient.createAuthAccount(authRequest).getBody();
 
-        Member newMember = Member.create(
-            authId,
-            requestDto.nickname()
-        );
+        Member newMember = Member.create(authId, requestDto.nickname());
 
         try {
-            memberAdapter.save(newMember);
+            memberRepository.save(newMember);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             authFeignClient.deleteAuth(authId);
             throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
@@ -53,7 +47,6 @@ public class MemberService {
 
     @Transactional
     public AuthLoginResponseDto login(MemberLoginRequestDto requestDto) {
-
         AuthLoginRequestDto authRequest = new AuthLoginRequestDto(
             requestDto.email(),
             requestDto.password()
@@ -73,24 +66,24 @@ public class MemberService {
         if (requestDto.nickname() == null || requestDto.nickname().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        if (memberAdapter.existsByNickname(requestDto.nickname())) {
+        if (memberRepository.existsByNickname(requestDto.nickname())) {
             throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
         }
 
-        Member member = memberAdapter.findByAuthId(authId)
+        Member member = memberRepository.findByAuthId(authId)
             .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         member.changeNickname(requestDto.nickname());
-        memberAdapter.save(member);
+        memberRepository.save(member);
     }
 
     @Transactional
     public void deleteMember(Long authId) {
-        if (!memberAdapter.existsByAuthId(authId)) {
+        if (!memberRepository.existsByAuthId(authId)) {
             throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
 
-        memberAdapter.softDeleteByAuthId(authId);
+        memberRepository.softDeleteByAuthId(authId);
 
         ResponseEntity<Void> response = authFeignClient.deleteAuth(authId);
         if (!response.getStatusCode().is2xxSuccessful()) {

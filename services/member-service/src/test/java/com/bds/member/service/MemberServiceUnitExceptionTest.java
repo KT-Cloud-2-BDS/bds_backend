@@ -1,9 +1,9 @@
 package com.bds.member.service;
 
 import com.bds.member.application.MemberService;
+import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.global.exception.BusinessException;
 import com.bds.member.global.exception.ErrorCode;
-import com.bds.member.infrastructure.persistence.adapter.MemberAdapter;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthLoginRequestDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
@@ -31,7 +31,7 @@ public class MemberServiceUnitExceptionTest {
     public MemberService memberService;
 
     @Mock
-    public MemberAdapter memberAdapter;
+    public MemberRepository memberRepository;
 
     @Mock
     public AuthFeignClient authFeignClient;
@@ -45,7 +45,7 @@ public class MemberServiceUnitExceptionTest {
             // given
             MemberSignupRequestDto requestDto = new MemberSignupRequestDto("test@email.com", "password123!", "중복닉네임");
 
-            given(memberAdapter.existsByNickname(anyString())).willReturn(true);
+            given(memberRepository.existsByNickname(anyString())).willReturn(true);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -100,7 +100,7 @@ public class MemberServiceUnitExceptionTest {
             Long authId = 24L;
             MemberInfoRequestDto requestDto = new MemberInfoRequestDto("이미있는닉네임");
 
-            given(memberAdapter.existsByNickname(anyString())).willReturn(true);
+            given(memberRepository.existsByNickname(anyString())).willReturn(true);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -116,8 +116,8 @@ public class MemberServiceUnitExceptionTest {
             Long authId = 999L;
             MemberInfoRequestDto requestDto = new MemberInfoRequestDto("새닉네임");
 
-            given(memberAdapter.existsByNickname(anyString())).willReturn(false);
-            given(memberAdapter.findByAuthId(anyLong())).willReturn(Optional.empty());
+            given(memberRepository.existsByNickname(anyString())).willReturn(false);
+            given(memberRepository.findByAuthId(anyLong())).willReturn(Optional.empty());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -136,7 +136,7 @@ public class MemberServiceUnitExceptionTest {
             // given
             Long authId = 999L;
 
-            given(memberAdapter.existsByAuthId(anyLong())).willReturn(false);
+            given(memberRepository.existsByAuthId(anyLong())).willReturn(false);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -151,7 +151,7 @@ public class MemberServiceUnitExceptionTest {
             // given
             Long authId = 24L;
 
-            given(memberAdapter.existsByAuthId(anyLong())).willReturn(true);
+            given(memberRepository.existsByAuthId(anyLong())).willReturn(true);
             given(authFeignClient.deleteAuth(anyLong())).willReturn(ResponseEntity.internalServerError().build());
 
             // when & then

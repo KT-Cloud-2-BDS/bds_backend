@@ -1,16 +1,14 @@
 package com.bds.auth.application;
 
-
 import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.domain.entity.enums.Status;
+import com.bds.auth.domain.repository.AuthRepository;
+import com.bds.auth.domain.repository.AuthLocalRepository;
+import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.bds.auth.global.exception.BusinessException;
 import com.bds.auth.global.exception.ErrorCode;
-import com.bds.auth.infrastructure.persistence.adapter.AuthAdapter;
-import com.bds.auth.infrastructure.persistence.adapter.AuthLocalAdapter;
-import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
-import com.bds.auth.infrastructure.persistence.repository.AuthLocalJpaRepository;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
 import java.security.SecureRandom;
@@ -26,9 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AuthService {
 
-    private final AuthAdapter authAdapter;
-    private final AuthLocalAdapter authLocalAdapter;
-    private final RedisAdapter redisAdapter;
+
+    private final AuthRepository authRepository;
+    private final AuthLocalRepository authLocalRepository;
+    private final TokenCacheRepository tokenCacheRepository;
+
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
@@ -37,19 +37,19 @@ public class AuthService {
 
     @Transactional
     public void sendSignUpVerificationCode(String email) {
-        if (authAdapter.existsByEmailAndStatus(email, Status.ACTIVE)) {
+        if (authRepository.existsByEmailAndStatus(email, Status.ACTIVE)) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
         String verificationCode = String.valueOf(SECURE_RANDOM.nextInt(900_000) + 100_000);
 
-        redisAdapter.put("verify:" + email, verificationCode, 3);
+        tokenCacheRepository.put("verify:" + email, verificationCode, 3);
         emailService.sendVerificationEmail(email, verificationCode);
     }
 
     @Transactional
     public void verifyCode(String email, String code) {
-        String redisCode = redisAdapter.get("verify:" + email);
+        String redisCode = tokenCacheRepository.get("verify:" + email);
 
         if (redisCode == null) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_EXPIRED);
@@ -58,54 +58,52 @@ public class AuthService {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_MISMATCH);
         }
 
-        redisAdapter.delete("verify:" + email);
-        redisAdapter.put("verified:" + email, "true", 10);
+        tokenCacheRepository.delete("verify:" + email);
+        tokenCacheRepository.put("verified:" + email, "true", 10);
     }
 
     @Transactional
     public Long createAccount(String email, String password) {
-
-        String ticket = redisAdapter.get("verified:" + email);
+        String ticket = tokenCacheRepository.get("verified:" + email);
         if (!"true".equals(ticket)) {
             throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
         }
 
-        if (authAdapter.existsByEmailAndStatus(email, Status.ACTIVE)) {
+        if (authRepository.existsByEmailAndStatus(email, Status.ACTIVE)) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        Optional<Auth> existingDeletedAuth = authAdapter.findByEmail(email);
-
+        Optional<Auth> existingDeletedAuth = authRepository.findByEmail(email);
 
         Auth savedAuth;
         if (existingDeletedAuth.isPresent()) {
             savedAuth = existingDeletedAuth.get();
             savedAuth.changeStatus(Status.ACTIVE);
-            authAdapter.save(savedAuth);
+            authRepository.save(savedAuth);
         } else {
             Auth newAuth = Auth.create(email, Status.ACTIVE, Role.SUPPORTER);
-            savedAuth = authAdapter.save(newAuth);
+            savedAuth = authRepository.save(newAuth);
         }
 
         String encodedPassword = passwordEncoder.encode(password);
 
         AuthLocal newAuthLocal = AuthLocal.create(savedAuth.getId(), encodedPassword);
-        authLocalAdapter.save(newAuthLocal);
-        redisAdapter.delete("verified:" + email);
+        authLocalRepository.save(newAuthLocal);
+        tokenCacheRepository.delete("verified:" + email);
 
         return savedAuth.getId();
     }
 
     @Transactional
     public AuthLoginResponseDto login(String email, String password) {
-        Auth auth = authAdapter.findByEmail(email)
+        Auth auth = authRepository.findByEmail(email)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
         if (auth.getStatus() != Status.ACTIVE) {
             throw new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND);
         }
 
-        AuthLocal authLocal = authLocalAdapter.findByAuthId(auth.getId())
+        AuthLocal authLocal = authLocalRepository.findByAuthId(auth.getId())
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
         if (!passwordEncoder.matches(password, authLocal.getPassword())) {
@@ -116,23 +114,20 @@ public class AuthService {
         String refreshToken = jwtTokenUtil.createRefreshToken(auth.getId());
 
         String redisKey = "refresh:" + auth.getId();
-
-        redisAdapter.save(redisKey, refreshToken, 7, TimeUnit.DAYS);
+        tokenCacheRepository.save(redisKey, refreshToken, 7, TimeUnit.DAYS);
 
         return new AuthLoginResponseDto(accessToken, refreshToken);
     }
 
     @Transactional
     public void deleteAuth(Long authId) {
-        Auth auth = authAdapter.findById(authId)
+        Auth auth = authRepository.findById(authId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
         auth.changeStatus(Status.DELETED);
-        authAdapter.save(auth);
+        authRepository.save(auth);
 
-        authLocalAdapter.deleteByAuthId(authId);
-
-        redisAdapter.delete("refresh:" + authId);
-
+        authLocalRepository.deleteByAuthId(authId);
+        tokenCacheRepository.delete("refresh:" + authId);
     }
 }

@@ -2,7 +2,7 @@ package com.bds.member.service;
 
 import com.bds.member.application.MemberService;
 import com.bds.member.domain.entity.Member;
-import com.bds.member.infrastructure.persistence.adapter.MemberAdapter;
+import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
 import com.bds.member.presentation.dto.AuthLoginRequestDto;
@@ -31,7 +31,7 @@ public class MemberServiceUnitTest {
     public MemberService memberService;
 
     @Mock
-    public MemberAdapter memberAdapter;
+    public MemberRepository memberRepository;
 
     @Mock
     public AuthFeignClient authFeignClient;
@@ -46,7 +46,7 @@ public class MemberServiceUnitTest {
             MemberSignupRequestDto requestDto = new MemberSignupRequestDto("test@email.com", "password123!", "여진닉네임");
             Long mockedAuthId = 100L;
 
-            given(memberAdapter.existsByNickname(anyString())).willReturn(false);
+            given(memberRepository.existsByNickname(anyString())).willReturn(false);
             given(authFeignClient.createAuthAccount(any(AuthCreateRequestDto.class)))
                 .willReturn(ResponseEntity.ok(mockedAuthId));
 
@@ -54,7 +54,7 @@ public class MemberServiceUnitTest {
             memberService.signUp(requestDto);
 
             // then
-            verify(memberAdapter, times(1)).save(any(Member.class));
+            verify(memberRepository, times(1)).save(any(Member.class));
         }
     }
 
@@ -90,15 +90,15 @@ public class MemberServiceUnitTest {
             MemberInfoRequestDto requestDto = new MemberInfoRequestDto("새로운닉네임");
             Member mockMember = mock(Member.class);
 
-            given(memberAdapter.existsByNickname(anyString())).willReturn(false);
-            given(memberAdapter.findByAuthId(anyLong())).willReturn(Optional.of(mockMember));
+            given(memberRepository.existsByNickname(anyString())).willReturn(false);
+            given(memberRepository.findByAuthId(anyLong())).willReturn(Optional.of(mockMember));
 
             // when
             memberService.updateNickname(authId, requestDto);
 
             // then
             verify(mockMember, times(1)).changeNickname(anyString());
-            verify(memberAdapter, times(1)).save(any(Member.class));
+            verify(memberRepository, times(1)).save(any(Member.class));
         }
     }
 
@@ -111,14 +111,14 @@ public class MemberServiceUnitTest {
             // given
             Long authId = 24L;
 
-            given(memberAdapter.existsByAuthId(anyLong())).willReturn(true);
+            given(memberRepository.existsByAuthId(anyLong())).willReturn(true);
             given(authFeignClient.deleteAuth(anyLong())).willReturn(ResponseEntity.ok().build());
 
             // when
             memberService.deleteMember(authId);
 
             // then
-            verify(memberAdapter, times(1)).softDeleteByAuthId(anyLong());
+            verify(memberRepository, times(1)).softDeleteByAuthId(anyLong());
         }
     }
 }
