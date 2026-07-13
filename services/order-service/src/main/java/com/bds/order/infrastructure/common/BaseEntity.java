@@ -1,4 +1,4 @@
-package com.bds.order.domain.common;
+package com.bds.order.infrastructure.common;
 
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
