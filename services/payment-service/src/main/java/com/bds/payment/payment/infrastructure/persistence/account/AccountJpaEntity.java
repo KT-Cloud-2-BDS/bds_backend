@@ -1,32 +1,32 @@
-package com.bds.payment.payment.infrastructure.persistence;
+package com.bds.payment.payment.infrastructure.persistence.account;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Entity
 @Getter
+@Entity
 @Builder
+@Table(name = "bank_account")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(
-        name = "wallet",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_wallet_member_id", columnNames = "member_id")
-        }
-)
-public class WalletJpaEntity {
+public class AccountJpaEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long walletId;
 
-    @Column(nullable = false, unique = true)
-    private Long memberId;
+    @Column(nullable = false, length = 10)
+    private String bankCode;
+
+    @Column(nullable = false, length = 50)
+    private String accountNumber;
+
+    @Column(nullable = false, length = 50)
+    private String holderName;
 
     @Column(nullable = false)
-    private Long balance;
+    private Boolean isVerified;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -37,9 +37,10 @@ public class WalletJpaEntity {
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
+
         if (this.createdAt == null) this.createdAt = now;
         if (this.updatedAt == null) this.updatedAt = now;
-        if (this.balance == null) this.balance = 0L;
+        if (this.isVerified == null) this.isVerified = false;
     }
 
     @PreUpdate

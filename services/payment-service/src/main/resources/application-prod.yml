@@ -21,3 +21,7 @@ spring:
 logging:
   level:
     com.bds.payment: INFO
+
+bank:
+  api:
+    base-url: ${BANK_URL}
