@@ -17,8 +17,8 @@ public class NotificationSubscriptionAdapter implements NotificationSubscription
 
   @Override
   public NotificationSubscription save(NotificationSubscription subscription) {
-    NotificationSubscriptionEntity entity = toEntity(subscription);
-    return toDomain(jpaRepository.save(entity));
+    return NotificationSubscriptionMapper.toDomain(
+        jpaRepository.save(NotificationSubscriptionMapper.toEntity(subscription)));
   }
 
   @Override
@@ -31,35 +31,11 @@ public class NotificationSubscriptionAdapter implements NotificationSubscription
   public Optional<NotificationSubscription> findActiveSubscription(Long memberId,
       SubscriptionTargetType targetType, Long targetId) {
     return jpaRepository.findByMemberIdAndTargetTypeAndTargetId(memberId, targetType, targetId)
-        .map(this::toDomain);
+        .map(NotificationSubscriptionMapper::toDomain);
   }
 
   @Override
   public List<Long> findSubscribedMemberIds(SubscriptionTargetType targetType, Long targetId) {
     return jpaRepository.findMemberIdsByTargetTypeAndTargetId(targetType, targetId);
-  }
-
-  private NotificationSubscriptionEntity toEntity(NotificationSubscription model) {
-    return NotificationSubscriptionEntity.builder()
-        .subscriptionId(model.getSubscriptionId())
-        .memberId(model.getMemberId())
-        .targetType(model.getTargetType())
-        .targetId(model.getTargetId())
-        .createdAt(model.getCreatedAt())
-        .isDeleted(model.getIsDeleted())
-        .deletedAt(model.getDeletedAt())
-        .build();
-  }
-
-  private NotificationSubscription toDomain(NotificationSubscriptionEntity entity) {
-    return NotificationSubscription.from(
-        entity.getSubscriptionId(),
-        entity.getMemberId(),
-        entity.getTargetType(),
-        entity.getTargetId(),
-        entity.getCreatedAt(),
-        entity.getIsDeleted(),
-        entity.getDeletedAt()
-    );
   }
 }

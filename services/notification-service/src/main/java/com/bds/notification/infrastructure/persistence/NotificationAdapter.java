@@ -16,7 +16,7 @@ public class NotificationAdapter implements NotificationRepository {
   @Override
   public Page<Notification> findByMemberId(Long memberId, Pageable pageable) {
     return jpaRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable)
-        .map(this::toDomain);
+        .map(NotificationMapper::toDomain);
   }
 
   @Override
@@ -27,22 +27,5 @@ public class NotificationAdapter implements NotificationRepository {
   @Override
   public int markAllAsRead(Long memberId) {
     return jpaRepository.markAllAsReadByMemberId(memberId);
-  }
-
-  private Notification toDomain(NotificationEntity entity) {
-    return Notification.from(
-        entity.getNotificationId(),
-        entity.getMemberId(),
-        entity.getType(),
-        entity.getTargetId(),
-        entity.getTitle(),
-        entity.getBody(),
-        entity.getChannel(),
-        entity.getSendStatus(),
-        entity.getIsRead(),
-        entity.getCreatedAt(),
-        entity.getReadAt(),
-        entity.getClickedAt()
-    );
   }
 }
