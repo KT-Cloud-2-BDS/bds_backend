@@ -74,7 +74,7 @@ public class MemberServiceUnitExceptionTest {
             ResponseEntity<Long> responseEntity = ResponseEntity.ok(authId);
             given(authFeignClient.createAuthAccount(any())).willReturn(responseEntity);
 
-            doThrow(DataIntegrityViolationException.class).when(memberRepository).save(any(Member.class));
+            doThrow(new DataIntegrityViolationException("Duplicate key")).when(memberRepository).save(any(Member.class));
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -97,7 +97,7 @@ public class MemberServiceUnitExceptionTest {
             ResponseEntity<Long> responseEntity = ResponseEntity.ok(authId);
             given(authFeignClient.createAuthAccount(any())).willReturn(responseEntity);
 
-            doThrow(DataIntegrityViolationException.class).when(memberRepository).save(any(Member.class));
+            doThrow(new DataIntegrityViolationException("Duplicate key")).when(memberRepository).save(any(Member.class));
 
             doThrow(new RuntimeException("Auth 서버 장애")).when(authFeignClient).deleteAuth(authId);
 
@@ -107,6 +107,7 @@ public class MemberServiceUnitExceptionTest {
             });
 
             assertEquals(ErrorCode.DUPLICATE_NICKNAME, exception.getErrorCode());
+            verify(authFeignClient, times(1)).deleteAuth(authId);
         }
     }
 
