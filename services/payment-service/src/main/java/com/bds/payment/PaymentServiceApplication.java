@@ -3,7 +3,7 @@ package com.bds.payment;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = "com.bds.payment")
+@SpringBootApplication(scanBasePackages = "com.bds")
 public class PaymentServiceApplication {
 
     public static void main(String[] args) {
