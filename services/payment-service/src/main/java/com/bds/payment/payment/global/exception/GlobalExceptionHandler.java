@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.Map;
@@ -33,7 +34,14 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ErrorResponseDto<String>> apiCustomException(BusinessException ex) {
         return ResponseEntity
                 .status(ex.getErrorCode().getHttpStatus())
-                .body(ErrorResponseDto.of(ex.getErrorCode(),null));
+                .body(ErrorResponseDto.of(ex.getErrorCode(), null));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponseDto<String>> resolveArgumentException(ResponseStatusException ex) {
+        return ResponseEntity
+                .status(ex.getStatusCode())
+                .body(ErrorResponseDto.of(ErrorCode.UNAUTHORIZED.getCode(), ex.getReason(), null));
     }
 
     @ExceptionHandler(Exception.class)

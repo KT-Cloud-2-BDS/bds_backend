@@ -10,4 +10,8 @@ public record ErrorResponseDto<T> (
     public static <T> ErrorResponseDto<T> of(ErrorCode code, T detail) {
         return new ErrorResponseDto<>(code.getCode(), code.getMessage(), detail);
     }
+
+    public static <T> ErrorResponseDto<T> of(String code, String message, T detail) {
+        return new ErrorResponseDto<>(code, message, detail);
+    }
 }
