@@ -1,5 +1,6 @@
-package com.bds.notification.domain.notification.entity;
+package com.bds.notification.infrastructure.persistence;
 
+import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,8 +19,8 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor
 @Entity
 @Table(name = "notification_subscription")
-@SQLRestriction("is_deleted = false")  // 모든 쿼리에 자동 적용
-public class NotificationSubscription {
+@SQLRestriction("is_deleted = false")
+public class NotificationSubscriptionEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,16 +46,15 @@ public class NotificationSubscription {
   private LocalDateTime deletedAt;
 
   @Builder
-  private NotificationSubscription(Long memberId, SubscriptionTargetType targetType,
-      Long targetId) {
+  public NotificationSubscriptionEntity(Long subscriptionId, Long memberId,
+      SubscriptionTargetType targetType, Long targetId, LocalDateTime createdAt, Boolean isDeleted,
+      LocalDateTime deletedAt) {
+    this.subscriptionId = subscriptionId;
     this.memberId = memberId;
     this.targetType = targetType;
     this.targetId = targetId;
-    this.createdAt = LocalDateTime.now();
-  }
-
-  public void softDelete() {
-    this.isDeleted = true;
-    this.deletedAt = LocalDateTime.now();
+    this.createdAt = createdAt;
+    this.isDeleted = isDeleted;
+    this.deletedAt = deletedAt;
   }
 }

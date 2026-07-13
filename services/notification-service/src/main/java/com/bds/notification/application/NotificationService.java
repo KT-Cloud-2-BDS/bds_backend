@@ -2,9 +2,9 @@ package com.bds.notification.application;
 
 import com.bds.notification.common.exception.BusinessException;
 import com.bds.notification.common.exception.ErrorCode;
-import com.bds.notification.domain.notification.entity.Notification;
-import com.bds.notification.domain.notification.entity.NotificationSubscription;
+import com.bds.notification.domain.notification.model.Notification;
 import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
+import com.bds.notification.domain.notification.model.NotificationSubscription;
 import com.bds.notification.domain.notification.repository.NotificationRepository;
 import com.bds.notification.domain.notification.repository.NotificationSubscriptionRepository;
 import com.bds.notification.infrastructure.sse.SseEmitterManager;
@@ -51,16 +51,15 @@ public class NotificationService {
   // 알림 리스트 반환
   @Transactional
   public NotificationListResponseDto getNotifications(Long memberId, Pageable pageable) {
-    Page<Notification> notifications = notificationRepository.findByMemberIdOrderByCreatedAtDesc(
-        memberId, pageable);
+    Page<Notification> notifications = notificationRepository.findByMemberId(memberId, pageable);
 
-    long unReadCount = notificationRepository.countByMemberIdAndIsReadFalse(memberId);
+    long unReadCount = notificationRepository.countUnreadByMemberId(memberId);
 
     List<NotificationResponseDto> responses = notifications.getContent().stream()
         .map(NotificationResponseDto::from)
         .toList();
 
-    notificationRepository.markAllAsReadByMemberId(memberId);
+    notificationRepository.markAllAsRead(memberId);
 
     return NotificationListResponseDto.of(responses, notifications.getTotalElements(), unReadCount);
   }
@@ -68,7 +67,7 @@ public class NotificationService {
   // 읽지 않은 알림 반환
   public UnreadCountResponseDto getUnreadCount(Long memberId) {
 
-    long unreadCount = notificationRepository.countByMemberIdAndIsReadFalse(memberId);
+    long unreadCount = notificationRepository.countUnreadByMemberId(memberId);
     return new UnreadCountResponseDto(unreadCount);
   }
 
@@ -77,15 +76,11 @@ public class NotificationService {
   public NotificationSubscribeResponseDto subscribe(Long memberId,
       SubscriptionTargetType targetType,
       Long targetId) {
-    if (notificationSubscriptionRepository.existsByMemberIdAndTargetTypeAndTargetId(memberId,
-        targetType, targetId)) {
+    if (notificationSubscriptionRepository.existsActiveSubscription(memberId, targetType, targetId)) {
       throw new BusinessException(ErrorCode.SUBSCRIPTION_ALREADY_EXISTS);
     }
-    NotificationSubscription notificationSubscription = NotificationSubscription.builder()
-        .targetType(targetType)
-        .memberId(memberId)
-        .targetId(targetId)
-        .build();
+    NotificationSubscription notificationSubscription = NotificationSubscription.create(memberId,
+        targetType, targetId);
     try {
       notificationSubscriptionRepository.save(notificationSubscription);
     } catch (DataIntegrityViolationException e) {
@@ -99,11 +94,12 @@ public class NotificationService {
   @Transactional
   public void unsubscribe(Long memberId, SubscriptionTargetType targetType,
       Long targetId) {
-    NotificationSubscription subscription = notificationSubscriptionRepository.findByMemberIdAndTargetTypeAndTargetId(
+    NotificationSubscription subscription = notificationSubscriptionRepository.findActiveSubscription(
             memberId, targetType, targetId)
         .orElseThrow(() -> new BusinessException(ErrorCode.SUBSCRIPTION_NOT_FOUND));
 
     subscription.softDelete();
+    notificationSubscriptionRepository.save(subscription);
   }
 
 }

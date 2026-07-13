@@ -1,0 +1,48 @@
+package com.bds.notification.infrastructure.persistence;
+
+import com.bds.notification.domain.notification.model.Notification;
+import com.bds.notification.domain.notification.repository.NotificationRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+
+@Repository
+@RequiredArgsConstructor
+public class NotificationAdapter implements NotificationRepository {
+
+  private final NotificationJpaRepository jpaRepository;
+
+  @Override
+  public Page<Notification> findByMemberId(Long memberId, Pageable pageable) {
+    return jpaRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable)
+        .map(this::toDomain);
+  }
+
+  @Override
+  public long countUnreadByMemberId(Long memberId) {
+    return jpaRepository.countByMemberIdAndIsReadFalse(memberId);
+  }
+
+  @Override
+  public int markAllAsRead(Long memberId) {
+    return jpaRepository.markAllAsReadByMemberId(memberId);
+  }
+
+  private Notification toDomain(NotificationEntity entity) {
+    return Notification.from(
+        entity.getNotificationId(),
+        entity.getMemberId(),
+        entity.getType(),
+        entity.getTargetId(),
+        entity.getTitle(),
+        entity.getBody(),
+        entity.getChannel(),
+        entity.getSendStatus(),
+        entity.getIsRead(),
+        entity.getCreatedAt(),
+        entity.getReadAt(),
+        entity.getClickedAt()
+    );
+  }
+}

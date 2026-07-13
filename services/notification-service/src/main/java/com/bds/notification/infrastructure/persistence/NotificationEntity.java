@@ -1,5 +1,7 @@
-package com.bds.notification.domain.notification.entity;
+package com.bds.notification.infrastructure.persistence;
 
+import com.bds.notification.domain.notification.entity.NotificationChannel;
+import com.bds.notification.domain.notification.entity.NotificationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,7 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Entity
 @Table(name = "notifications")
-public class Notification {
+public class NotificationEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,16 +61,20 @@ public class Notification {
   private LocalDateTime clickedAt;
 
   @Builder
-  private Notification(Long memberId, NotificationType type, Long targetId,
-      String title, String body, NotificationChannel channel) {
+  public NotificationEntity(Long notificationId, Long memberId, NotificationType type,
+      Long targetId, String title, String body, NotificationChannel channel, Boolean sendStatus,
+      Boolean isRead, LocalDateTime createdAt, LocalDateTime readAt, LocalDateTime clickedAt) {
+    this.notificationId = notificationId;
     this.memberId = memberId;
     this.type = type;
     this.targetId = targetId;
     this.title = title;
     this.body = body;
     this.channel = channel;
-    this.sendStatus = false;
-    this.isRead = false;
-    this.createdAt = LocalDateTime.now();
+    this.sendStatus = sendStatus;
+    this.isRead = isRead;
+    this.createdAt = createdAt;
+    this.readAt = readAt;
+    this.clickedAt = clickedAt;
   }
 }

@@ -11,9 +11,9 @@ import static org.mockito.Mockito.when;
 
 import com.bds.notification.common.exception.BusinessException;
 import com.bds.notification.common.exception.ErrorCode;
-import com.bds.notification.domain.notification.entity.Notification;
-import com.bds.notification.domain.notification.entity.NotificationSubscription;
+import com.bds.notification.domain.notification.model.Notification;
 import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
+import com.bds.notification.domain.notification.model.NotificationSubscription;
 import com.bds.notification.domain.notification.repository.NotificationRepository;
 import com.bds.notification.domain.notification.repository.NotificationSubscriptionRepository;
 import com.bds.notification.infrastructure.sse.SseEmitterManager;
@@ -63,8 +63,7 @@ public class NotificationServiceTest {
       Long memberId = 1L;
       SubscriptionTargetType targetType = SubscriptionTargetType.PRODUCT;
       Long targetId = 1L;
-      when(notificationSubscriptionRepository.existsByMemberIdAndTargetTypeAndTargetId(memberId,
-          targetType, targetId))
+      when(notificationSubscriptionRepository.existsActiveSubscription(memberId, targetType, targetId))
           .thenReturn(false);
 
       //when
@@ -84,8 +83,7 @@ public class NotificationServiceTest {
       Long memberId = 1L;
       SubscriptionTargetType targetType = SubscriptionTargetType.PRODUCT;
       Long targetId = 1L;
-      when(notificationSubscriptionRepository.existsByMemberIdAndTargetTypeAndTargetId(memberId,
-          targetType, targetId))
+      when(notificationSubscriptionRepository.existsActiveSubscription(memberId, targetType, targetId))
           .thenReturn(true);
       //when
       BusinessException exception = assertThrows(BusinessException.class,
@@ -111,7 +109,7 @@ public class NotificationServiceTest {
       SubscriptionTargetType targetType = SubscriptionTargetType.PRODUCT;
       Long targetId = 1L;
       NotificationSubscription notificationSubscription = mock(NotificationSubscription.class);
-      when(notificationSubscriptionRepository.findByMemberIdAndTargetTypeAndTargetId(
+      when(notificationSubscriptionRepository.findActiveSubscription(
           memberId, targetType, targetId
       )).thenReturn(Optional.of(notificationSubscription));
 
@@ -120,7 +118,7 @@ public class NotificationServiceTest {
 
       //then
       verify(notificationSubscription).softDelete();
-      verify(notificationSubscriptionRepository, never()).delete(any());
+      verify(notificationSubscriptionRepository).save(any(NotificationSubscription.class));
     }
 
     @Test
@@ -130,7 +128,7 @@ public class NotificationServiceTest {
       Long memberId = 1L;
       SubscriptionTargetType targetType = SubscriptionTargetType.PRODUCT;
       Long targetId = 1L;
-      when(notificationSubscriptionRepository.findByMemberIdAndTargetTypeAndTargetId(
+      when(notificationSubscriptionRepository.findActiveSubscription(
           memberId, targetType, targetId
       )).thenReturn(Optional.empty());
 
@@ -152,7 +150,7 @@ public class NotificationServiceTest {
     public void getUnreadCount() {
       //given
       Long memberId = 1L;
-      when(notificationRepository.countByMemberIdAndIsReadFalse(memberId))
+      when(notificationRepository.countUnreadByMemberId(memberId))
           .thenReturn(10L);
 
       //when
@@ -178,7 +176,7 @@ public class NotificationServiceTest {
       Page<Notification> notifications = new PageImpl<>(List.of(notification));
       // Page<Notification> notifications = mock(Page.class);
 
-      when(notificationRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable))
+      when(notificationRepository.findByMemberId(memberId, pageable))
           .thenReturn(notifications);
 
       //when
@@ -187,7 +185,7 @@ public class NotificationServiceTest {
 
       //then
       assertThat(responseDto.notifications().size()).isEqualTo(notifications.getContent().size());
-      verify(notificationRepository).markAllAsReadByMemberId(memberId);
+      verify(notificationRepository).markAllAsRead(memberId);
     }
   }
 

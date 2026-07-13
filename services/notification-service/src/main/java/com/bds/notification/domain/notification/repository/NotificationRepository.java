@@ -1,20 +1,16 @@
 package com.bds.notification.domain.notification.repository;
 
-import com.bds.notification.domain.notification.entity.Notification;
+import com.bds.notification.domain.notification.model.Notification;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
+public interface NotificationRepository {
 
-  Page<Notification> findByMemberIdOrderByCreatedAtDesc(Long memberId, Pageable pageable);
+  Page<Notification> findByMemberId(Long memberId, Pageable pageable);
 
-  long countByMemberIdAndIsReadFalse(Long memberId);
+  long countUnreadByMemberId(Long memberId);
 
-  @Modifying
-  @Query("UPDATE Notification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.memberId =  :memberId AND n.isRead = false")
-  int markAllAsReadByMemberId(Long memberId);
+  int markAllAsRead(Long memberId);
 
 }

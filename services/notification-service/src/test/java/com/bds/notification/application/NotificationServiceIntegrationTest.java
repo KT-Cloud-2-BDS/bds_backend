@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.bds.notification.common.exception.BusinessException;
 import com.bds.notification.common.exception.ErrorCode;
-import com.bds.notification.domain.notification.entity.Notification;
 import com.bds.notification.domain.notification.entity.NotificationChannel;
 import com.bds.notification.domain.notification.entity.NotificationType;
 import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
-import com.bds.notification.domain.notification.repository.NotificationRepository;
-import com.bds.notification.domain.notification.repository.NotificationSubscriptionRepository;
+import com.bds.notification.infrastructure.persistence.NotificationEntity;
+import com.bds.notification.infrastructure.persistence.NotificationJpaRepository;
+import com.bds.notification.infrastructure.persistence.NotificationSubscriptionJpaRepository;
 import com.bds.notification.presentation.dto.NotificationListResponseDto;
 import com.bds.notification.presentation.dto.NotificationSubscribeResponseDto;
 import com.bds.notification.presentation.dto.UnreadCountResponseDto;
@@ -58,10 +58,10 @@ public class NotificationServiceIntegrationTest {
   NotificationService notificationService;
 
   @Autowired
-  NotificationRepository notificationRepository;
+  NotificationJpaRepository notificationRepository;
 
   @Autowired
-  NotificationSubscriptionRepository notificationSubscriptionRepository;
+  NotificationSubscriptionJpaRepository notificationSubscriptionRepository;
 
   @BeforeEach
   void setUp() {
@@ -87,8 +87,7 @@ public class NotificationServiceIntegrationTest {
 
       //then
       boolean subscribed = notificationSubscriptionRepository.existsByMemberIdAndTargetTypeAndTargetId(
-          memberId, targetType, targetId
-      );
+          memberId, targetType, targetId);
       assertThat(subscribed).isTrue();
     }
 
@@ -204,14 +203,17 @@ public class NotificationServiceIntegrationTest {
     }
   }
 
-  private Notification createNotification(Long memberId, Long targetId) {
-    return notificationRepository.save(Notification.builder()
+  private NotificationEntity createNotification(Long memberId, Long targetId) {
+    return notificationRepository.save(NotificationEntity.builder()
         .memberId(memberId)
         .type(NotificationType.FUNDING_START)
         .targetId(targetId)
         .title("제목" + targetId)
         .body("펀딩이 시작되었습니다." + targetId)
         .channel(NotificationChannel.SSE)
+        .sendStatus(false)
+        .isRead(false)
+        .createdAt(java.time.LocalDateTime.now())
         .build());
   }
 }

@@ -1,6 +1,6 @@
 package com.bds.notification.presentation.dto;
 
-import com.bds.notification.domain.notification.entity.Notification;
+import com.bds.notification.domain.notification.model.Notification;
 import com.bds.notification.domain.notification.entity.NotificationType;
 import java.time.LocalDateTime;
 
