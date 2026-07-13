@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import java.util.HashMap;
@@ -19,8 +20,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
 
 /**
  * [Auth 도메인 통합 테스트]
@@ -44,7 +43,7 @@ public class AuthCreateIntegrationTest {
     private com.bds.auth.application.EmailService emailService;
 
     @MockitoBean
-    private RedisAdapter redisAdapter;
+    private TokenCacheRepository tokenCacheRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -57,7 +56,7 @@ public class AuthCreateIntegrationTest {
         String password = "password123!";
         String redisKey = "verified:" + email;
 
-        Mockito.when(redisAdapter.get(redisKey)).thenReturn("true");
+        Mockito.when(tokenCacheRepository.get(redisKey)).thenReturn("true");
 
         Map<String, String> authCreateRequest = new HashMap<>();
         authCreateRequest.put("email", email);
@@ -66,7 +65,7 @@ public class AuthCreateIntegrationTest {
         String jsonContent = objectMapper.writeValueAsString(authCreateRequest);
 
 
-        // when : 내부(Internal) API 컨트롤러 호출 (신규 가입)
+        // when : 내부 API 컨트롤러 호출 (신규 가입)
         mockMvc.perform(post("/api/auths/account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
@@ -97,7 +96,7 @@ public class AuthCreateIntegrationTest {
     @DisplayName("기존 탈퇴 유저 가입: 이미 DELETED 상태로 존재하는 계정이 있다면, 복구(ACTIVE)하여 처리한다.")
     void authRestoreAccountScenario() throws Exception {
 
-        // given : 1. DB에 기존 탈퇴(DELETED) 회원 데이터를 미리 쑤셔 넣어 둡니다.
+        // given : 1. DB에 기존 탈퇴 회원 데이터 적재
         String email = "jinjinjala312@naver.com";
         String password = "password123!";
 
@@ -110,7 +109,7 @@ public class AuthCreateIntegrationTest {
 
         // 2. 가짜 Redis 및 요청 바디 세팅
         String redisKey = "verified:" + email;
-        Mockito.when(redisAdapter.get(redisKey)).thenReturn("true");
+        Mockito.when(tokenCacheRepository.get(redisKey)).thenReturn("true");
 
         Map<String, String> authCreateRequest = new HashMap<>();
         authCreateRequest.put("email", email);

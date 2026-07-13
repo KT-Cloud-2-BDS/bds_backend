@@ -66,7 +66,8 @@ public class AuthServiceUnitTest {
         @DisplayName("중복 이메일이 없으면 랜덤 인증 코드를 생성하여 Redis에 저장하고 메일을 발송한다")
         public void 인증코드발송_성공() {
             String email = "yeojin@email.com";
-            given(authRepository.existsByEmailAndStatus(anyString(), eq(Status.ACTIVE))).willReturn(false);
+
+            given(authRepository.findByEmail(email)).willReturn(Optional.empty());
 
             authService.sendSignUpVerificationCode(email);
 

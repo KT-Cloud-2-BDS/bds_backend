@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.bds.member.domain.entity.Member;
+import com.bds.member.domain.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import java.io.IOException;
 import okhttp3.mockwebserver.MockResponse;
@@ -41,7 +42,7 @@ class MemberDeleteIntegrationTest {
     private EntityManager em;
 
     @Autowired
-    private com.bds.member.infrastructure.persistence.adapter.MemberAdapter memberAdapter;
+    private MemberRepository memberRepository;
 
     private static MockWebServer mockWebServer;
 
@@ -67,17 +68,17 @@ class MemberDeleteIntegrationTest {
     @DisplayName("회원 탈퇴 요청 시, 내부 상태를 비활성화하고 외부 Auth 서버 파기 요청 후 정상 응답한다.")
     void memberDeleteLifecycleScenario() throws Exception {
 
-        // given : 탈퇴할 정상 회원 데이터 사전 적재 & 가짜 외부 응답 큐
+        // given : 탈퇴할 정상 회원 데이터 사전 적재
         Long mockAuthId = 100L;
         String nickname = "bbangdiz";
 
-        // DB에 탈퇴의 타겟이 될 정상(Active) 회원 생성
+        // DB에 탈퇴의 타겟이 될 정상 회원 생성
         Member activeMember = Member.create(mockAuthId, nickname);
-        memberAdapter.save(activeMember);
+
+        memberRepository.save(activeMember);
         em.flush();
         em.clear();
 
-        // Auth 서버가 파기 요청을 받으면 정상적으로 200 OK를 반환한다고 가정하여 세팅
         mockWebServer.enqueue(new MockResponse()
             .setResponseCode(200)
             .setHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE));

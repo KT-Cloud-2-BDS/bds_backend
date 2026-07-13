@@ -8,7 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
 
-import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
+import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import java.util.HashMap;
@@ -26,13 +26,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-
-/**
- * [Auth 도메인 통합 테스트 - 로그인]
- * DB에 저장된 회원 정보를 바탕으로 로그인 요청(이메일, 평문 비밀번호)을 수행하고,
- * 비밀번호 검증(Bcrypt 대조) 성공 시 JWT 토큰(Access/Refresh)이 정상적으로 발급되는지 확인합니다.
- * 발급된 Refresh Token이 Redis에 올바른 TTL 7일로 안전하게 적재되는 과정을 검증합니다.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -55,7 +48,7 @@ public class AuthLoginIntegrationTest {
     private com.bds.auth.application.EmailService emailService;
 
     @MockitoBean
-    private RedisAdapter redisAdapter;
+    private TokenCacheRepository tokenCacheRepository;
 
     @Test
     @DisplayName("DB에 저장된 이메일과 비밀번호로 로그인을 요청하면 성공하고 토큰을 반환한다.")
@@ -72,9 +65,9 @@ public class AuthLoginIntegrationTest {
             .executeUpdate();
 
         // 생성된 Auth의 ID 가져오기
-        Long authId = (Long) em.createNativeQuery("SELECT id FROM auth WHERE email = :email")
+        Long authId = ((Number) em.createNativeQuery("SELECT id FROM auth WHERE email = :email")
             .setParameter("email", email)
-            .getSingleResult();
+            .getSingleResult()).longValue();
 
         // 2. AuthLocal 자식 테이블에 암호화된 비밀번호 저장
         em.createNativeQuery("INSERT INTO auth_local (auth_id, password) VALUES (:authId, :password)")
@@ -82,8 +75,7 @@ public class AuthLoginIntegrationTest {
             .setParameter("password", encodedPassword)
             .executeUpdate();
 
-
-        // 로그인을 요청할 JSON 바디 생성 (평문 비밀번호 사용)
+        // 로그인을 요청할 JSON 바디 생성
         Map<String, String> loginRequest = new HashMap<>();
         loginRequest.put("email", email);
         loginRequest.put("password", rawPassword);
@@ -95,11 +87,10 @@ public class AuthLoginIntegrationTest {
                 .content(jsonContent))
             .andDo(print())
 
-
             // then
             .andExpect(status().isOk());
 
-        verify(redisAdapter, times(1)).save(
+        verify(tokenCacheRepository, times(1)).save(
             anyString(),
             anyString(),
             eq(7L),

@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.bds.auth.infrastructure.persistence.adapter.RedisAdapter;
+import com.bds.auth.domain.repository.TokenCacheRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ public class AuthDeleteIntegrationTest {
     private com.bds.auth.application.EmailService emailService;
 
     @MockitoBean
-    private RedisAdapter redisAdapter;
+    private TokenCacheRepository tokenCacheRepository;
 
     @Test
     @DisplayName("내부 통신으로 계정 삭제 요청이 오면, DB에서 해당 인증 정보가 성공적으로 삭제된다.")
@@ -54,9 +54,9 @@ public class AuthDeleteIntegrationTest {
             .executeUpdate();
 
         // 방금 만든 회원의 ID(authId) 가져오기
-        Long authId = (Long) em.createNativeQuery("SELECT id FROM auth WHERE email = :email")
+        Long authId = ((Number) em.createNativeQuery("SELECT id FROM auth WHERE email = :email")
             .setParameter("email", email)
-            .getSingleResult();
+            .getSingleResult()).longValue();
 
         // 2. AuthLocal 자식 테이블에도 데이터 저장
         em.createNativeQuery("INSERT INTO auth_local (auth_id, password) VALUES (:authId, 'dummyPassword!')")
