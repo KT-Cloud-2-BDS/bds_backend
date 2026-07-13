@@ -71,7 +71,7 @@ public class MemberEntityUnitExceptionTest {
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                member.changeNickname(invalidNickname);
+                member.updateNickname(invalidNickname);
             });
             assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
         }

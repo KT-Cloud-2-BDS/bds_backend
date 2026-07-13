@@ -73,7 +73,7 @@ public class MemberServiceUnitTest {
             memberService.updateNickname(authId, requestDto);
 
             // then
-            verify(mockMember, times(1)).changeNickname(anyString());
+            verify(mockMember, times(1)).updateNickname(anyString());
             verify(memberRepository, times(1)).save(any(Member.class));
         }
     }

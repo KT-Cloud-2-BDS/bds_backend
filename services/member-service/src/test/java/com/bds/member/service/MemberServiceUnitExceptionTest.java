@@ -1,6 +1,8 @@
 package com.bds.member.service;
 
 import com.bds.member.application.MemberService;
+import com.bds.member.domain.entity.Member;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.global.exception.BusinessException;
 import com.bds.member.global.exception.ErrorCode;
@@ -35,22 +37,54 @@ public class MemberServiceUnitExceptionTest {
     public AuthFeignClient authFeignClient;
 
     @Nested
-    @DisplayName("회원가입 예외 핸들링")
+    @DisplayName("회원가입 예외 케이스")
     public class SignUpException {
-        @Test
-        @DisplayName("이미 존재하는 닉네임으로 가입 시 DUPLICATE_NICKNAME 예외가 터진다")
-        public void 중복된_닉네임_가입_예외() {
-            // given
-            MemberSignupRequestDto requestDto = new MemberSignupRequestDto("test@email.com", "password123!", "중복닉네임");
 
-            given(memberRepository.existsByNickname(anyString())).willReturn(true);
+        @Test
+        @DisplayName("찰나의 순간에 닉네임이 중복되어 DataIntegrityViolationException이 발생하면 DUPLICATE_NICKNAME 예외를 던지고 Auth 계정을 롤백(삭제) 요청한다")
+        public void 회원가입_닉네임중복_DB충돌_예외() {
+            // given
+            MemberSignupRequestDto requestDto = new MemberSignupRequestDto("yeojin@email.com", "password123!", "BBandiz");
+            Long authId = 100L;
+
+            given(memberRepository.existsByNickname(requestDto.nickname())).willReturn(false);
+
+            ResponseEntity<Long> responseEntity = ResponseEntity.ok(authId);
+            given(authFeignClient.createAuthAccount(any())).willReturn(responseEntity);
+
+            doThrow(DataIntegrityViolationException.class).when(memberRepository).save(any(Member.class));
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 memberService.signUp(requestDto);
             });
+
             assertEquals(ErrorCode.DUPLICATE_NICKNAME, exception.getErrorCode());
-            verify(authFeignClient, never()).createAuthAccount(any());
+            verify(authFeignClient, times(1)).deleteAuth(authId);
+        }
+
+        @Test
+        @DisplayName("롤백 탈퇴(deleteAuth) 요청 중 외부 서버 장애가 발생하더라도 원래의 닉네임 중복 예외가 정상적으로 전파된다")
+        public void 회원가입_롤백실패시에도_원본예외_유지_검증() {
+            // given
+            MemberSignupRequestDto requestDto = new MemberSignupRequestDto("yeojin@email.com", "password123!", "BBandiz");
+            Long authId = 100L;
+
+            given(memberRepository.existsByNickname(requestDto.nickname())).willReturn(false);
+
+            ResponseEntity<Long> responseEntity = ResponseEntity.ok(authId);
+            given(authFeignClient.createAuthAccount(any())).willReturn(responseEntity);
+
+            doThrow(DataIntegrityViolationException.class).when(memberRepository).save(any(Member.class));
+
+            doThrow(new RuntimeException("Auth 서버 장애")).when(authFeignClient).deleteAuth(authId);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                memberService.signUp(requestDto);
+            });
+
+            assertEquals(ErrorCode.DUPLICATE_NICKNAME, exception.getErrorCode());
         }
     }
 

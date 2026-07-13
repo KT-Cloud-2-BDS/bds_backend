@@ -29,7 +29,7 @@ public class Member {
         return new Member(id, authId, nickname, isDeleted);
     }
 
-    public void changeNickname(String newNickname) {
+    public void updateNickname(String newNickname) {
         if (newNickname == null || newNickname.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }

@@ -68,7 +68,7 @@ public class MemberEntityUnitTest {
             String newNickname = "새로운닉네임";
 
             // when
-            member.changeNickname(newNickname);
+            member.updateNickname(newNickname);
 
             // then
             assertEquals(newNickname, member.getNickname());
