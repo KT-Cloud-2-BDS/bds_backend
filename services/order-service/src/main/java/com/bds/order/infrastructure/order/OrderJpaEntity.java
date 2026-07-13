@@ -1,26 +1,24 @@
 package com.bds.order.infrastructure.order;
 
+import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.infrastructure.common.BaseEntity;
+import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Getter
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(name = "`order`")
-@EntityListeners(AuditingEntityListener.class)
-public class OrderJpaEntity {
+public class OrderJpaEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,15 +32,20 @@ public class OrderJpaEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    private Long amount;
+    private Long totalRewardAmount;
 
-    private String cancelReason;
+    private Long totalShippingCharge;
 
-    @CreatedDate
-    private LocalDateTime createdAt;
+    @Enumerated(EnumType.STRING)
+    private CancelReason cancelReason;
 
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
+    private LocalDateTime cancelledAt;
+
+    private LocalDateTime expiresAt;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderRewardJpaEntity> orderRewards = new ArrayList<>();
 
     @PrePersist
     public void generateOrderNumber() {

@@ -1,5 +1,7 @@
 package com.bds.payment.payment.domain.wallet;
 
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -23,5 +25,14 @@ public class Wallet {
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
+    }
+
+    public void charge(Long amount) {
+        this.balance += amount;
+    }
+
+    public void withdraw(Long amount) {
+        if (this.balance < amount) throw new BusinessException(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
+        this.balance -= amount;
     }
 }

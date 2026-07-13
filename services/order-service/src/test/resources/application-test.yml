@@ -2,10 +2,6 @@ spring:
   application:
     name: order-test
 
-  datasource:
-    url: jdbc:tc:postgresql:18:///order_db
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-
   jpa:
     hibernate:
       ddl-auto: create
