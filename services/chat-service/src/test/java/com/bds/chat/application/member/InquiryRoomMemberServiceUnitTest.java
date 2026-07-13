@@ -69,7 +69,6 @@ class InquiryRoomMemberServiceUnitTest {
 
             InquiryMemberLeaveResponseDto result = memberService.leave(ROOM_ID, MEMBER_ID);
 
-            assertThat(result.isLeft()).isTrue();
             assertThat(result.roomId()).isEqualTo(ROOM_ID);
             assertThat(result.memberId()).isEqualTo(MEMBER_ID);
             assertThat(result.leftAt()).isNotNull();

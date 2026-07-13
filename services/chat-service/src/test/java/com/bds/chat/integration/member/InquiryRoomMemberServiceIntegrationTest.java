@@ -54,7 +54,6 @@ class InquiryRoomMemberServiceIntegrationTest {
             // Step 1: 응답 검증
             assertThat(result.roomId()).isEqualTo(roomId);
             assertThat(result.memberId()).isEqualTo(BUYER_ID);
-            assertThat(result.isLeft()).isTrue();
             assertThat(result.leftAt()).isNotNull();
 
             // Step 2: DB 검증 - ACTIVE 멤버로 더 이상 조회되지 않음

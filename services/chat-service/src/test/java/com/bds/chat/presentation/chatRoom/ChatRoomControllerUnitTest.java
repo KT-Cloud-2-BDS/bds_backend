@@ -64,7 +64,7 @@ class ChatRoomControllerUnitTest {
     }
 
     private InquiryMemberLeaveResponseDto dummyLeaveResponse() {
-        return new InquiryMemberLeaveResponseDto(10L, 5L, true, NOW);
+        return new InquiryMemberLeaveResponseDto(10L, 5L, NOW);
     }
 
     @Nested

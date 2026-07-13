@@ -90,15 +90,16 @@ public class MessageService {
                 : Optional.empty();
 
         boolean isInquiryRoom = ChatRoomType.INQUIRY == room.getType();
-        boolean hasMemberId = memberId != null;
         boolean isMember = memberOpt.isPresent();
 
-        if (isInquiryRoom ^ hasMemberId) {
+        if(!isInquiryRoom){
             throw new BusinessException(ErrorCode.NOT_FOUND, "roomId=" + roomId);
         }
-        if (isInquiryRoom && !isMember) {
+
+        if(!isMember){
             throw new BusinessException(ErrorCode.FORBIDDEN, "Not a member of this room");
         }
+
 
         List<ChatMessage> messages = chatMessageRepository.findByRoomIdBefore(roomId, cursor, PAGE_SIZE + 1);
         MessageListResponseDto response = toPagedResponse(messages);

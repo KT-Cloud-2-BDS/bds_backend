@@ -168,7 +168,6 @@ Response Body
 {
   "roomId": 201,
   "memberId": 55,
-  "isLeft": true,
   "leftAt": "2026-07-07T12:00:00Z"
 }
 ```

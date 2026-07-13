@@ -66,17 +66,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException e) {
         HttpStatus status = HttpStatus.resolve(e.getStatusCode().value());
-        ErrorCode code = switch (status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR) {
-            case BAD_REQUEST               -> ErrorCode.INVALID_INPUT;
-            case NOT_FOUND                 -> ErrorCode.NOT_FOUND;
-            case FORBIDDEN, UNAUTHORIZED   -> ErrorCode.FORBIDDEN;
-            case CONFLICT                  -> ErrorCode.CONFLICT;
-            default                        -> ErrorCode.INTERNAL_SERVER_ERROR;
-        };
         log.warn("ResponseStatusException: status={} reason={}", e.getStatusCode(), e.getReason());
         return ResponseEntity
                 .status(e.getStatusCode())
-                .body(ErrorResponse.of(code, e.getReason()));
+                .body(ErrorResponse.of(
+                        status != null ? status.name() : HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                        e.getReason()));
     }
 
     @ExceptionHandler(Exception.class)
