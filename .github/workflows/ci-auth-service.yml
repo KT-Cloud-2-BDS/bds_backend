@@ -64,7 +64,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and Test
-        run: ./gradlew :services:auth-service:clean :services:auth-service:build -Dspring.profiles.active=dev
+        run: ./gradlew :services:auth-service:clean :services:auth-service:build :services:auth-service:jacocoTestReport --stacktrace -Dspring.profiles.active=dev
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
