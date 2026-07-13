@@ -23,15 +23,14 @@ services:
   rabbitmq:
     image: rabbitmq:4-management
     container_name: bds-chat-rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-bds}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-bds1234}
     ports:
       - "5674:5672"    # AMQP
       - "15674:15672"  # Management UI
       - "61615:61613"  # STOMP
     volumes:
       - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
       - rabbitmq_data:/var/lib/rabbitmq
 
 volumes:

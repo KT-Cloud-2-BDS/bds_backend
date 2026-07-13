@@ -17,6 +17,10 @@ spring:
         await-termination: true
         await-termination-period: 10s
 
+chat:
+  read:
+    flush-interval-ms: 10000  # 읽음 처리 버퍼 flush 주기 (ms)
+
 server:
   port: 8082
 # grafana monitoring

@@ -1,0 +1,9 @@
+# Build output
+build/
+.gradle/
+
+# Local environment
+.env
+
+# RabbitMQ definitions (contains credentials — copy from definitions.json.example)
+docker/rabbitmq/definitions.json
