@@ -71,3 +71,10 @@ jobs:
         with:
           name: auth-service
           path: services/auth-service/build/libs/*[!plain].jar
+
+      - name: Upload Auth Service Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-auth-report
+          path: services/auth-service/build/reports/jacoco/test/html/
