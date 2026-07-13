@@ -83,6 +83,27 @@ public class MemberServiceUnitTest {
         }
     }
 
+    @Test
+    @DisplayName("현재 본인의 닉네임과 동일한 닉네임으로 수정을 요청하면, 중복 검사를 건너뛰고 정상 처리된다(No-Op)")
+    public void 닉네임수정_동일닉네임_성공() {
+        // given
+        Long authId = 1L;
+        String sameNickname = "BBandiz";
+        MemberInfoRequestDto requestDto = new MemberInfoRequestDto(sameNickname);
+
+        Member mockMember = Member.create(authId, sameNickname);
+        given(memberRepository.findByAuthId(authId)).willReturn(Optional.of(mockMember));
+
+        // when
+        memberService.updateNickname(authId, requestDto);
+
+        // then
+        assertEquals(sameNickname, mockMember.getNickname());
+        verify(memberRepository, times(1)).save(mockMember);
+
+        verify(memberRepository, never()).existsByNickname(anyString());
+    }
+
     @Nested
     @DisplayName("회원 탈퇴 기능")
     public class DeleteMember {

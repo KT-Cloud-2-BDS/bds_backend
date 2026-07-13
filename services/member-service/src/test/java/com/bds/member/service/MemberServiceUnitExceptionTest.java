@@ -41,6 +41,28 @@ public class MemberServiceUnitExceptionTest {
     public class SignUpException {
 
         @Test
+        @DisplayName("회원가입 중 DataIntegrityViolationException이 아닌 일반 예외가 발생해도 Auth 계정을 롤백 요청하고 예외를 그대로 던진다")
+        public void 회원가입_일반예외_발생시_롤백_검증() {
+            // given
+            MemberSignupRequestDto requestDto = new MemberSignupRequestDto("yeojin@email.com", "password123!", "BBandiz");
+            Long authId = 100L;
+
+            given(memberRepository.existsByNickname(requestDto.nickname())).willReturn(false);
+
+            ResponseEntity<Long> responseEntity = ResponseEntity.ok(authId);
+            given(authFeignClient.createAuthAccount(any())).willReturn(responseEntity);
+
+            doThrow(new RuntimeException("DB 연결 끊김")).when(memberRepository).save(any(Member.class));
+
+            // when & then
+            assertThrows(RuntimeException.class, () -> {
+                memberService.signUp(requestDto);
+            });
+
+            verify(authFeignClient, times(1)).deleteAuth(authId);
+        }
+
+        @Test
         @DisplayName("찰나의 순간에 닉네임이 중복되어 DataIntegrityViolationException이 발생하면 DUPLICATE_NICKNAME 예외를 던지고 Auth 계정을 롤백(삭제) 요청한다")
         public void 회원가입_닉네임중복_DB충돌_예외() {
             // given
