@@ -26,12 +26,6 @@ public class AuthInternalController {
         return ResponseEntity.ok(authId);
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<AuthLoginResponseDto> login(@RequestBody AuthLoginRequestDto requestDto) {
-        AuthLoginResponseDto responseDto = authService.login(requestDto.email(), requestDto.password());
-        return ResponseEntity.ok(responseDto);
-    }
-
     @DeleteMapping("/{authId}")
     public ResponseEntity<Void> deleteAuth(@PathVariable("authId") Long authId) {
         authService.deleteAuth(authId);

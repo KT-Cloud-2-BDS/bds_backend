@@ -6,9 +6,6 @@ import com.bds.member.global.exception.BusinessException;
 import com.bds.member.global.exception.ErrorCode;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
-import com.bds.member.presentation.dto.AuthLoginRequestDto;
-import com.bds.member.presentation.dto.AuthLoginResponseDto;
-import com.bds.member.presentation.dto.MemberLoginRequestDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import lombok.RequiredArgsConstructor;
@@ -43,22 +40,6 @@ public class MemberService {
             authFeignClient.deleteAuth(authId);
             throw e;
         }
-    }
-
-    @Transactional
-    public AuthLoginResponseDto login(MemberLoginRequestDto requestDto) {
-        AuthLoginRequestDto authRequest = new AuthLoginRequestDto(
-            requestDto.email(),
-            requestDto.password()
-        );
-
-        ResponseEntity<AuthLoginResponseDto> feignResponse = authFeignClient.login(authRequest);
-
-        if (!feignResponse.getStatusCode().is2xxSuccessful() || feignResponse.getBody() == null) {
-            throw new BusinessException(ErrorCode.AUTH_SERVICE_ERROR);
-        }
-
-        return feignResponse.getBody();
     }
 
     @Transactional

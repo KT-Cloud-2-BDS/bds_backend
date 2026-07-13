@@ -5,9 +5,7 @@ import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.global.exception.BusinessException;
 import com.bds.member.global.exception.ErrorCode;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
-import com.bds.member.presentation.dto.AuthLoginRequestDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
-import com.bds.member.presentation.dto.MemberLoginRequestDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -53,26 +51,6 @@ public class MemberServiceUnitExceptionTest {
             });
             assertEquals(ErrorCode.DUPLICATE_NICKNAME, exception.getErrorCode());
             verify(authFeignClient, never()).createAuthAccount(any());
-        }
-    }
-
-    @Nested
-    @DisplayName("로그인 예외 핸들링")
-    public class LoginException {
-        @Test
-        @DisplayName("인증 서버로부터 2xx 상태 코드가 오지 않거나 바디가 비어있으면 AUTH_SERVICE_ERROR 예외가 터진다")
-        public void 인증서버_통신실패_또는_바디비어있음_예외() {
-            // given
-            MemberLoginRequestDto requestDto = new MemberLoginRequestDto("test@email.com", "password123!");
-
-            given(authFeignClient.login(any(AuthLoginRequestDto.class)))
-                .willReturn(ResponseEntity.internalServerError().build());
-
-            // when & then
-            BusinessException exception = assertThrows(BusinessException.class, () -> {
-                memberService.login(requestDto);
-            });
-            assertEquals(ErrorCode.AUTH_SERVICE_ERROR, exception.getErrorCode());
         }
     }
 

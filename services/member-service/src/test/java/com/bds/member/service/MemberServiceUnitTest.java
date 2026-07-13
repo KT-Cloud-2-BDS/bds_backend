@@ -5,10 +5,7 @@ import com.bds.member.domain.entity.Member;
 import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
-import com.bds.member.presentation.dto.AuthLoginRequestDto;
-import com.bds.member.presentation.dto.AuthLoginResponseDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
-import com.bds.member.presentation.dto.MemberLoginRequestDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,27 +52,6 @@ public class MemberServiceUnitTest {
 
             // then
             verify(memberRepository, times(1)).save(any(Member.class));
-        }
-    }
-
-    @Nested
-    @DisplayName("로그인 기능")
-    public class Login {
-        @Test
-        @DisplayName("인증 서버 통신이 성공하면 로그인 토큰 정보가 정상 반환된다")
-        public void 로그인_성공() {
-            // given
-            MemberLoginRequestDto requestDto = new MemberLoginRequestDto("test@email.com", "password123!");
-            AuthLoginResponseDto expectedResponse = new AuthLoginResponseDto("accessToken", "refreshToken");
-
-            given(authFeignClient.login(any(AuthLoginRequestDto.class)))
-                .willReturn(ResponseEntity.ok(expectedResponse));
-
-            // when
-            memberService.login(requestDto);
-
-            // then
-            verify(authFeignClient, times(1)).login(any());
         }
     }
 

@@ -1,6 +1,8 @@
 package com.bds.auth.presentation.controller;
 
 import com.bds.auth.application.AuthService;
+import com.bds.auth.presentation.dto.AuthLoginRequestDto;
+import com.bds.auth.presentation.dto.AuthLoginResponseDto;
 import com.bds.auth.presentation.dto.EmailRequestDto;
 import com.bds.auth.presentation.dto.VerifyCodeRequestDto;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +33,12 @@ public class AuthController {
         return ResponseEntity.ok("인증이 성공적으로 완료되었습니다.");
 
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthLoginResponseDto> login(@RequestBody AuthLoginRequestDto requestDto) {
+        AuthLoginResponseDto response = authService.login(requestDto.email(), requestDto.password());
+        return ResponseEntity.ok(response);
+    }
+
 
 }

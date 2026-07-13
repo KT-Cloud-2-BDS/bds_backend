@@ -3,8 +3,6 @@ package com.bds.member.presentation.controller;
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
 import com.bds.member.application.MemberService;
-import com.bds.member.presentation.dto.AuthLoginResponseDto;
-import com.bds.member.presentation.dto.MemberLoginRequestDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +25,6 @@ public class MemberController {
     public ResponseEntity<Void> signUp(@RequestBody MemberSignupRequestDto requestDto) {
         memberService.signUp(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<AuthLoginResponseDto> login(@RequestBody MemberLoginRequestDto requestDto) {
-        AuthLoginResponseDto loginResponse = memberService.login(requestDto);
-        return ResponseEntity.ok(loginResponse);
     }
 
     @PatchMapping("/info")

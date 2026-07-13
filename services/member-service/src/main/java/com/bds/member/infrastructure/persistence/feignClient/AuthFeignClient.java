@@ -1,8 +1,6 @@
 package com.bds.member.infrastructure.persistence.feignClient;
 
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
-import com.bds.member.presentation.dto.AuthLoginRequestDto;
-import com.bds.member.presentation.dto.AuthLoginResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,9 +14,6 @@ public interface AuthFeignClient {
 
     @PostMapping("/api/auths/account")
     ResponseEntity<Long> createAuthAccount(@RequestBody AuthCreateRequestDto requestDto);
-
-    @PostMapping("/api/auths/login")
-    ResponseEntity<AuthLoginResponseDto> login(@RequestBody AuthLoginRequestDto requestDto);
 
     @DeleteMapping("/api/auths/{authId}")
     ResponseEntity<Void> deleteAuth(@PathVariable("authId") Long authId);

@@ -2,15 +2,14 @@
 
 ### 엔드포인트 목록
 
-| method | path                        | auth required | 설명                     |
-|--------|-----------------------------|---------------|------------------------|
-| POST   | /api/members/signup         | N             | 플랫폼 자체 회원가입(1)         |
-| POST   | /api/members/social         | N             | 소셜 회원가입 및 로그인(2)       |
-| POST   | /api/members/login          | N             | 로그인(3)                 |
-| GET    | /api/members/info           | O             | 내 정보(이메일, 닉네임) 조회(6)   |
-| PATCH  | /api/members/info           | O             | 내 정보(닉네임) 수정(7)        |
-| PATCH  | /api/members/password/reset | N             | 비밀번호 변경(8)             |
-| DELETE | /api/members/delete         | O             | 회원 탈퇴(10)              |
+| method | path                        | auth required | 설명                    |
+|--------|-----------------------------|---------------|-----------------------|
+| POST   | /api/members/signup         | N             | 플랫폼 자체 회원가입(1)        |
+| POST   | /api/members/social         | N             | 소셜 회원가입 및 로그인(2)      |
+| GET    | /api/members/info           | O             | 내 정보(이메일, 닉네임) 조회(6)  |
+| PATCH  | /api/members/info           | O             | 내 정보(닉네임) 수정(7)       |
+| PATCH  | /api/members/password/reset | N             | 비밀번호 변경(8)            |
+| DELETE | /api/members/delete         | O             | 회원 탈퇴(10)             |
 | PATCH  | /api/members/role           | O             | 회원 권한 변경(서포터, 메이커)(11) |
 
 ### 플랫폼 자체 회원가입
@@ -76,38 +75,6 @@ Validation / Business Rules
 - `email`, `oauth_id` 기반 중복 검증 진행, 이미 가입된 계정은 기존 회원 정보 반환
 - 신규 유저인 경우 member 테이블과 oauth_account 테이블 id를 매핑
 - 최조 가입 유저의 권한 기본값은 `SUPPORTER`, 상태값은 `ACTIVE`로 설정
-
----
-
-### 로그인
-```
-POST /api/members/login
-```
-
-Auth Required: **N**
-
-Request Body
-
-| 필드         | 타입     | 필수  | 설명              |
-|------------|--------|-----|-----------------|
-| `email`    | String | Y   | 가입한 이메일(회원 아이디) |
-| `password` | String | Y   | 비밀번호            |
-
-Response Body
-```json
-{
-  "grantType": "Bearer",
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5c...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5c...",
-  "accessTokenExpiresIn": 1800000
-}
-```
-
-Validation / Business Rules
-- 인증 서버의 로그인 인증 요청에 따라 실행되는 내부 API
-- 회원은 `email`과 `password`를 통해 로그인을 요청
-- 입력된 `email`을 기반으로 회원 테이블 조회 후 존재하지 않는 경우 예외 반환
-- DB에 저장된 password와 입력된 password의 BCrypt 검증을 진행해 일치 여부를 인증 서버로 응답
 
 ---
 

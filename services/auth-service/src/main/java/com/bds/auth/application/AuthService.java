@@ -37,7 +37,10 @@ public class AuthService {
 
     @Transactional
     public void sendSignUpVerificationCode(String email) {
-        if (authRepository.existsByEmailAndStatus(email, Status.ACTIVE)) {
+
+        Optional<Auth> existingAuth = authRepository.findByEmail(email);
+
+        if (existingAuth.isPresent() && existingAuth.get().getStatus() == Status.ACTIVE) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
