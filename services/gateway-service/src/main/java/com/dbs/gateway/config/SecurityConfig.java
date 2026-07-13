@@ -17,9 +17,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, ReactiveJwtDecoder jwtDecoder) {
-        // 인가는 게이트웨이가 아니라 각 도메인 서비스의 책임이다.
-        // 게이트웨이는 Authorization 헤더가 있으면 서명/만료를 검증해 클레임을 파싱해줄 뿐,
-        // 라우트 접근 자체를 막지 않는다 (permitAll). 실제 인증 여부 판단은 다운스트림에서 처리.
+
         return http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .authorizeExchange(exchange -> exchange.anyExchange().permitAll())
