@@ -1,6 +1,5 @@
 name: CI - chat-service
 
-# chat-service 디렉토리 변경 시에만 실행
 on:
   push:
     branches: [main, develop]
@@ -30,20 +29,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      # 다중 인스턴스 간 메시지 Fan-out을 위한 외부 브로커
-      rabbitmq:
-        image: rabbitmq:4
-        env:
-          RABBITMQ_DEFAULT_USER: bds
-          RABBITMQ_DEFAULT_PASS: bds1234
-        ports:
-          - 5672:5672
-        options: >-
-          --health-cmd "rabbitmq-diagnostics ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,6 +39,25 @@ jobs:
             settings.gradle
             gradlew
             gradle
+
+      - name: Build and start RabbitMQ (STOMP enabled)
+        run: |
+          docker build -t rabbitmq-ci:local \
+            -f services/chat-service/docker/rabbitmq/Dockerfile.ci \
+            services/chat-service/docker/rabbitmq
+          docker run -d --name rabbitmq \
+            -p 5672:5672 -p 61613:61613 \
+            -e RABBITMQ_DEFAULT_USER=bds \
+            -e RABBITMQ_DEFAULT_PASS=bds1234 \
+            rabbitmq-ci:local
+          for i in $(seq 1 30); do
+            if docker exec rabbitmq rabbitmq-diagnostics ping > /dev/null 2>&1; then
+              echo "RabbitMQ ready"
+              break
+            fi
+            echo "Waiting for RabbitMQ... ($i/30)"
+            sleep 2
+          done
 
       - uses: actions/setup-java@v4
         with:
@@ -77,7 +81,14 @@ jobs:
           RABBITMQ_USERNAME: bds
           RABBITMQ_PASSWORD: bds1234
           CORS_ALLOWED_ORIGINS: http://localhost:3000
-        run: ./gradlew :services:chat-service:clean :services:chat-service:build
+        run: ./gradlew :services:chat-service:clean :services:chat-service:build :services:chat-service:jacocoTestReport --stacktrace
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: services/chat-service/build/reports/jacoco/test/html/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
