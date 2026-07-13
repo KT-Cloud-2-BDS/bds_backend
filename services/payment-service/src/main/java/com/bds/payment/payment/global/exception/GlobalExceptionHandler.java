@@ -1,6 +1,7 @@
 package com.bds.payment.payment.global.exception;
 
 import com.bds.payment.payment.presentation.response.ErrorResponseDto;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -39,9 +40,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErrorResponseDto<String>> resolveArgumentException(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
         return ResponseEntity
-                .status(ex.getStatusCode())
-                .body(ErrorResponseDto.of(ErrorCode.UNAUTHORIZED.getCode(), ex.getReason(), null));
+                .status(status)
+                .body(ErrorResponseDto.of(status.name(), ex.getReason(), null));
     }
 
     @ExceptionHandler(Exception.class)

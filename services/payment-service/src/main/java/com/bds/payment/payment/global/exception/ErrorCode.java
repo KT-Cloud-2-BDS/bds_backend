@@ -15,6 +15,7 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR","서버 에러가 발생했습니다"),
     DEPENDENCY_FAILURE(HttpStatus.SERVICE_UNAVAILABLE, "DEPENDENCY_FAILURE","외부 서비스 호출 실패"),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED,"UNAUTHORIZED","인증이 필요합니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "권한이 없습니다."),
     // 지갑 도메인
     WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "WALLET_NOT_FOUND", "지갑을 찾을 수 없습니다."),
     WALLET_ALREADY_EXISTS(HttpStatus.CONFLICT, "WALLET_ALREADY_EXISTS", "이미 지갑이 존재합니다."),
