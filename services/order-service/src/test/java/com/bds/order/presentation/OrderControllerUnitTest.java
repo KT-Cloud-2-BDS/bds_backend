@@ -40,7 +40,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
             OrderResponseDto dto = new OrderResponseDto(
                     1L, "ORD-001", OrderStatus.PENDING, now,
                     "테스트 펀딩", 100L, false,
-                    36000L, null, null, false
+                    36000L, null, false
             );
 
             given(orderService.getAllOrders(eq(1L), any())).willReturn(List.of(dto));
@@ -68,9 +68,8 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
             OrderDetailResponseDto dto = new OrderDetailResponseDto(
                     1L, "ORD-001", OrderStatus.PAID, now,
                     "테스트 펀딩", 100L, false,
-                    null, null, false,
-                    List.of(rewardItem),
-                    33000L, 3000L, 36000L, null
+                    now, false,
+                    List.of(rewardItem),33000L, 3000L, 36000L, null
             );
 
             given(orderService.getOrderDetail(1L, 1L)).willReturn(dto);
