@@ -10,6 +10,7 @@ public enum ErrorCode {
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "A_005", "존재하지 않는 계정입니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "A_006", "비밀번호가 일치하지 않습니다."),
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "A_007", "올바르지 않은 입력값입니다."),
+    INVALID_LOGIN_CREDENTIALS(HttpStatus.BAD_REQUEST,"A_008" ,"이메일 또는 비밀번호가 일치하지 않습니다."),
 
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "G_005", "서버 내부 오류가 발생했습니다.");
 

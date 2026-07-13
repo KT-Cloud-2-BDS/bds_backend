@@ -151,7 +151,7 @@ public class AuthServiceUnitExceptionTest {
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 authService.login(email, "password123!");
             });
-            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+            assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
         }
 
         @Test
@@ -168,7 +168,7 @@ public class AuthServiceUnitExceptionTest {
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 authService.login(email, "password123!");
             });
-            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+        assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
         }
 
         @Test
@@ -187,7 +187,7 @@ public class AuthServiceUnitExceptionTest {
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 authService.login(email, "password123!");
             });
-            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+        assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
         }
 
         @Test
@@ -212,7 +212,7 @@ public class AuthServiceUnitExceptionTest {
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 authService.login(email, password);
             });
-            assertEquals(ErrorCode.INVALID_PASSWORD, exception.getErrorCode());
+        assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
         }
     }
 

@@ -103,17 +103,17 @@ public class AuthService {
     @Transactional
     public AuthLoginResponseDto login(String email, String password) {
         Auth auth = authRepository.findByEmail(email)
-            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN_CREDENTIALS));
 
         if (auth.getStatus() != Status.ACTIVE) {
-            throw new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND);
+            throw new BusinessException(ErrorCode.INVALID_LOGIN_CREDENTIALS);
         }
 
         AuthLocal authLocal = authLocalRepository.findByAuthId(auth.getId())
-            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN_CREDENTIALS));
 
         if (!passwordEncoder.matches(password, authLocal.getPassword())) {
-            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+            throw new BusinessException(ErrorCode.INVALID_LOGIN_CREDENTIALS);
         }
 
         String accessToken = jwtTokenUtil.createAccessToken(auth.getId(), auth.getEmail(), auth.getRole());
