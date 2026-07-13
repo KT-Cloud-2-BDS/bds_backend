@@ -4,7 +4,11 @@ import java.util.Optional;
 
 public interface WalletRepository {
 
-    Optional<Wallet> findByMemberId(Long id);
+    boolean existsByMemberId(Long memberId);
+
+    Optional<Wallet> findByMemberId(Long memberId);
+
+    Optional<Wallet> findByMemberIdWithLock(Long memberId);
 
     Wallet save(Wallet wallet);
 }

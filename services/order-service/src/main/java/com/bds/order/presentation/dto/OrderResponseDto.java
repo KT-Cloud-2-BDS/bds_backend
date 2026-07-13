@@ -1,34 +1,36 @@
 package com.bds.order.presentation.dto;
 
-import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
+import com.bds.order.infrastructure.order.OrderListProjection;
 
 import java.time.LocalDateTime;
 
 public record OrderResponseDto(
+        Long orderId,
         String orderNo,
         OrderStatus orderStatus,
         LocalDateTime fundingDate,
         String title,
-        String hostName,
+        Long hostId,
         boolean isEnded,
         Long billingAmount,
         String paymentStatus,
         LocalDateTime paidAt,
         boolean isFundingSucceeded
 ) {
-    public static OrderResponseDto from(Order order) {
+    public static OrderResponseDto from(OrderListProjection order) {
         return new OrderResponseDto(
-                order.getOrderNo(),
-                order.getStatus(),
-                order.getCreatedAt(),
+                order.orderId(),
+                order.orderNo(),
+                order.status(),
+                order.createdAt(),
+                order.fundingTitle(),
+                order.hostId(),
+                LocalDateTime.now().isAfter(order.holdTo()),
+                order.totalRewardAmount() + order.totalShippingCharge(),
                 null,
                 null,
-                false,
-                order.getAmount(),
-                null,
-                null,
-                false
+                order.isSuccess()
         );
     }
 }

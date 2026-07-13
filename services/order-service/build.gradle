@@ -42,9 +42,25 @@ jacoco {
 
 jacocoTestReport {
     dependsOn test
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/OrderApplication.class'
+            ])
+        }))
+    }
 }
 
 jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+
+    classDirectories.setFrom(files(classDirectories.files.collect {
+        fileTree(dir: it, exclude: [
+                '**/OrderApplication.class'
+        ])
+    }))
+
     violationRules {
         rule {
             limit {
@@ -53,3 +69,5 @@ jacocoTestCoverageVerification {
         }
     }
 }
+
+check.dependsOn jacocoTestCoverageVerification

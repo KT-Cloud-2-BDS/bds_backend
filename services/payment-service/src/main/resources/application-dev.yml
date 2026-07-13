@@ -23,3 +23,7 @@ logging:
   level:
     com.bds.payment: DEBUG
     org.hibernate.SQL: DEBUG
+
+bank:
+  api:
+    base-url: ${BANK_URL}
