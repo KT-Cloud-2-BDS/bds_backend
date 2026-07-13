@@ -58,7 +58,7 @@ public class AuthServiceUnitExceptionTest {
             Auth mockAuth = mock(Auth.class);
             given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
 
-            given(authRepository.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -76,7 +76,8 @@ public class AuthServiceUnitExceptionTest {
         public void 인증코드_만료_예외() {
             // given
             String email = "yeojin@email.com";
-            given(tokenCacheRepository.get(anyString())).willReturn(null);
+
+            given(tokenCacheRepository.get("verify:" + email)).willReturn(null);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -126,7 +127,6 @@ public class AuthServiceUnitExceptionTest {
             given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
 
             given(tokenCacheRepository.get("verified:" + email)).willReturn("true");
-
             given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
 
             // when & then
@@ -141,11 +141,12 @@ public class AuthServiceUnitExceptionTest {
     @DisplayName("로그인 예외")
     public class LoginException {
         @Test
-        @DisplayName("존재하지 않는 이메일 주소라면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        @DisplayName("존재하지 않는 이메일 주소라면 INVALID_LOGIN_CREDENTIALS 예외가 터진다")
         public void 계정_존재하지않음_이메일오류_예외() {
             // given
             String email = "wrong@email.com";
-            given(authRepository.findByEmail(anyString())).willReturn(Optional.empty());
+
+            given(authRepository.findByEmail(email)).willReturn(Optional.empty());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -155,24 +156,24 @@ public class AuthServiceUnitExceptionTest {
         }
 
         @Test
-        @DisplayName("계정은 존재하나 ACTIVE 상태가 아니라면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        @DisplayName("계정은 존재하나 ACTIVE 상태가 아니라면 INVALID_LOGIN_CREDENTIALS 예외가 터진다")
         public void 비활성화_계정_로그인_차단_예외() {
             // given
             String email = "yeojin@email.com";
             Auth mockAuth = mock(Auth.class);
             given(mockAuth.getStatus()).willReturn(Status.DELETED);
 
-            given(authRepository.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 authService.login(email, "password123!");
             });
-        assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
+            assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
         }
 
         @Test
-        @DisplayName("이메일과 ACTIVE 상태는 유효하나 로컬 로그인 정보(AuthLocal)가 존재하지 않으면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        @DisplayName("이메일과 ACTIVE 상태는 유효하나 로컬 로그인 정보(AuthLocal)가 존재하지 않으면 INVALID_LOGIN_CREDENTIALS 예외가 터진다")
         public void 계정_로그인정보_누락_예외() {
             // given
             String email = "yeojin@email.com";
@@ -180,18 +181,18 @@ public class AuthServiceUnitExceptionTest {
             given(mockAuth.getId()).willReturn(1L);
             given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
 
-            given(authRepository.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
-            given(authLocalRepository.findByAuthId(anyLong())).willReturn(Optional.empty());
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
+            given(authLocalRepository.findByAuthId(1L)).willReturn(Optional.empty());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 authService.login(email, "password123!");
             });
-        assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
+            assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
         }
 
         @Test
-        @DisplayName("비밀번호가 일치하지 않으면 INVALID_PASSWORD 예외가 터진다")
+        @DisplayName("비밀번호가 일치하지 않으면 INVALID_LOGIN_CREDENTIALS 예외가 터진다")
         public void 비밀번호_불일치_예외() {
             // given
             String email = "yeojin@email.com";
@@ -204,15 +205,15 @@ public class AuthServiceUnitExceptionTest {
             AuthLocal mockAuthLocal = mock(AuthLocal.class);
             given(mockAuthLocal.getPassword()).willReturn("encodedPassword");
 
-            given(authRepository.findByEmail(anyString())).willReturn(Optional.of(mockAuth));
-            given(authLocalRepository.findByAuthId(anyLong())).willReturn(Optional.of(mockAuthLocal));
-            given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
+            given(authLocalRepository.findByAuthId(1L)).willReturn(Optional.of(mockAuthLocal));
+            given(passwordEncoder.matches(password, "encodedPassword")).willReturn(false);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 authService.login(email, password);
             });
-        assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
+            assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
         }
     }
 
@@ -224,7 +225,8 @@ public class AuthServiceUnitExceptionTest {
         public void 존재하지않는계정_탈퇴시도_예외() {
             // given
             Long authId = 999L;
-            given(authRepository.findById(anyLong())).willReturn(Optional.empty());
+
+            given(authRepository.findById(authId)).willReturn(Optional.empty());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
