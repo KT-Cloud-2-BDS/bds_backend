@@ -16,7 +16,8 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
 
     @Query("SELECT DISTINCT new com.bds.order.infrastructure.order.OrderListProjection(" +
             "o.id, o.orderNo, o.status, o.totalRewardAmount, o.totalShippingCharge, o.createdAt, " +
-            "f.title, f.creatorId, f.holdTo, f.isSuccess) " +
+            "f.title, f.creatorId, f.holdTo, f.isSuccess," +
+            "o.updatedAt) " +
             "FROM OrderJpaEntity o " +
             "JOIN o.orderRewards orw " +
             "JOIN orw.reward r " +
@@ -27,7 +28,7 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
     @Query("SELECT DISTINCT new com.bds.order.infrastructure.order.OrderDetailProjection(" +
             "o.id, o.orderNo, o.status, o.totalRewardAmount, o.totalShippingCharge, o.createdAt, " +
             "f.title, f.creatorId, f.holdTo, f.isSuccess," +
-            "o.cancelledAt, o.cancelReason) " +
+            "o.cancelledAt, o.cancelReason, o.updatedAt) " +
             "FROM OrderJpaEntity o " +
             "JOIN o.orderRewards orw " +
             "JOIN orw.reward r " +

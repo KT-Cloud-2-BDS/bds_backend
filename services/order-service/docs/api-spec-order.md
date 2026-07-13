@@ -157,8 +157,7 @@ GET /api/orders
         "hostId": 20112,
         "isEnded": false,
         "billingAmount": 51800,
-        "paymentStatus": "PAID",
-        "paidAt": "2025-01-12T17:00:00+09:00",
+        "updatedAt": "2025-01-12T17:00:00+09:00",
         "isFundingSucceeded": true
       }
     ],
@@ -217,8 +216,7 @@ GET /api/orders/{orderId}
     "rewardAmount": 182400,
     "totalShippingCharge": 5000,
     "totalBillingAmount": 187400,
-    "paymentStatus": "PAID",
-    "paidAt": "2025-02-01T14:30:00",
+    "updatedAt": "2025-02-01T14:30:00",
     "cancelledAt": null
 }
 ```

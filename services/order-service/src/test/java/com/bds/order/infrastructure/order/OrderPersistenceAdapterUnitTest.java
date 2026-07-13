@@ -83,7 +83,7 @@ class OrderPersistenceAdapterUnitTest {
             OrderListProjection projection = new OrderListProjection(
                     1L, "ORD-001", OrderStatus.PENDING,
                     33000L, 3000L, now,
-                    "테스트 펀딩", 100L, now.plusDays(30), false
+                    "테스트 펀딩", 100L, now.plusDays(30), false, now
             );
             Page<OrderListProjection> page = new PageImpl<>(List.of(projection));
 
@@ -111,7 +111,7 @@ class OrderPersistenceAdapterUnitTest {
                     1L, "ORD-001", OrderStatus.PAID,
                     33000L, 3000L, now,
                     "테스트 펀딩", 100L, now.plusDays(30), false,
-                    null, null
+                    null, null, now
             );
 
             given(orderJpaRepository.findOrderWithFunding(memberId, orderId))

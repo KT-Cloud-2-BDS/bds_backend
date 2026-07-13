@@ -67,7 +67,7 @@ class OrderServiceUnitTest {
             OrderListProjection projection = new OrderListProjection(
                     1L, "ORD-001", OrderStatus.PENDING,
                     33000L, 3000L, now,
-                    "테스트 펀딩", 100L, now.plusDays(30), false
+                    "테스트 펀딩", 100L, now.plusDays(30), false, now
             );
 
             given(orderRepository.findOrderListWithFunding(memberId, pageable))
@@ -110,7 +110,7 @@ class OrderServiceUnitTest {
                     1L, "ORD-001", OrderStatus.PAID,
                     33000L, 3000L, now,
                     "테스트 펀딩", 100L, now.plusDays(30), false,
-                    null, null
+                    null, null, now
             );
             OrderRewardDetailProjection rewardProjection = new OrderRewardDetailProjection(
                     1L, 2, 20000L, 3000L, "리워드A", BadgeType.ULTRA_EARLY_BIRD
