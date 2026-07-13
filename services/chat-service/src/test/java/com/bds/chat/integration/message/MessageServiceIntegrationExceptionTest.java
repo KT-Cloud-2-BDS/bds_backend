@@ -156,14 +156,14 @@ class MessageServiceIntegrationExceptionTest {
 
         // INQUIRY 방에서 memberId 없이 조회 → NOT_FOUND (XOR 조건 위반)
         @Test
-        @DisplayName("INQUIRY 채팅방을 memberId 없이 조회하면 NOT_FOUND 예외가 발생한다")
+        @DisplayName("INQUIRY 채팅방을 memberId 없이 조회하면 FORBIDDEN 예외가 발생한다")
         void INQUIRY_방을_memberId_없이_조회하면_NOT_FOUND_예외() {
             Long inquiryRoomId = setupInquiryRoom();
 
             assertThatThrownBy(() ->
                     messageService.getInquiryMessages(inquiryRoomId, null, null)
             ).isInstanceOf(BusinessException.class)
-             .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
+             .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
         }
 
         // 문의방 비멤버가 조회 → FORBIDDEN

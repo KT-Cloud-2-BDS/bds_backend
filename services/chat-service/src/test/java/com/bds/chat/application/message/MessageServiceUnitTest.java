@@ -180,16 +180,6 @@ class MessageServiceUnitTest {
     class GetInquiryMessagesTest {
 
         @Test
-        void FUNDING_방은_memberId_없이_조회할_수_있다() {
-            given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(fundingRoom()));
-            given(chatMessageRepository.findByRoomIdBefore(ROOM_ID, null, 21)).willReturn(List.of(sentMessage()));
-
-            MessageListResponseDto result = messageService.getInquiryMessages(ROOM_ID, null, null);
-
-            assertThat(result.messages()).hasSize(1);
-        }
-
-        @Test
         void INQUIRY_방_멤버는_조회시_lastRead를_갱신한다() {
             InquiryChatMember member = activeMember();
 

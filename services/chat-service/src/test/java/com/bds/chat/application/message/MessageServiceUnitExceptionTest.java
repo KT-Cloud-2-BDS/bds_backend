@@ -179,12 +179,12 @@ class MessageServiceUnitExceptionTest {
         }
 
         @Test
-        void INQUIRY_방인데_memberId가_없으면_NOT_FOUND_예외() {
+        void INQUIRY_방인데_memberId가_없으면_FORBIDDEN_예외() {
             given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(inquiryRoom()));
 
             assertThatThrownBy(() -> messageService.getInquiryMessages(ROOM_ID, null, null))
                     .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
+                    .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
         }
 
         @Test

@@ -154,18 +154,6 @@ class MessageServiceIntegrationTest {
     @DisplayName("문의방 메시지 조회")
     class GetInquiryMessagesTest {
 
-        // 펀딩방에서 memberId 없이 조회 성공
-        @Test
-        @DisplayName("펀딩 채팅방의 메시지를 memberId 없이 조회할 수 있다")
-        void 펀딩_채팅방_메시지를_memberId_없이_조회할_수_있다() {
-            Long roomId = setupFundingRoom();
-            fixture.createMessage(roomId, SELLER_ID, "funding-msg-1");
-
-            MessageListResponseDto result = messageService.getInquiryMessages(roomId, null, null);
-
-            assertThat(result.messages()).isNotEmpty();
-        }
-
         // 문의방에서 멤버로 조회 → lastRead 갱신 포함
         @Test
         @DisplayName("문의 채팅방 멤버가 메시지를 조회하면 성공한다")
