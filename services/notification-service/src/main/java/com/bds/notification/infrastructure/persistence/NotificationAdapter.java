@@ -15,7 +15,7 @@ public class NotificationAdapter implements NotificationRepository {
 
   @Override
   public Page<Notification> findByMemberId(Long memberId, Pageable pageable) {
-    return jpaRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable)
+    return jpaRepository.findByMemberIdOrderByCreatedAtDescNotificationIdDesc(memberId, pageable)
         .map(NotificationMapper::toDomain);
   }
 
