@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,19 +63,23 @@ public class MemberServiceUnitTest {
         @DisplayName("정상적인 닉네임 입력이고 중복이 없으면 닉네임이 정상 변경된다")
         public void 닉네임수정_성공() {
             // given
-            Long authId = 24L;
-            MemberInfoRequestDto requestDto = new MemberInfoRequestDto("새로운닉네임");
-            Member mockMember = mock(Member.class);
+            Long authId = 1L;
+            String newNickname = "newBBandiz";
+            MemberInfoRequestDto requestDto = new MemberInfoRequestDto(newNickname);
 
-            given(memberRepository.existsByNickname(anyString())).willReturn(false);
-            given(memberRepository.findByAuthId(anyLong())).willReturn(Optional.of(mockMember));
+            Member mockMember = Member.create(authId, "oldNickname");
+
+            given(memberRepository.findByAuthId(authId)).willReturn(Optional.of(mockMember));
+
+            given(memberRepository.existsByNickname(newNickname)).willReturn(false);
 
             // when
             memberService.updateNickname(authId, requestDto);
 
             // then
-            verify(mockMember, times(1)).updateNickname(anyString());
-            verify(memberRepository, times(1)).save(any(Member.class));
+            assertEquals(newNickname, mockMember.getNickname());
+
+            verify(memberRepository, times(1)).save(mockMember);
         }
     }
 

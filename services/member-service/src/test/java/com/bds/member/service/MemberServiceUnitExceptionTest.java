@@ -2,7 +2,6 @@ package com.bds.member.service;
 
 import com.bds.member.application.MemberService;
 import com.bds.member.domain.entity.Member;
-import org.springframework.dao.DataIntegrityViolationException;
 import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.global.exception.BusinessException;
 import com.bds.member.global.exception.ErrorCode;
@@ -16,12 +15,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
 
-import static org.mockito.BDDMockito.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MemberService 단위 테스트 - 예외 케이스")
@@ -91,6 +91,7 @@ public class MemberServiceUnitExceptionTest {
     @Nested
     @DisplayName("닉네임 수정 예외 핸들링")
     public class UpdateNicknameException {
+
         @Test
         @DisplayName("수정할 닉네임이 null이거나 공백이면 INVALID_INPUT_VALUE 예외가 터진다")
         public void 닉네임_공백_예외() {
@@ -110,9 +111,13 @@ public class MemberServiceUnitExceptionTest {
         public void 닉네임_중복_예외() {
             // given
             Long authId = 24L;
-            MemberInfoRequestDto requestDto = new MemberInfoRequestDto("이미있는닉네임");
+            String newNickname = "이미있는닉네임";
+            MemberInfoRequestDto requestDto = new MemberInfoRequestDto(newNickname);
 
-            given(memberRepository.existsByNickname(anyString())).willReturn(true);
+            Member mockMember = Member.create(authId, "기존닉네임");
+            given(memberRepository.findByAuthId(authId)).willReturn(Optional.of(mockMember));
+
+            given(memberRepository.existsByNickname(newNickname)).willReturn(true);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -128,8 +133,7 @@ public class MemberServiceUnitExceptionTest {
             Long authId = 999L;
             MemberInfoRequestDto requestDto = new MemberInfoRequestDto("새닉네임");
 
-            given(memberRepository.existsByNickname(anyString())).willReturn(false);
-            given(memberRepository.findByAuthId(anyLong())).willReturn(Optional.empty());
+            given(memberRepository.findByAuthId(authId)).willReturn(Optional.empty());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -142,13 +146,13 @@ public class MemberServiceUnitExceptionTest {
     @Nested
     @DisplayName("회원 탈퇴 예외 핸들링")
     public class DeleteMemberException {
+
         @Test
         @DisplayName("가입된 회원이 존재하지 않으면 MEMBER_NOT_FOUND 예외가 터진다")
         public void 가입된회원_없음_예외발생() {
             // given
             Long authId = 999L;
-
-            given(memberRepository.existsByAuthId(anyLong())).willReturn(false);
+            given(memberRepository.existsByAuthId(authId)).willReturn(false);
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
@@ -163,8 +167,8 @@ public class MemberServiceUnitExceptionTest {
             // given
             Long authId = 24L;
 
-            given(memberRepository.existsByAuthId(anyLong())).willReturn(true);
-            given(authFeignClient.deleteAuth(anyLong())).willReturn(ResponseEntity.internalServerError().build());
+            given(memberRepository.existsByAuthId(authId)).willReturn(true);
+            given(authFeignClient.deleteAuth(authId)).willReturn(ResponseEntity.internalServerError().build());
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
