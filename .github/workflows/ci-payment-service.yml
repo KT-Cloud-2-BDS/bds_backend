@@ -52,7 +52,15 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and Test
-        run: ./gradlew :services:payment-service:clean :services:payment-service:build
+        run: ./gradlew :services:payment-service:clean :services:payment-service:build :services:payment-service:jacocoTestReport --stacktrace
+      
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: services/payment-service/build/reports/jacoco/test/html/
+        
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

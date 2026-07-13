@@ -1,4 +1,4 @@
-package com.bds.payment.payment.infrastructure.persistence;
+package com.bds.payment.payment.infrastructure.persistence.wallet;
 
 import com.bds.payment.payment.domain.wallet.Wallet;
 import com.bds.payment.payment.domain.wallet.WalletRepository;
@@ -15,8 +15,18 @@ public class WalletPersistenceAdapter implements WalletRepository {
     private final WalletMapper mapper;
 
     @Override
+    public boolean existsByMemberId(Long memberId) {
+        return jpaRepository.existsByMemberId(memberId);
+    }
+
+    @Override
     public Optional<Wallet> findByMemberId(Long memberId) {
         return jpaRepository.findByMemberId(memberId).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<Wallet> findByMemberIdWithLock(Long memberId) {
+        return jpaRepository.findByMemberIdWithLock(memberId).map(mapper::toDomain);
     }
 
     @Override
