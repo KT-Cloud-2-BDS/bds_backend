@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+// TODO: 도메인 모델로 변경 예정
 
 @Getter
 @NoArgsConstructor
