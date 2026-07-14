@@ -5,6 +5,7 @@ import com.bds.messaging.idempotency.ProcessedEventStore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -13,7 +14,9 @@ public class OrderCreatedListener {
     public OrderCreatedListener(ProcessedEventStore processedEventStore){
         this.processedEventStore = processedEventStore;
     }
-
+    //이때 해당 transaction의 경우 구현한 markProcessed가 db일 경우 의미가 있습니다.
+    //만약 현재 처럼 in memory 기반이라면, 다른 처리 로직이 필요합니다. (실패시 rollback할 수 있는)
+    @Transactional
     @RabbitListener(queues = PaymentQueues.ORDER_CREATED)
     public void handle(OrderCreatedEvent event){
         if (!processedEventStore.markProcessed(event.eventId())) {

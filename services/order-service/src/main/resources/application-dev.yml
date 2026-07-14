@@ -3,11 +3,11 @@ spring:
     name: order-dev
 
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
     virtual-host: msa
-    username: ${RABBITMQ_USER:order-service}
-    password: ${RABBITMQ_PASSWORD:order1234}
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
     # messaging 모듈의 confirm 콜백이 동작하기 위한 발행 서비스 필수 설정
     publisher-confirm-type: correlated
     publisher-returns: true
