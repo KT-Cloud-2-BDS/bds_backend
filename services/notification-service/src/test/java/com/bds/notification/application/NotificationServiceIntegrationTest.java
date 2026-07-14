@@ -3,6 +3,8 @@ package com.bds.notification.application;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.bds.notification.application.dto.FundingNotificationCommandDto;
+import com.bds.notification.application.dto.OrderNotificationMessageDto;
 import com.bds.notification.common.exception.BusinessException;
 import com.bds.notification.common.exception.ErrorCode;
 import com.bds.notification.domain.notification.entity.NotificationChannel;
@@ -203,11 +205,64 @@ public class NotificationServiceIntegrationTest {
     }
   }
 
+  @Nested
+  @DisplayName("펀딩 상태 알림 생성 통합 테스트")
+  class CreateFundingNotificationIntegrationTests {
+
+    @Test
+    @DisplayName("구독자가 있을 때 구독자 수만큼 알림이 DB에 저장된다.")
+    public void 펀딩_알림_구독자수만큼_저장() {
+      // given - 구독자 3명 등록
+      notificationService.subscribe(1L, SubscriptionTargetType.PRODUCT, 123L);
+      notificationService.subscribe(2L, SubscriptionTargetType.PRODUCT, 123L);
+      notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
+
+      FundingNotificationCommandDto command = new FundingNotificationCommandDto(
+          NotificationType.FUNDING_START, "123", "PRODUCT"
+      );
+      // when
+      notificationService.createFundingNotification(command);
+      // then
+      assertThat(notificationRepository.count()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("구독자가 없을 때 알림이 저장되지 않는다.")
+    public void 펀딩_알림_구독자없음_저장안됨() {
+      // given
+      FundingNotificationCommandDto command = new FundingNotificationCommandDto(
+          NotificationType.FUNDING_START, "123", "PRODUCT"
+      );
+      // when
+      notificationService.createFundingNotification(command);
+      // then
+      assertThat(notificationRepository.count()).isEqualTo(0L);
+    }
+  }
+
+  @Nested
+  @DisplayName("주문 상태 알림 생성 통합 테스트")
+  class CreateOrderNotificationIntegrationTests {
+
+    @Test
+    @DisplayName("PAID 타입으로 알림 생성 시 DB에 저장된다.")
+    public void 주문완료_알림_DB_저장() {
+      // given
+      OrderNotificationMessageDto command = new OrderNotificationMessageDto(
+          NotificationType.PAID, 1L, "여름맞이 물총 장난감", "order-1234-1234"
+      );
+      // when
+      notificationService.createOrderNotification(command);
+      // then
+      assertThat(notificationRepository.count()).isEqualTo(1L);
+    }
+  }
+
   private NotificationEntity createNotification(Long memberId, Long targetId) {
     return notificationRepository.save(NotificationEntity.builder()
         .memberId(memberId)
         .type(NotificationType.FUNDING_START)
-        .targetId(targetId)
+        .targetId(String.valueOf(targetId))
         .title("제목" + targetId)
         .body("펀딩이 시작되었습니다." + targetId)
         .channel(NotificationChannel.SSE)
