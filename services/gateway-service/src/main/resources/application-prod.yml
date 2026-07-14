@@ -1,0 +1,38 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
+              predicates:
+                - Path=/api/auths/**
+
+            - id: member-service
+              uri: http://${MEMBER_SERVICE_HOST:localhost}:${MEMBER_SERVICE_PORT:8086}
+              predicates:
+                - Path=/api/members/**
+
+            - id: chat-service
+              uri: http://${CHAT_SERVICE_HOST:localhost}:${CHAT_SERVICE_PORT:8082}
+              predicates:
+                - Path=/api/chat/**
+
+            - id: notification-service
+              uri: http://${NOTIFICATION_SERVICE_HOST:localhost}:${NOTIFICATION_SERVICE_PORT:8083}
+              predicates:
+                - Path=/api/notifications/**
+
+            - id: order-service
+              uri: http://${ORDER_SERVICE_HOST:localhost}:${ORDER_SERVICE_PORT:8084}
+              predicates:
+                - Path=/api/orders/**
+
+            - id: payment-service
+              uri: http://${PAYMENT_SERVICE_HOST:localhost}:${PAYMENT_SERVICE_PORT:8085}
+              predicates:
+                - Path=/api/payments/**
+
+jwt:
+  jwks-uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}/oauth2/jwks

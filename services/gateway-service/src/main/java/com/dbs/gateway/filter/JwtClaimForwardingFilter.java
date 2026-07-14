@@ -15,9 +15,10 @@ import reactor.core.publisher.Mono;
 
 /**
  * 인증된 요청의 JWT 클레임(sub, email, roles)을 다운스트림 서비스가 바로 쓸 수 있도록
- * X-User-Id / X-User-Email / X-User-Roles 헤더로 변환해 전달한다. 인증되지 않은 요청(permitAll 라우트)은
- * SecurityContext가 JwtAuthenticationToken이 아니므로 그대로 통과시킨다.
- * 헤더 이름은 modules/common의 LoginUserArgumentResolver가 읽는 이름과 반드시 일치해야 한다.
+ * X-User-Id / X-User-Email / X-User-Roles 헤더로 변환해 전달한다.
+ * 다운스트림 서비스는 이 헤더들을 게이트웨이가 검증한 값으로 100% 신뢰하므로,
+ * 클라이언트가 직접 같은 이름의 헤더를 실어 보내 신원을 위조하지 못하도록
+ * 매 요청마다 먼저 제거한 뒤(JWT 유무와 무관하게) 유효한 JWT가 있을 때만 새로 채운다.
  */
 @Component
 public class JwtClaimForwardingFilter implements GlobalFilter, Ordered {
@@ -28,14 +29,28 @@ public class JwtClaimForwardingFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ServerWebExchange sanitizedExchange = stripClientSuppliedIdentityHeaders(exchange);
+
         return ReactiveSecurityContextHolder.getContext()
             .map(SecurityContext::getAuthentication)
             .filter(JwtAuthenticationToken.class::isInstance)
             .cast(JwtAuthenticationToken.class)
             .map(JwtAuthenticationToken::getToken)
-            .map(jwt -> withClaimHeaders(exchange, jwt))
-            .defaultIfEmpty(exchange)
+            .map(jwt -> withClaimHeaders(sanitizedExchange, jwt))
+            .defaultIfEmpty(sanitizedExchange)
             .flatMap(chain::filter);
+    }
+
+    private ServerWebExchange stripClientSuppliedIdentityHeaders(ServerWebExchange exchange) {
+        ServerHttpRequest strippedRequest = exchange.getRequest().mutate()
+            .headers(headers -> {
+                headers.remove(USER_ID_HEADER);
+                headers.remove(USER_EMAIL_HEADER);
+                headers.remove(USER_ROLES_HEADER);
+            })
+            .build();
+
+        return exchange.mutate().request(strippedRequest).build();
     }
 
     private ServerWebExchange withClaimHeaders(ServerWebExchange exchange, Jwt jwt) {
