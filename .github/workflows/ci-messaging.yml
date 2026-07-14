@@ -1,0 +1,43 @@
+name: CI - messaging
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'libs/**'
+      - 'modules/messaging/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'libs/**'
+      - 'modules/messaging/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            libs
+            modules/messaging
+            build.gradle
+            settings.gradle
+            gradlew
+            gradle
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Build
+        run: ./gradlew :libs:bds-events:build :modules:messaging:build
