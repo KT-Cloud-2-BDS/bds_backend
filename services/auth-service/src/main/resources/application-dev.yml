@@ -36,7 +36,10 @@ mail:
         writetimeout: 5000
 
 jwt:
-  secret: ${JWT_SECRET}
   expiration:
     access: ${JWT_ACCESS_EXPIRATION}
     refresh: ${JWT_REFRESH_EXPIRATION}
+  rsa:
+    # 로컬 개발 전용 키
+    # 운영 환경(application-prod.yml)에서는 반드시 JWT_RSA_PRIVATE_KEY 환경변수로 주입한다.
+    private-key: ${JWT_RSA_PRIVATE_KEY}

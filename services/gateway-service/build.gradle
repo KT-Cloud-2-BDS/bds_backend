@@ -6,7 +6,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    // 혹시 모를 최신 라이브러리를 위해 마일스톤 저장소 유지
     maven { url 'https://repo.spring.io/milestone' }
 }
 
@@ -16,7 +15,6 @@ dependencies {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
     }
 
-    // Spring Cloud Gateway 5.x부터 webflux/webmvc 구현체가 분리되어 아티팩트명이 변경됨
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webflux'
 
     // Resource Server 의존성 (NimbusJwtDecoder 포함)
