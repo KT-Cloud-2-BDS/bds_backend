@@ -17,7 +17,10 @@ spring:
       externalization:
         enabled: true
       republish-outstanding-events-on-restart: false   # 재발행은 messaging 모듈 스케줄러가 담당
-
+      staleness: #Fail 기준
+        published: 1m
+        processing: 5m
+        resubmitted: 2m
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     username: ${POSTGRES_USER}
