@@ -1,6 +1,11 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: notification-service
+
+  flyway:
+    enabled: true
 
   jpa:
     properties:
