@@ -48,7 +48,6 @@ def jacocoExcludeFilter = [
         "**/*Exception*",
         "**/global/exception/**",
         "**/infrastructure/persistence/**",
-        "**/infrastructure/security/**",
         "**/presentation/**",
         "**/domain/entity/enums/**",
         "**/*Application*"
