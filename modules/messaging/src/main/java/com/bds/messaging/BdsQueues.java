@@ -22,6 +22,8 @@ public class BdsQueues {
                 .quorum()
                 .deadLetterExchange(DLX)
                 .deadLetterRoutingKey(deadRoutingKey)
+                .withArgument("x-dead-letter-strategy", "at-least-once")
+                .withArgument("x-overflow", "reject-publish")
                 .withArgument("x-delivery-limit", DELIVERY_LIMIT)
                 .build();
 

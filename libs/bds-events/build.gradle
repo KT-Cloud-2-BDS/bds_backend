@@ -3,6 +3,6 @@ plugins {
 }
 
 dependencies {
-    // @Externalized 어노테이션용.
-    compileOnly 'org.springframework.modulith:spring-modulith-events-api'
+    // @Externalized 어노테이션: 이 모듈을 의존하는 서비스가 런타임에도 받도록 api로 노출
+    api 'org.springframework.modulith:spring-modulith-events-api'
 }
