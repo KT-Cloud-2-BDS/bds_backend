@@ -24,6 +24,7 @@ jobs:
         with:
           sparse-checkout: |
             libs
+            modules/common
             modules/messaging
             build.gradle
             settings.gradle
