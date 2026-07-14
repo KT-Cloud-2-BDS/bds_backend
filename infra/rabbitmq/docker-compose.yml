@@ -1,0 +1,44 @@
+#   local: docker compose --env-file .env.local up -d
+#   dev  : docker compose --env-file .env.dev up -d
+services:
+
+  # 구조(definitions.json)는 환경 공통, 비밀번호 해시만 .env로 분리하기 위한 장치.
+  definitions-init:
+    image: alpine:3.20
+    volumes:
+      - ./definitions.json:/input/definitions.json:ro
+      - definitions:/output
+    environment:
+      ADMIN_HASH: ${ADMIN_HASH}
+      ORDER_HASH: ${ORDER_HASH}
+      CHAT_HASH: ${CHAT_HASH}
+    command: >
+      sh -c 'sed
+      -e "s|__ADMIN_HASH__|$$ADMIN_HASH|g"
+      -e "s|__ORDER_HASH__|$$ORDER_HASH|g"
+      -e "s|__CHAT_HASH__|$$CHAT_HASH|g"
+      /input/definitions.json > /output/definitions.json'
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq-${ENV_NAME}
+    depends_on:
+      definitions-init:
+        condition: service_completed_successfully
+    ports:
+      - "${AMQP_PORT}:5672" #AMQP
+      - "${MGMT_PORT}:15672" #MANAGEMENT UI
+    volumes:
+      - ${DATA_DIR}:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - definitions:/etc/rabbitmq/generated:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  definitions:

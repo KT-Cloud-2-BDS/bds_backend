@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: order-local
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5435}/${POSTGRES_DB:order}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${RABBITMQ_USER:order-service}
+    password: ${RABBITMQ_PASSWORD:order1234}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  modulith:
+    events:
+      externalization:
+        enabled: true
+      republish-outstanding-events-on-restart: false
+
+bds:
+  messaging:
+    events:
+      republish-delay: 30s
+      republish-min-age: 1m
+      retention: 7d
+
+logging:
+  level:
+    com.bds: DEBUG
+    org.hibernate.SQL: DEBUG

@@ -4,6 +4,8 @@ plugins {
 
 dependencies {
     implementation project(':modules:common')
+    implementation project(':libs:bds-events')
+    implementation project(':modules:messaging')
 
     implementation 'org.springframework.boot:spring-boot-starter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
