@@ -1,8 +1,6 @@
 package com.bds.auth.presentation.controller;
 
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,25 +35,30 @@ class AuthInternalControllerTest {
     @Test
     @DisplayName("POST /api/auths/account는 생성된 계정의 authId를 반환한다")
     void 계정생성_성공() throws Exception {
+        // given
         given(authService.createAccount("yeojin@email.com", "password123!")).willReturn(1L);
 
         String requestBody = objectMapper.writeValueAsString(
             new AuthCreateRequestDto("yeojin@email.com", "password123!")
         );
 
+        // when & then
         mockMvc.perform(post("/api/auths/account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
             .andExpect(status().isOk())
             .andExpect(content().string("1"));
+
+        verify(authService).createAccount("yeojin@email.com", "password123!");
     }
 
     @Test
     @DisplayName("DELETE /api/auths/{authId}는 계정을 삭제하고 200을 반환한다")
     void 계정삭제_성공() throws Exception {
+        // when & then
         mockMvc.perform(delete("/api/auths/{authId}", 1L))
             .andExpect(status().isOk());
 
-        verify(authService, times(1)).deleteAuth(anyLong());
+        verify(authService).deleteAuth(1L);
     }
 }

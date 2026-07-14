@@ -2,6 +2,7 @@ package com.bds.member.global.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,10 +22,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException e) {
-        HttpStatus status = HttpStatus.valueOf(e.getStatusCode().value());
+        HttpStatusCode status = e.getStatusCode();
+        String code = (status instanceof HttpStatus httpStatus) ? httpStatus.name() : String.valueOf(status.value());
         return ResponseEntity
             .status(status)
-            .body(new ErrorResponse(status.name(), e.getReason()));
+            .body(new ErrorResponse(code, e.getReason()));
     }
 
     @ExceptionHandler(Exception.class)
