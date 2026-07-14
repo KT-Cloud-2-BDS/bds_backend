@@ -23,4 +23,20 @@ public class FundingMapper {
                 entity.getUpdatedAt()
         );
     }
+
+    public FundingJpaEntity toJpaEntity(Funding entity) {
+        return FundingJpaEntity.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .creatorId(entity.getCreatorId())
+                .status(entity.getStatus())
+                .startAt(entity.getStartAt())
+                .holdTo(entity.getHoldTo())
+                .payAt(entity.getPayAt())
+                .participationCnt(entity.getParticipationCnt())
+                .goalAmount(entity.getGoalAmount())
+                .currentAmount(entity.getCurrentAmount())
+                .isSuccess(entity.getIsSuccess())
+                .build();
+    }
 }

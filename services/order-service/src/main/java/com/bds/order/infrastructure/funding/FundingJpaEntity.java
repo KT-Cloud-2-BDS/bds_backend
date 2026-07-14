@@ -4,10 +4,7 @@ import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.infrastructure.common.BaseEntity;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,6 +13,7 @@ import java.util.List;
 @Entity
 @Table(name = "funding")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class FundingJpaEntity extends BaseEntity {

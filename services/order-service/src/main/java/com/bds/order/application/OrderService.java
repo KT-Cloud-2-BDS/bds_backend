@@ -17,6 +17,7 @@ import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
 import com.bds.order.presentation.dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +26,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -127,7 +130,7 @@ public class OrderService {
         }
 
         try {
-            order.cancelOrder(CancelReason.USER_CANCEL);
+            order.cancelOrder(CancelReason.USER_CANCEL.name());
         } catch (IllegalStateException e) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
         }
@@ -172,9 +175,77 @@ public class OrderService {
         return new ValidatedRewards(foundRewards, rewardIdQtyMap);
     }
 
+    @Transactional
+    public void processStatusUpdate(Long orderId, OrderStatus targetStatus) {
+        findOrderForUpdate(orderId).ifPresent(order -> {
+            try {
+                order.updateStatus(targetStatus);
+                orderRepository.save(order);
+            } catch (IllegalStateException e) {
+                log.warn("Status transition failed: orderId={}, target={}, reason={}",
+                        orderId, targetStatus, e.getMessage());
+            }
+        });
+    }
+
+    @Transactional
+    public void processCancelledUpdate(Long orderId, String cancelReason) {
+        findOrderForUpdate(orderId).ifPresent(order -> {
+            try {
+                order.cancelOrder(cancelReason);
+                order.getOrderRewards().forEach(orw ->
+                        rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
+                );
+                orderRepository.save(order);
+            } catch (IllegalStateException e) {
+                log.warn("Cancel failed: orderId={}, reason={}", orderId, e.getMessage());
+            }
+        });
+    }
+
+    @Transactional
+    public void publishSettlement(Long orderId) {
+        // 상태 변경 없음, 발행만
+        // TODO: Outbox에 정산 요청 메시지 저장 (type: SETTLEMENT)
+    }
+
+    @Transactional
+    public void processPayingAndPublishSettlement(Long orderId) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "[FUNDING_JUDGE] Order not found: orderId=" + orderId));
+
+        order.updateStatus(OrderStatus.PAYING);
+        orderRepository.save(order);
+
+        // TODO: Outbox에 결제 요청 메시지 저장 (PAY 측 스펙 확정 후)
+        // outboxRepository.save(OutboxMessage.create(...))
+    }
+
+    @Transactional
+    public void processCancelAndPublishRefund(Long orderId) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "[FUNDING_JUDGE] Order not found: orderId=" + orderId));
+
+        order.cancelOrder(CancelReason.FUNDING_FAILED.name());
+        order.getOrderRewards().forEach(orw ->
+                rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
+        );
+        orderRepository.save(order);
+
+        // TODO: Outbox에 환불 요청 메시지 저장 (PAY 측 스펙 확정 후)
+    }
+
+    private Optional<Order> findOrderForUpdate(Long orderId) {
+        Optional<Order> orderOpt = orderRepository.findByIdForUpdate(orderId);
+        if (orderOpt.isEmpty()) {
+            log.warn("Order not found: orderId={}", orderId);
+        }
+        return orderOpt;
+    }
+
     private record ValidatedRewards(List<Reward> rewards, Map<Long, Integer> qtyMap) {
     }
 
-    // TODO: 주문성공 처리 내부 API
-    // TODO: 주문실패 보상처리 내부 API
 }

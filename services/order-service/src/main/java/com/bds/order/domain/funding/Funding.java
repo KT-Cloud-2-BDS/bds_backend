@@ -35,4 +35,18 @@ public class Funding {
     public boolean isFuningPeriod(LocalDateTime now) {
         return now.isAfter(startAt) && now.isBefore(holdTo);
     }
+
+    public void markSuccess() {
+        this.isSuccess = true;
+        this.status = FundingStatus.SUCCESS;
+    }
+
+    public void markFailed() {
+        this.isSuccess = false;
+        this.status = FundingStatus.FAILED;
+    }
+
+    public void activate() {
+        this.status = FundingStatus.ACTIVE;
+    }
 }
