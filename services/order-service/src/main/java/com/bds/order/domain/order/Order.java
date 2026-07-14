@@ -19,7 +19,7 @@ public class Order {
     private Long totalRewardAmount;
     private Long totalShippingCharge;
     private List<OrderReward> orderRewards;
-    private CancelReason cancelReason;
+    private String cancelReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime cancelledAt;
@@ -42,7 +42,7 @@ public class Order {
 
     public static Order reconstitute(Long id, String orderNo, Long memberId, OrderStatus status,
                                      Long totalRewardAmount, Long totalShippingCharge, List<OrderReward> orderRewards,
-                                     CancelReason cancelReason, LocalDateTime createdAt,
+                                     String cancelReason, LocalDateTime createdAt,
                                      LocalDateTime updatedAt, LocalDateTime cancelledAt, LocalDateTime expiresAt) {
         return new Order(id, orderNo, memberId, status, totalRewardAmount, totalShippingCharge, orderRewards,
                 cancelReason, createdAt, updatedAt, cancelledAt, expiresAt);
@@ -66,7 +66,7 @@ public class Order {
         this.status = newStatus;
     }
 
-    public void cancelOrder(CancelReason cancelReason) {
+    public void cancelOrder(String cancelReason) {
         updateStatus(OrderStatus.CANCELLED);
         this.cancelledAt = LocalDateTime.now();
         this.cancelReason = cancelReason;

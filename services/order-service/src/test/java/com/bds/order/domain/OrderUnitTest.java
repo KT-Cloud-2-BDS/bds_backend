@@ -81,10 +81,10 @@ class OrderUnitTest {
         void 취소_가능한_상태에서_취소하면_CANCELLED로_변경된다(OrderStatus from) {
             Order order = OrderFixture.createOrder(from);
 
-            order.cancelOrder(CancelReason.USER_CANCEL);
+            order.cancelOrder(CancelReason.USER_CANCEL.name());
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-            assertThat(order.getCancelReason()).isEqualTo(CancelReason.USER_CANCEL);
+            assertThat(order.getCancelReason()).isEqualTo(CancelReason.USER_CANCEL.name());
             assertThat(order.getCancelledAt()).isNotNull();
         }
     }

@@ -74,7 +74,7 @@ class OrderUnitExceptionTest {
         void PENDING_상태에서_취소하면_예외를_던진다() {
             Order order = OrderFixture.createOrder(OrderStatus.PENDING);
 
-            assertThatThrownBy(() -> order.cancelOrder(CancelReason.USER_CANCEL))
+            assertThatThrownBy(() -> order.cancelOrder(CancelReason.USER_CANCEL.name()))
                     .isInstanceOf(IllegalStateException.class);
         }
     }
