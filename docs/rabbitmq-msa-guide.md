@@ -41,6 +41,73 @@ BDS 백엔드는 서비스 간 이벤트를 RabbitMQ를 통해 교환합니다.
 
 ---
 
+## RabbitMQ 신규 서비스 유저 추가
+
+신규 서비스를 RabbitMQ에 연결하려면 `definitions.json`에 유저를 추가하고 비밀번호 해시를 생성해야 합니다.
+
+### 1. 비밀번호 해시 생성
+
+RabbitMQ는 평문 비밀번호를 그대로 저장하지 않고 SHA-256 해시를 사용합니다.  
+아래 명령어로 해시를 생성합니다.
+
+```bash
+docker run --rm rabbitmq:4 rabbitmqctl hash-password <평문비밀번호>
+```
+
+예시:
+```bash
+$ docker run --rm rabbitmq:4 rabbitmqctl hash-password chat1234
+# 출력: 2TpEAVhROmPU9uKZanKsBIR8itaXt9ifkH2Y/cif2L1iihQ8
+```
+
+### 2. `infra/rabbitmq/definitions.json` 수정
+
+생성된 해시를 플레이스홀더로 추가합니다.
+
+```json
+{
+  "users": [
+    { "name": "your-service", "password_hash": "__YOUR_SERVICE_HASH__",
+      "hashing_algorithm": "rabbit_password_hashing_sha256", "tags": [] }
+  ],
+  "permissions": [
+    { "user": "your-service", "vhost": "msa",
+      "configure": ".*", "write": ".*", "read": ".*" }
+  ]
+}
+```
+
+### 3. `.env.local` / `.env.dev` 에 해시값 추가
+
+```bash
+# .env.local
+YOUR_SERVICE_HASH=<1번에서 생성한 해시>
+```
+
+그리고 `docker-compose.yml`의 `definitions-init` sed 커맨드에도 치환 라인을 추가합니다.
+
+```yaml
+command: >
+  sh -c 'sed
+  -e "s|__ADMIN_HASH__|$$ADMIN_HASH|g"
+  -e "s|__ORDER_HASH__|$$ORDER_HASH|g"
+  -e "s|__CHAT_HASH__|$$CHAT_HASH|g"
+  -e "s|__YOUR_SERVICE_HASH__|$$YOUR_SERVICE_HASH|g"   # 추가
+  /input/definitions.json > /output/definitions.json'
+```
+
+### 4. 컨테이너 재기동
+
+```bash
+# local 환경
+docker compose --env-file .env.local up -d
+```
+
+> 이미 컨테이너가 떠 있다면 유저 정보는 `mnesia` 데이터에 남아있으므로  
+> `.data/rabbitmq` 디렉토리를 삭제 후 재기동해야 definitions.json이 반영됩니다.
+
+---
+
 ## 신규 서비스 적용 방법
 
 ### 1. `build.gradle` 의존성 추가
@@ -249,6 +316,24 @@ public class InMemoryProcessedEventStore implements ProcessedEventStore {
 `ci-your-service.yml`의 `sparse-checkout`과 `Start MSA RabbitMQ` 스텝을 추가합니다.
 
 ```yaml
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      rabbitmq:
+        image: rabbitmq:4
+        env:
+          RABBITMQ_DEFAULT_USER: your-service
+          RABBITMQ_DEFAULT_PASS: your1234
+          RABBITMQ_DEFAULT_VHOST: msa
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 30s
 steps:
   - uses: actions/checkout@v4
     with:
@@ -262,25 +347,8 @@ steps:
         gradlew
         gradle
 
-  - name: Start MSA RabbitMQ
-    run: |
-      docker run -d --name rabbitmq-msa \
-        -p 5672:5672 \
-        -e RABBITMQ_DEFAULT_USER=your-service \
-        -e RABBITMQ_DEFAULT_PASS=your1234 \
-        -e RABBITMQ_DEFAULT_VHOST=msa \
-        rabbitmq:4
-
-  - name: Wait for RabbitMQ
-    run: |
-      for i in $(seq 1 30); do
-        if docker exec rabbitmq-msa rabbitmq-diagnostics -q ping > /dev/null 2>&1; then
-          echo "rabbitmq-msa ready"; break
-        fi
-        echo "Waiting... ($i/30)"; sleep 2
-      done
-      docker exec rabbitmq-msa rabbitmq-diagnostics -q ping || exit 1
-
+  # docker run 수동 방식 대신 services 블록 사용 — 헬스체크 및 대기를 GitHub Actions가 처리
+  # name: Build and Test 에서 env로 접속 정보만 주입
   - name: Build and Test
     env:
       RABBITMQ_HOST: localhost

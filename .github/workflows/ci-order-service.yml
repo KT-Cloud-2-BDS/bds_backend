@@ -26,6 +26,20 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      rabbitmq:
+        image: rabbitmq:4
+        env:
+          RABBITMQ_DEFAULT_USER: order-service
+          RABBITMQ_DEFAULT_PASS: order1234
+          RABBITMQ_DEFAULT_VHOST: msa
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 30s
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,30 +52,6 @@ jobs:
             settings.gradle
             gradlew
             gradle
-
-      # MSA 공용 브로커 — order-service는 내부 브로커가 없어 이것 하나만 필요
-      # 순정 이미지로 충분 (exchange는 앱이 코드로 선언), vhost는 실환경과 동일하게 msa
-      - name: Start MSA RabbitMQ
-        run: |
-          docker run -d --name rabbitmq-msa \
-            -p 5672:5672 \
-            -e RABBITMQ_DEFAULT_USER=order-service \
-            -e RABBITMQ_DEFAULT_PASS=order1234 \
-            -e RABBITMQ_DEFAULT_VHOST=msa \
-            rabbitmq:4
-
-      # 시간 내 기동하지 않으면 여기서 즉시 실패시켜 원인이 테스트 실패로 위장되는 것을 방지
-      - name: Wait for RabbitMQ
-        run: |
-          for i in $(seq 1 30); do
-            if docker exec rabbitmq-msa rabbitmq-diagnostics -q ping > /dev/null 2>&1; then
-              echo "rabbitmq-msa ready"
-              break
-            fi
-            echo "Waiting for rabbitmq-msa... ($i/30)"
-            sleep 2
-          done
-          docker exec rabbitmq-msa rabbitmq-diagnostics -q ping || { echo "rabbitmq-msa failed to start"; exit 1; }
 
       - uses: actions/setup-java@v4
         with:
