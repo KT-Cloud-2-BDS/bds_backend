@@ -13,10 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,12 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
  * Member 서버로부터 내부 통신으로 넘어온 계정 생성 요청을 받아,
  * Redis 인증 티켓을 검증하고 최종적으로 Auth / AuthLocal DB에 적재하는 과정을 검증합니다.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
 @Transactional
 @DisplayName("인증 서버 계정 생성 통합 테스트")
-public class AuthCreateIntegrationTest {
+public class AuthCreateIntegrationTest extends AbstractAuthIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
