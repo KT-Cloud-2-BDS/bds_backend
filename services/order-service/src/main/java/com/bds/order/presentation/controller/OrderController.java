@@ -2,7 +2,11 @@ package com.bds.order.presentation.controller;
 
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
+import com.bds.common.events.order.OrderCreatedDirectEvent;
+import com.bds.common.events.order.OrderCreatedEvent;
 import com.bds.order.application.OrderService;
+import com.bds.order.infrastructure.messaging.DirectEventPublisher;
+import com.bds.order.infrastructure.messaging.OrderEventPublisher;
 import com.bds.order.presentation.dto.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -22,6 +26,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final DirectEventPublisher directEventPublisher;
 
     @GetMapping
     public ResponseEntity<List<OrderResponseDto>> listOrders(
@@ -50,6 +55,7 @@ public class OrderController {
             @Valid @RequestBody BillingRequestDto reqDto
     ) {
         Long memberId = user.id();
+        directEventPublisher.publish(OrderCreatedDirectEvent.of(memberId,12L));
         return ResponseEntity.ok(orderService.createBilling(memberId, reqDto));
     }
 

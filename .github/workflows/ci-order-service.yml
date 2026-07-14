@@ -1,5 +1,4 @@
 name: CI - order-service
-
 # order-service 디렉토리 변경 시에만 실행
 on:
   push:
@@ -10,11 +9,9 @@ on:
     branches: [develop]
     paths:
       - 'services/order-service/**'
-
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:18
@@ -29,13 +26,28 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+      rabbitmq:
+        image: rabbitmq:4
+        env:
+          RABBITMQ_DEFAULT_USER: order-service
+          RABBITMQ_DEFAULT_PASS: order1234
+          RABBITMQ_DEFAULT_VHOST: msa
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 30s
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
             services/order-service
             modules/common
+            modules/messaging
+            libs/bds-events
             build.gradle
             settings.gradle
             gradlew
@@ -46,13 +58,16 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
           cache: 'gradle'
-
       - name: Grant execute permission
         run: chmod +x gradlew
-
       - name: Build and Test
+        env:
+          # MSA 브로커 (spring.rabbitmq.* — order는 단일 브로커라 표준 네임스페이스 사용)
+          RABBITMQ_HOST: localhost
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USER: order-service
+          RABBITMQ_PASSWORD: order1234
         run: ./gradlew :services:order-service:clean :services:order-service:build
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

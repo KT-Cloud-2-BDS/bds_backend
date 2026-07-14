@@ -2,6 +2,22 @@ spring:
   application:
     name: order-dev
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${RABBITMQ_USER:order-service}
+    password: ${RABBITMQ_PASSWORD:order1234}
+    # messaging 모듈의 confirm 콜백이 동작하기 위한 발행 서비스 필수 설정
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  modulith:
+    events:
+      externalization:
+        enabled: true
+      republish-outstanding-events-on-restart: false   # 재발행은 messaging 모듈 스케줄러가 담당
+
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     username: ${POSTGRES_USER}
@@ -12,6 +28,14 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+
+# messaging 모듈 스케줄러 주기 (기본값 사용 시 생략 가능)
+bds:
+  messaging:
+    events:
+      republish-delay: 30s
+      republish-min-age: 1m
+      retention: 7d
 
 logging:
   level:
