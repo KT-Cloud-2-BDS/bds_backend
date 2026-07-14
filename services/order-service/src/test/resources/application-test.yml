@@ -2,6 +2,13 @@ spring:
   application:
     name: order-test
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${RABBITMQ_USER:order-service}
+    password: ${RABBITMQ_PASSWORD:order1234}
+
   jpa:
     hibernate:
       ddl-auto: create
