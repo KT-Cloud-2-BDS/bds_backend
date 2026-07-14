@@ -3,8 +3,10 @@ package com.bds.notification.presentation;
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
 import com.bds.notification.application.NotificationService;
+import com.bds.notification.application.dto.PushNotificationDto;
 import com.bds.notification.common.exception.BusinessException;
 import com.bds.notification.common.exception.ErrorCode;
+import com.bds.notification.domain.notification.entity.NotificationChannel;
 import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
 import com.bds.notification.presentation.dto.NotificationListResponseDto;
 import com.bds.notification.presentation.dto.NotificationSubscribeResponseDto;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -76,6 +79,22 @@ public class NotificationController {
 
     notificationService.unsubscribe(currentUser.id(), type, targetId);
     return ResponseEntity.noContent().build();
+  }
+
+  //임시 테스트
+  @PostMapping("/test/send")
+  public void testSend(
+      @LoginUser CurrentUser currentUser,
+      @RequestBody PushNotificationDto request
+  ) {
+    notificationService.createNotification(
+        currentUser.id(),
+        request.type(),
+        "1",
+        request.title(),
+        request.body(),
+        NotificationChannel.SSE
+    );
   }
 
 }

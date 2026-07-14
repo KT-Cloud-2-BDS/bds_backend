@@ -16,7 +16,7 @@ public class Notification {
 
   private NotificationType type;
 
-  private Long targetId;
+  private String targetId;
 
   private String title;
 
@@ -35,7 +35,7 @@ public class Notification {
   private LocalDateTime clickedAt;
 
   public static Notification create(
-      Long memberId, NotificationType type, Long targetId, String title, String body,
+      Long memberId, NotificationType type, String targetId, String title, String body,
       NotificationChannel channel
   ) {
     Notification notification = new Notification();
@@ -51,7 +51,7 @@ public class Notification {
   }
 
   public static Notification from(Long notificationId, Long memberId, NotificationType type,
-      Long targetId,
+      String targetId,
       String title, String body, NotificationChannel channel, Boolean sendStatus, Boolean isRead,
       LocalDateTime createdAt, LocalDateTime readAt, LocalDateTime clickedAt) {
     Notification notification = new Notification();

@@ -9,7 +9,7 @@ public record NotificationResponseDto(
     NotificationType type,
     String title,
     String body,
-    Long targetId,
+    String targetId,
     Boolean isRead,
     LocalDateTime createdAt
 ) {
