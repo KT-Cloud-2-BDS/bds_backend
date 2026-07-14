@@ -38,4 +38,9 @@ public class Auth {
         }
         this.status = status;
     }
+
+    public void switchRole() {
+        this.role = (this.role == Role.SUPPORTER) ? Role.MAKER : Role.SUPPORTER;
+    }
+
 }

@@ -179,6 +179,51 @@ public class AuthServiceUnitTest {
     }
 
     @Nested
+    @DisplayName("유저 권한(Role) 전환 기능")
+    public class SwitchRole {
+
+        @Test
+        @DisplayName("존재하는 계정인 경우 권한을 전환하고 변경된 새로운 권한을 반환한다")
+        public void 권한전환_성공() {
+            // given
+            Long authId = 1L;
+            Auth mockAuth = mock(Auth.class);
+
+            // 처음에는 SUPPORTER였다가 switchRole() 호출 후 MAKER로 변하는 상황 모킹
+            given(authRepository.findById(authId)).willReturn(Optional.of(mockAuth));
+            given(mockAuth.getRole()).willReturn(Role.MAKER);
+            given(authRepository.save(mockAuth)).willReturn(mockAuth);
+
+            // when
+            Role updatedRole = authService.switchRole(authId);
+
+            // then
+            assertEquals(Role.MAKER, updatedRole);
+            verify(mockAuth, times(1)).switchRole(); // 엔티티 내부 권한 변경 메서드가 실행되었는지 검증
+            verify(authRepository, times(1)).findById(authId);
+            verify(authRepository, times(1)).save(mockAuth);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 계정 ID인 경우 ACCOUNT_NOT_FOUND 예외를 발생시킨다")
+        public void 권한전환_실패_존재하지않는계정() {
+            // given
+            Long nonExistentAuthId = 999L;
+            given(authRepository.findById(nonExistentAuthId)).willReturn(Optional.empty());
+
+            // when & then
+            org.junit.jupiter.api.Assertions.assertThrows(
+                com.bds.auth.global.exception.BusinessException.class,
+                () -> authService.switchRole(nonExistentAuthId)
+            );
+
+            // 엔티티 조작이나 저장이 일어나지 않아야 함을 검증
+            verify(authRepository, times(1)).findById(nonExistentAuthId);
+            verify(authRepository, times(0)).save(any(Auth.class));
+        }
+    }
+
+    @Nested
     @DisplayName("계정 삭제 기능")
     public class DeleteAuth {
         @Test

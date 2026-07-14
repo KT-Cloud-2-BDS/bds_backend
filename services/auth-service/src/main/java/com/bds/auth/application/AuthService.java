@@ -126,6 +126,17 @@ public class AuthService {
     }
 
     @Transactional
+    public Role switchRole(Long authId) {
+        Auth auth = authRepository.findById(authId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        auth.switchRole();
+        Auth savedAuth = authRepository.save(auth);
+
+        return savedAuth.getRole();
+    }
+
+    @Transactional
     public void deleteAuth(Long authId) {
         Auth auth = authRepository.findById(authId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
