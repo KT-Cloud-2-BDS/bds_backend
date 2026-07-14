@@ -9,9 +9,9 @@ services:
       - ./definitions.json:/input/definitions.json:ro
       - definitions:/output
     environment:
-      ADMIN_HASH: ${ADMIN_HASH}
-      ORDER_HASH: ${ORDER_HASH}
-      CHAT_HASH: ${CHAT_HASH}
+      ADMIN_HASH: ${ADMIN_HASH:?ADMIN_HASH is required}
+      ORDER_HASH: ${ORDER_HASH:?ORDER_HASH is required}
+      CHAT_HASH: ${CHAT_HASH:?CHAT_HASH is required}
     command: >
       sh -c 'sed
       -e "s|__ADMIN_HASH__|$$ADMIN_HASH|g"

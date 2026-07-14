@@ -7,32 +7,31 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.modulith.events.CompletedEventPublications;
-import org.springframework.modulith.events.IncompleteEventPublications;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.modulith.events.FailedEventPublications;
+import org.springframework.modulith.events.ResubmissionOptions;
 import org.springframework.scheduling.annotation.Scheduled;
-
 import java.time.Duration;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 
 @Slf4j
 @AutoConfiguration
 @EnableScheduling
-@ConditionalOnClass(IncompleteEventPublications.class)
+@ConditionalOnClass(FailedEventPublications.class)
 public class BdsEventPublicationAutoConfig {
 
     static class EventRepublisher {
-        private final ObjectProvider<IncompleteEventPublications> incomplete;
-        private final Duration minAge;
+        private final ObjectProvider<FailedEventPublications> failed;
 
-        EventRepublisher(ObjectProvider<IncompleteEventPublications> incomplete, Duration minAge) {
-            this.incomplete = incomplete;
-            this.minAge = minAge;
+        EventRepublisher(ObjectProvider<FailedEventPublications> failed) {
+            this.failed = failed;
         }
 
         @Scheduled(fixedDelayString = "${bds.messaging.events.republish-delay:30s}")
         void republish() {
-            IncompleteEventPublications registry = incomplete.getIfAvailable();
-            if (registry == null) return;   // registry 없는 컨텍스트면 조용히 스킵
-            registry.resubmitIncompletePublicationsOlderThan(minAge);
+            FailedEventPublications registry = failed.getIfAvailable();
+            if (registry == null) return;
+            registry.resubmit(ResubmissionOptions.defaults().withMaxInFlight(50));
         }
     }
 
@@ -55,9 +54,8 @@ public class BdsEventPublicationAutoConfig {
     }
 
     @Bean
-    EventRepublisher bdsEventRepublisher(ObjectProvider<IncompleteEventPublications> incomplete,
-                                         @Value("${bds.messaging.events.republish-min-age:1m}") Duration minAge) {
-        return new EventRepublisher(incomplete, minAge);
+    EventRepublisher bdsEventRepublisher(ObjectProvider<FailedEventPublications> failed) {
+        return new EventRepublisher(failed);
     }
 
     @Bean
