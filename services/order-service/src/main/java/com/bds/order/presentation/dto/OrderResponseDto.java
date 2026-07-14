@@ -14,8 +14,7 @@ public record OrderResponseDto(
         Long hostId,
         boolean isEnded,
         Long billingAmount,
-        String paymentStatus,
-        LocalDateTime paidAt,
+        LocalDateTime updatedAt,
         boolean isFundingSucceeded
 ) {
     public static OrderResponseDto from(OrderListProjection order) {
@@ -28,8 +27,7 @@ public record OrderResponseDto(
                 order.hostId(),
                 LocalDateTime.now().isAfter(order.holdTo()),
                 order.totalRewardAmount() + order.totalShippingCharge(),
-                null,
-                null,
+                order.updatedAt(),
                 order.isSuccess()
         );
     }
