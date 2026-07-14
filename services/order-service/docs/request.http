@@ -1,0 +1,5 @@
+### Test API 호출 (POST /api/orders/test)
+POST http://localhost:8080/api/orders/test
+X-User-Id: 1
+X-User-Email: test@example.com
+X-User-Role: USER

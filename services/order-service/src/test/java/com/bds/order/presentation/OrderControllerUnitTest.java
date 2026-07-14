@@ -2,9 +2,9 @@ package com.bds.order.presentation;
 
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.order.Order;
-import com.bds.order.infrastructure.messaging.DirectEventPublisher;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.domain.reward.BadgeType;
+import com.bds.order.infrastructure.messaging.OrderEventPublisher;
 import com.bds.order.presentation.controller.OrderController;
 import com.bds.order.presentation.dto.*;
 import com.bds.support.MockMvcTestSupport;
@@ -32,7 +32,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
     private OrderService orderService;
 
     @MockitoBean
-    private DirectEventPublisher directEventPublisher;
+    private OrderEventPublisher orderEventPublisher;
 
     @Nested
     @DisplayName("주문 목록 조회 API")

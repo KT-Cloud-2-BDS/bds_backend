@@ -12,6 +12,7 @@ import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
+import com.bds.order.infrastructure.messaging.OrderEventPublisher;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
@@ -35,6 +36,7 @@ public class OrderService {
     private final FundingRepository fundingRepository;
     private final RewardRepository rewardRepository;
     private final OrderRewardRepository orderRewardRepository;
+    private final OrderEventPublisher  orderEventPublisher;
 
     public List<OrderResponseDto> getAllOrders(Long memberId, Pageable pageable) {
         List<OrderListProjection> orderList = orderRepository.findOrderListWithFunding(memberId, pageable);
@@ -177,4 +179,10 @@ public class OrderService {
 
     // TODO: 주문성공 처리 내부 API
     // TODO: 주문실패 보상처리 내부 API
+
+    @Transactional
+    public void test(Long orderId){
+        //trasnactional로 묶여야해 service안에 넣을 수 밖에 없습니다.
+        orderEventPublisher.publishOrderCreated(orderId,12L);
+    }
 }

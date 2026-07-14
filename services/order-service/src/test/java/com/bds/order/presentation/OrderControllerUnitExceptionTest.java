@@ -2,8 +2,8 @@ package com.bds.order.presentation;
 
 import com.bds.order.application.OrderService;
 import com.bds.order.global.exception.BusinessException;
-import com.bds.order.infrastructure.messaging.DirectEventPublisher;
 import com.bds.order.global.exception.ErrorCode;
+import com.bds.order.infrastructure.messaging.OrderEventPublisher;
 import com.bds.order.presentation.controller.OrderController;
 import com.bds.order.presentation.dto.BillingRequestDto;
 import com.bds.order.presentation.dto.OrderCreateRequestDto;
@@ -32,7 +32,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
     private OrderService orderService;
 
     @MockitoBean
-    private DirectEventPublisher directEventPublisher;
+    private OrderEventPublisher orderEventPublisher;
 
     @Nested
     @DisplayName("인증 예외 응답")

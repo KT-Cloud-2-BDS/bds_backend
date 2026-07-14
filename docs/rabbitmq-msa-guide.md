@@ -8,23 +8,64 @@ BDS 백엔드는 서비스 간 이벤트를 RabbitMQ를 통해 교환합니다.
 
 ---
 
+## 발행 패턴 비교
+
+BDS 에서 사용 가능한 이벤트 발행 방식은 두 가지입니다.
+
+| 구분 | Direct 발행 | Outbox 패턴 |
+|------|-------------|-------------|
+| 발행 클래스 | `DirectEventPublisher` | `ApplicationEventPublisher` |
+| 이벤트 어노테이션 | `@PublishTo(exchange, routingKey)` | `@Externalized("exchange::routingKey")` |
+| 유실 가능성 | TX commit 전 발행 → 롤백 시 메시지 남음 | TX commit 후 발행 → 원자성 보장 |
+| DB 테이블 | 없음 | `event_publication` (Flyway V3) |
+| 추가 의존성 | 없음 | `spring-modulith-*` 4종 |
+| 권장 용도 | 유실 허용 가능한 알림성 이벤트 | 결제·주문 등 유실 불가 이벤트 |
+
+> **Order Service는 Outbox 패턴을 사용합니다.**  
+> 결제 연동처럼 TX 원자성이 필요한 이벤트에는 반드시 Outbox 패턴을 적용하세요.
+
+---
+
 ## 아키텍처 흐름
+
+### Direct 발행
 
 ```
 [Producer Service]
   │
-  ├─ DirectEventPublisher.publish(event)       ← @PublishTo 어노테이션으로 목적지 선언
-  │         │
-  │   RabbitTemplate (JacksonJsonMessageConverter)
-  │         │
-  │    order.exchange ──── routing key ───▶ [Consumer Queue]
-  │                                                │
-  │                                    @RabbitListener + ProcessedEventStore
-  │                                                │
-  │                                        [Consumer Service]
-  │                                         비즈니스 로직 처리
+  └─ DirectEventPublisher.publish(event)
+          │   @PublishTo → exchange / routingKey 자동 추출
+          ▼
+     RabbitTemplate.convertAndSend()
+          │
+     [order.exchange] ──routing key──▶ [payment.order-created.queue]
+                                                │
+                                    @RabbitListener + ProcessedEventStore
+                                                │
+                                        [Consumer Service]
+```
+
+### Outbox 패턴 (Spring Modulith)
+
+```
+[Producer Service]  ← @Transactional 메서드 내부
   │
-  └─ (유실 불가 이벤트) Spring Modulith @Externalized    ← 현재 미적용, JDBC 백엔드 필요
+  └─ ApplicationEventPublisher.publishEvent(OrderCreatedEvent)
+          │
+          ▼
+  PersistentApplicationEventMulticaster
+  ① event_publication 테이블에 PUBLISHED 상태로 저장 (동일 TX)
+          │
+          ▼  TX commit 후
+  EventExternalizerModuleListener (afterCommit)
+  ② RabbitTemplate.convertAndSend()
+          │
+     [order.exchange] ──routing key──▶ [payment.order-created.queue]
+                                                │
+                                    @RabbitListener + ProcessedEventStore
+                                                │
+                                        [Consumer Service]
+  ③ event_publication.status → COMPLETED
 ```
 
 ### 큐 구조 (`BdsQueues.workQueue`)
@@ -108,19 +149,20 @@ docker compose --env-file .env.local up -d
 
 ---
 
-## 신규 서비스 적용 방법
+## 신규 서비스 적용 방법 — Direct 발행
+
+유실을 허용하는 알림성 이벤트에 사용합니다.
 
 ### 1. `build.gradle` 의존성 추가
 
 ```gradle
 dependencies {
-    implementation project(':libs:bds-events')     // 이벤트 타입 + @PublishTo
-    implementation project(':modules:messaging')   // RabbitMQ 공통 설정
-    // ... 기존 의존성
+    implementation project(':libs:bds-events')
+    implementation project(':modules:messaging')
 }
 ```
 
-### 2. `application-local.yml` / `application-dev.yml` RabbitMQ 설정 추가
+### 2. `application-local.yml` / `application-dev.yml` RabbitMQ 설정
 
 #### 발행(Producer) 서비스
 
@@ -132,17 +174,8 @@ spring:
     virtual-host: msa
     username: ${RABBITMQ_USER:your-service}
     password: ${RABBITMQ_PASSWORD:your1234}
-    # 발행 서비스 필수 — confirm 콜백이 동작하기 위한 설정
     publisher-confirm-type: correlated
     publisher-returns: true
-
-# messaging 모듈 스케줄러 주기 (기본값 사용 시 생략 가능)
-bds:
-  messaging:
-    events:
-      republish-delay: 30s
-      republish-min-age: 1m
-      retention: 7d
 ```
 
 #### 수신(Consumer) 서비스
@@ -155,35 +188,19 @@ spring:
     virtual-host: msa
     username: ${RABBITMQ_USER:your-service}
     password: ${RABBITMQ_PASSWORD:your1234}
-    # 수신 전용 서비스는 confirm 설정 불필요
 ```
-
----
 
 ### 3. `RabbitTopologyConfig` 작성
 
-`modules/messaging`의 `BdsRabbitAutoConfig`는 `@AutoConfiguration`이므로 사용자 설정보다 늦게 로드됩니다.  
-따라서 각 서비스의 `@Configuration`에서 `MessageConverter`와 `RabbitTemplate`을 직접 선언해야 합니다.
+`BdsRabbitAutoConfig`(`@AutoConfiguration`)가 `MessageConverter`와 `RabbitTemplateCustomizer`를  
+자동으로 등록하므로, 서비스에서는 **Exchange 선언만** 하면 됩니다.  
+커스텀 `RabbitTemplate`이나 `MessageConverter`를 직접 선언하면 Spring Modulith의 externalization 경로를 방해하므로 **선언하지 마세요**.
 
 ```java
 @Configuration
 public class RabbitTopologyConfig {
 
-    // 1. JSON 컨버터 선언 (BdsRabbitAutoConfig의 @ConditionalOnMissingBean이 중복 방지)
-    @Bean
-    public MessageConverter messageConverter() {
-        return new JacksonJsonMessageConverter();
-    }
-
-    // 2. 표준 템플릿 (JSON 컨버터 + mandatory + confirm/returns 로깅 적용)
-    @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory cf,
-                                         MessageConverter converter,
-                                         ObjectProvider<RabbitTemplateCustomizer> customizers) {
-        return BdsRabbit.standardTemplate(cf, converter, customizers);
-    }
-
-    // 3. 이 서비스가 소유한 Exchange 선언 (발행 서비스만)
+    // 이 서비스가 소유한 Exchange 선언 (발행 서비스만)
     @Bean
     public TopicExchange myExchange() {
         return ExchangeBuilder.topicExchange("my.exchange").durable(true).build();
@@ -191,27 +208,22 @@ public class RabbitTopologyConfig {
 }
 ```
 
----
-
-### 4. 이벤트 발행 (Producer)
-
-#### 이벤트 정의 (`libs/bds-events`)
+### 4. 이벤트 정의 (`libs/bds-events`)
 
 ```java
-@PublishTo(exchange = "order.exchange", routingKey = "order.created")
-public record OrderCreatedDirectEvent(
+@PublishTo(exchange = "my.exchange", routingKey = "my.event.occurred")
+public record MyEvent(
         UUID eventId,
-        Long orderId,
-        Long amount,
+        Long targetId,
         Instant occurredAt
 ) {
-    public static OrderCreatedDirectEvent of(Long orderId, Long amount) {
-        return new OrderCreatedDirectEvent(UUID.randomUUID(), orderId, amount, Instant.now());
+    public static MyEvent of(Long targetId) {
+        return new MyEvent(UUID.randomUUID(), targetId, Instant.now());
     }
 }
 ```
 
-#### 발행
+### 5. 이벤트 발행
 
 ```java
 @Component
@@ -219,57 +231,278 @@ public record OrderCreatedDirectEvent(
 public class MyEventPublisher {
     private final DirectEventPublisher directEventPublisher;
 
-    public void publishOrderCreated(Long orderId, Long amount) {
-        directEventPublisher.publish(OrderCreatedDirectEvent.of(orderId, amount));
+    public void publish(Long targetId) {
+        directEventPublisher.publish(MyEvent.of(targetId));
         // @PublishTo의 exchange/routingKey를 자동으로 읽어 발행
     }
 }
 ```
 
----
-
-### 5. 이벤트 수신 (Consumer)
-
-#### 큐 선언
+### 6. 이벤트 수신 (Consumer)
 
 ```java
 @Configuration
 public class MyQueues {
-    public static final String ORDER_CREATED = "my-service.order-created.queue";
+    public static final String MY_EVENT = "my-service.my-event.queue";
 
     @Bean
-    public Declarables orderCreatedQueue() {
-        // BdsQueues.workQueue(큐이름, exchange, routingKey)
-        // → 메인 큐 + DLQ + 바인딩 일체 선언
-        return BdsQueues.workQueue(ORDER_CREATED, "order.exchange", "order.created");
+    public Declarables myEventQueue() {
+        return BdsQueues.workQueue(MY_EVENT, "my.exchange", "my.event.occurred");
     }
 }
 ```
-
-#### 리스너 작성
 
 ```java
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OrderCreatedListener {
+public class MyEventListener {
     private final ProcessedEventStore processedEventStore;
 
-    @RabbitListener(queues = MyQueues.ORDER_CREATED)
-    public void handle(OrderCreatedDirectEvent event) {
+    @RabbitListener(queues = MyQueues.MY_EVENT)
+    public void handle(MyEvent event) {
         if (!processedEventStore.markProcessed(event.eventId())) {
             log.info("중복 이벤트 스킵: {}", event.eventId());
-            return;  // 정상 종료 → ack (재처리 방지)
+            return;
         }
+        log.info("MyEvent 수신: targetId={}", event.targetId());
         // 비즈니스 로직
-        log.info("OrderCreated 수신: orderId={}, amount={}", event.orderId(), event.amount());
     }
 }
 ```
 
 ---
 
-### 6. `ProcessedEventStore` 구현 (멱등성)
+## 신규 서비스 적용 방법 — Outbox 패턴 (Spring Modulith)
+
+TX commit 이후에 메시지를 발행하므로 **비즈니스 TX와 메시지 발행의 원자성이 보장**됩니다.  
+결제·주문 등 유실이 허용되지 않는 이벤트에 사용합니다.
+
+### 1. `build.gradle` 의존성 추가
+
+```gradle
+dependencies {
+    implementation project(':libs:bds-events')
+    implementation project(':modules:messaging')
+
+    // Modulith outbox
+    implementation 'org.springframework.modulith:spring-modulith-starter-core'   // PersistentApplicationEventMulticaster 등록
+    implementation 'org.springframework.modulith:spring-modulith-events-amqp'    // AMQP externalization 엔진
+    implementation 'org.springframework.modulith:spring-modulith-events-jpa'     // JPA publication store
+    implementation 'org.springframework.modulith:spring-modulith-events-jackson' // 이벤트 JSON 직렬화
+
+    // JPA, Flyway (이미 있다면 생략)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+}
+```
+
+### 2. Flyway 마이그레이션 추가
+
+`src/main/resources/db/migration/V{N}__event_publication.sql`을 추가합니다.
+
+```sql
+CREATE TABLE event_publication
+(
+    id                     UUID                        NOT NULL,
+    listener_id            VARCHAR(255)                NOT NULL,
+    event_type             VARCHAR(255)                NOT NULL,
+    serialized_event       TEXT                        NOT NULL,
+    publication_date       TIMESTAMP(6) WITH TIME ZONE NOT NULL,
+    completion_date        TIMESTAMP(6) WITH TIME ZONE,
+    last_resubmission_date TIMESTAMP(6) WITH TIME ZONE,
+    completion_attempts    INTEGER                     NOT NULL DEFAULT 0,
+    status                 VARCHAR(255)                NOT NULL
+        CHECK (status IN ('PUBLISHED', 'PROCESSING', 'COMPLETED', 'FAILED', 'RESUBMITTED')),
+
+    CONSTRAINT pk_event_publication PRIMARY KEY (id)
+);
+
+CREATE INDEX idx_event_publication_status ON event_publication (status);
+CREATE INDEX idx_event_publication_publication_date ON event_publication (publication_date);
+```
+
+### 3. `application-local.yml` / `application-dev.yml` 설정
+
+```yaml
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${RABBITMQ_USER:your-service}
+    password: ${RABBITMQ_PASSWORD:your1234}
+    publisher-confirm-type: correlated   # Outbox 발행 서비스 필수
+    publisher-returns: true
+
+  modulith:
+    events:
+      externalization:
+        enabled: true
+      republish-outstanding-events-on-restart: false  # 재발행은 messaging 모듈 스케줄러가 담당
+      staleness:
+        published: 1m
+        processing: 5m
+        resubmitted: 2m
+
+bds:
+  messaging:
+    events:
+      republish-delay: 30s
+      republish-min-age: 1m
+      retention: 7d
+```
+
+### 4. `RabbitTopologyConfig` 작성
+
+커스텀 `RabbitTemplate`/`MessageConverter`를 선언하면 Spring Modulith의 AMQP externalization 경로를 방해하므로 반드시 **Exchange 선언과 `EventExternalizationConfiguration`만** 작성합니다.
+
+```java
+@Configuration
+public class RabbitTopologyConfig {
+
+    @Bean
+    public TopicExchange myExchange() {
+        return ExchangeBuilder.topicExchange("my.exchange").durable(true).build();
+    }
+
+    /**
+     * Spring Modulith는 기본적으로 AutoConfigurationPackages(= 메인 클래스 패키지)만 스캔한다.
+     * 이벤트가 libs/bds-events(com.bds.common.*)처럼 외부 패키지에 있을 경우
+     * 패키지 필터에서 제외되어 externalization이 동작하지 않는다.
+     * @Externalized 어노테이션 기준으로 전체 클래스패스를 대상으로 재정의한다.
+     */
+    @Bean
+    public EventExternalizationConfiguration eventExternalizationConfiguration() {
+        return EventExternalizationConfiguration.externalizing()
+                .selectAndRoute(Externalized.class, Externalized::value)
+                .build();
+    }
+}
+```
+
+> **주의:** `EventExternalizationConfiguration` 빈을 직접 정의하면 Spring Modulith의  
+> auto-configured 버전(`@ConditionalOnMissingBean`)이 스킵됩니다.
+
+### 5. 이벤트 정의 (`libs/bds-events`)
+
+Direct 발행과 달리 `@Externalized`를 사용합니다.  
+라우팅 목적지를 `"exchange::routingKey"` 형식으로 선언합니다.
+
+```java
+import org.springframework.modulith.events.Externalized;
+
+@Externalized("my.exchange::my.event.occurred")
+public record MyEvent(
+        UUID eventId,
+        Long targetId,
+        Instant occurredAt
+) {
+    public static MyEvent of(Long targetId) {
+        return new MyEvent(UUID.randomUUID(), targetId, Instant.now());
+    }
+}
+```
+
+### 6. 이벤트 발행
+
+`ApplicationEventPublisher`를 주입받아 `@Transactional` 메서드 안에서 발행합니다.  
+TX commit 이후 Spring Modulith가 자동으로 RabbitMQ로 externalize합니다.
+
+```java
+@Slf4j
+@Component
+public class MyEventPublisher {
+    private final ApplicationEventPublisher applicationEventPublisher;
+
+    public MyEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
+    }
+
+    @Transactional
+    public void publishMyEvent(Long targetId) {
+        log.info("publishMyEvent: targetId={}", targetId);
+        applicationEventPublisher.publishEvent(MyEvent.of(targetId));
+    }
+}
+```
+
+**호출 위치:** `@Transactional` 메서드 내부에서 호출해야 합니다.
+
+```java
+@Service
+@RequiredArgsConstructor
+public class MyService {
+    private final MyEventPublisher myEventPublisher;
+
+    @Transactional
+    public void doSomething(Long targetId) {
+        // 비즈니스 로직
+        myEventPublisher.publishMyEvent(targetId);  // 같은 TX 안에서 발행
+    }
+}
+```
+
+> `publishMyEvent()` 자체가 `@Transactional`이므로 서비스 TX에 참여합니다.  
+> TX가 commit될 때 `event_publication` → `COMPLETED`로 업데이트되고 AMQP 발행이 일어납니다.
+
+### 7. 이벤트 수신 (Consumer)
+
+Consumer 쪽은 Direct 발행과 동일합니다.
+
+```java
+@Configuration
+public class MyQueues {
+    public static final String MY_EVENT = "my-service.my-event.queue";
+
+    @Bean
+    public Declarables myEventQueue() {
+        return BdsQueues.workQueue(MY_EVENT, "my.exchange", "my.event.occurred");
+    }
+}
+```
+
+```java
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class MyEventListener {
+    private final ProcessedEventStore processedEventStore;
+
+    @Transactional
+    @RabbitListener(queues = MyQueues.MY_EVENT)
+    public void handle(MyEvent event) {
+        if (!processedEventStore.markProcessed(event.eventId())) {
+            log.info("중복 이벤트 스킵: {}", event.eventId());
+            return;
+        }
+        log.info("MyEvent 수신: targetId={}", event.targetId());
+        // 비즈니스 로직
+    }
+}
+```
+
+### 8. Outbox 상태 확인
+
+`event_publication` 테이블로 발행 상태를 모니터링할 수 있습니다.
+
+```bash
+# 상태 확인
+docker exec <postgres-container> psql -U postgres -d <db> \
+  -c "SELECT status, event_type, publication_date, completion_date
+      FROM event_publication ORDER BY publication_date DESC LIMIT 10;"
+```
+
+| status | 의미 |
+|--------|------|
+| `PUBLISHED` | TX commit 후 externalization 대기 또는 진행 중 |
+| `COMPLETED` | AMQP 발행 성공 |
+| `FAILED` | 발행 실패 — `BdsEventPublicationAutoConfig`의 스케줄러가 30s 간격으로 재시도 |
+| `RESUBMITTED` | 재시도 중 |
+
+---
+
+## `ProcessedEventStore` 구현 (멱등성)
 
 `ProcessedEventStore`는 동일 이벤트의 중복 처리를 막는 인터페이스입니다.  
 구현 여부와 방식은 서비스의 비즈니스 요구사항에 따라 선택합니다.
@@ -282,7 +515,7 @@ public interface ProcessedEventStore {
 }
 ```
 
-#### 구현체 선택 기준
+### 구현체 선택 기준
 
 | 상황 | 구현체 | 설명 |
 |------|--------|------|
@@ -290,7 +523,7 @@ public interface ProcessedEventStore {
 | 다중 인스턴스 / 재시작 후도 중복 방지 | `RedisProcessedEventStore` (직접 구현) | Redis `SET NX` 활용 |
 | 멱등성 검증 불필요 | 항상 `true` 반환하는 더미 구현체 | 비즈니스 로직 자체가 멱등일 때 |
 
-#### `InMemoryProcessedEventStore` 동작 원리
+### `InMemoryProcessedEventStore` 동작 원리
 
 ```java
 @Component
@@ -299,8 +532,6 @@ public class InMemoryProcessedEventStore implements ProcessedEventStore {
 
     @Override
     public boolean markProcessed(UUID eventId) {
-        // putIfAbsent: key가 없으면 삽입 후 null 반환 → 첫 처리 → true
-        // putIfAbsent: key가 있으면 삽입 안 하고 기존 값 반환 → 중복 → false
         return processed.putIfAbsent(eventId, Boolean.TRUE) == null;
     }
 }
@@ -311,9 +542,9 @@ public class InMemoryProcessedEventStore implements ProcessedEventStore {
 
 ---
 
-### 7. CI workflow 수정
+## CI workflow 설정
 
-`ci-your-service.yml`의 `sparse-checkout`과 `Start MSA RabbitMQ` 스텝을 추가합니다.
+`ci-your-service.yml`에 RabbitMQ 서비스 블록과 환경 변수를 추가합니다.
 
 ```yaml
 jobs:
@@ -334,29 +565,54 @@ jobs:
           --health-timeout 5s
           --health-retries 10
           --health-start-period 30s
-steps:
-  - uses: actions/checkout@v4
-    with:
-      sparse-checkout: |
-        services/your-service
-        modules/common
-        modules/messaging      # 추가
-        libs/bds-events        # 추가
-        build.gradle
-        settings.gradle
-        gradlew
-        gradle
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/your-service
+            modules/common
+            modules/messaging      # 추가
+            libs/bds-events        # 추가
+            build.gradle
+            settings.gradle
+            gradlew
+            gradle
 
-  # docker run 수동 방식 대신 services 블록 사용 — 헬스체크 및 대기를 GitHub Actions가 처리
-  # name: Build and Test 에서 env로 접속 정보만 주입
-  - name: Build and Test
-    env:
-      RABBITMQ_HOST: localhost
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: your-service
-      RABBITMQ_PASSWORD: your1234
-    run: ./gradlew :services:your-service:clean :services:your-service:build
+      - name: Build and Test
+        env:
+          RABBITMQ_HOST: localhost
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USER: your-service
+          RABBITMQ_PASSWORD: your1234
+        run: ./gradlew :services:your-service:clean :services:your-service:build
 ```
+
+---
+
+## 트러블슈팅
+
+### Outbox 이벤트가 RabbitMQ에 전달되지 않음
+
+**증상:** `event_publication`에 `PUBLISHED` 행은 생기지만 큐에 메시지가 도착하지 않음.
+
+**원인 1: `EventExternalizationConfiguration` 패키지 스캔 범위 문제**
+
+Spring Modulith는 기본적으로 `AutoConfigurationPackages`(= `@SpringBootApplication` 선언 클래스의 패키지)만 스캔합니다.  
+이벤트가 `libs/bds-events`(com.bds.common.*)에 있으면 스캔 대상에서 제외됩니다.
+
+→ `RabbitTopologyConfig`에 `EventExternalizationConfiguration` 빈을 직접 정의합니다 (4번 항목 참고).
+
+**원인 2: `RabbitTemplate`을 직접 선언한 경우**
+
+서비스 `@Configuration`에 커스텀 `RabbitTemplate` 빈이 있으면 Spring Modulith의 AMQP externalization이 사용하는 auto-configured 템플릿을 덮어씁니다.
+
+→ `RabbitTemplate` / `MessageConverter` 빈 선언을 제거하고 `BdsRabbitAutoConfig`에 위임합니다.
+
+**원인 3: `@Transactional` 외부에서 `publishEvent()` 호출**
+
+Spring Modulith는 활성 TX 안에서 `publishEvent()`가 호출되어야 TX commit 후 externalization을 수행합니다.
+
+→ `@Transactional` 메서드 안에서 발행하거나, 발행 메서드 자체에 `@Transactional`을 선언합니다.
 
 ---
 
@@ -365,14 +621,15 @@ steps:
 ```
 libs/bds-events/
   └─ com.bds.common.events/
-       ├─ PublishTo.java              # 발행 목적지 선언 어노테이션
-       └─ order/OrderCreatedDirectEvent.java  # 이벤트 레코드 예시
+       ├─ PublishTo.java                        # Direct 발행용 목적지 선언 어노테이션
+       └─ order/
+            └─ OrderCreatedEvent.java           # @Externalized Outbox 이벤트 예시
 
 modules/messaging/
   └─ com.bds.messaging/
-       ├─ BdsRabbit.java              # standardTemplate / standardListenerFactory 팩토리
-       ├─ BdsRabbitAutoConfig.java    # MessageConverter + confirm/returns 콜백 자동 설정
-       ├─ BdsQueues.java              # workQueue (메인 큐 + DLQ 세트) 선언 헬퍼
-       ├─ BdsEventPublicationAutoConfig.java  # 미완료 이벤트 재발행 스케줄러 (Modulith용)
+       ├─ BdsRabbit.java                        # standardTemplate / standardListenerFactory 팩토리
+       ├─ BdsRabbitAutoConfig.java              # MessageConverter + confirm/returns 콜백 자동 설정
+       ├─ BdsQueues.java                        # workQueue (메인 큐 + DLQ 세트) 선언 헬퍼
+       ├─ BdsEventPublicationAutoConfig.java    # 미완료 이벤트 재발행 스케줄러 (Outbox용)
        └─ idempotency/ProcessedEventStore.java  # 멱등성 인터페이스
 ```

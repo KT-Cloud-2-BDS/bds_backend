@@ -45,4 +45,8 @@ bds:
 logging:
   level:
     com.bds: DEBUG
+    org.springframework.orm.jpa: DEBUG
+    org.springframework.transaction: DEBUG
+    org.springframework.modulith: DEBUG
+    org.springframework.amqp: DEBUG
     org.hibernate.SQL: DEBUG

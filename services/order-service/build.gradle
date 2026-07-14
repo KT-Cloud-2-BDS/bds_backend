@@ -23,6 +23,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-flyway'
     implementation 'org.flywaydb:flyway-database-postgresql'
 
+    // Modulith outbox
+    implementation 'org.springframework.modulith:spring-modulith-starter-core'   // PersistentApplicationEventMulticaster 등록
+    implementation 'org.springframework.modulith:spring-modulith-events-amqp'    // AMQP externalization 엔진
+    implementation 'org.springframework.modulith:spring-modulith-events-jpa'     // JPA publication store
+    implementation 'org.springframework.modulith:spring-modulith-events-jackson' // 이벤트 JSON 직렬화
+
     // Test - Testcontainers
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
@@ -30,6 +36,8 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql:1.21.4'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 
+    implementation 'org.springframework.modulith:spring-modulith-events-api'
+    implementation 'org.springframework.modulith:spring-modulith-events-amqp' // RabbitMQ용
 }
 
 tasks.named('test') {
