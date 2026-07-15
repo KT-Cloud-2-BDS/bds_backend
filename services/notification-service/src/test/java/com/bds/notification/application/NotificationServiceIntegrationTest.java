@@ -210,8 +210,8 @@ public class NotificationServiceIntegrationTest {
   class CreateFundingNotificationIntegrationTests {
 
     @Test
-    @DisplayName("구독자가 있을 때 구독자 수만큼 알림이 DB에 저장된다.")
-    public void 펀딩_알림_구독자수만큼_저장() {
+    @DisplayName("구독자가 있을 때 구독자 수만큼 펀딩 시작 알림이 DB에 저장된다.")
+    public void 펀딩_시작_알림_구독자수만큼_저장() {
       // given - 구독자 3명 등록
       notificationService.subscribe(1L, SubscriptionTargetType.PRODUCT, 123L);
       notificationService.subscribe(2L, SubscriptionTargetType.PRODUCT, 123L);
@@ -219,6 +219,40 @@ public class NotificationServiceIntegrationTest {
 
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
           NotificationType.FUNDING_START, "123", "PRODUCT"
+      );
+      // when
+      notificationService.createFundingNotification(command);
+      // then
+      assertThat(notificationRepository.count()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("구독자가 있을 때 구독자 수만큼 펀딩 성공 알림이 DB에 저장된다.")
+    public void 펀딩_성공_알림_구독자수만큼_저장() {
+      // given - 구독자 3명 등록
+      notificationService.subscribe(1L, SubscriptionTargetType.PRODUCT, 123L);
+      notificationService.subscribe(2L, SubscriptionTargetType.PRODUCT, 123L);
+      notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
+
+      FundingNotificationCommandDto command = new FundingNotificationCommandDto(
+          NotificationType.FUNDING_SUCCESS, "123", "PRODUCT"
+      );
+      // when
+      notificationService.createFundingNotification(command);
+      // then
+      assertThat(notificationRepository.count()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("구독자가 있을 때 구독자 수만큼 펀딩 실패 알림이 DB에 저장된다.")
+    public void 펀딩_실패_알림_구독자수만큼_저장() {
+      // given - 구독자 3명 등록
+      notificationService.subscribe(1L, SubscriptionTargetType.PRODUCT, 123L);
+      notificationService.subscribe(2L, SubscriptionTargetType.PRODUCT, 123L);
+      notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
+
+      FundingNotificationCommandDto command = new FundingNotificationCommandDto(
+          NotificationType.FUNDING_FAIL, "123", "PRODUCT"
       );
       // when
       notificationService.createFundingNotification(command);
