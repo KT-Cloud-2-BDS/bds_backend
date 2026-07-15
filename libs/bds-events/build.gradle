@@ -1,0 +1,8 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // @Externalized 어노테이션용.
+    compileOnly 'org.springframework.modulith:spring-modulith-events-api'
+}
