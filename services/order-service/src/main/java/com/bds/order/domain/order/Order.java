@@ -84,6 +84,7 @@ public class Order {
             case CANCELLED ->
                     this.status == OrderStatus.PAYING || this.status == OrderStatus.RESERVED || this.status == OrderStatus.PAID;
             case REFUNDED -> this.status == OrderStatus.CANCELLED || this.status == OrderStatus.RESERVED;
+            case CONFIRMED -> this.status == OrderStatus.PAYING || this.status == OrderStatus.PAID;
             default -> false;
         };
     }

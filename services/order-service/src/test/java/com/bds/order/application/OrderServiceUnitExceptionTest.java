@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceUnitExceptionTest {
@@ -269,4 +270,33 @@ class OrderServiceUnitExceptionTest {
                     .isInstanceOf(BusinessException.class);
         }
     }
+
+    @Nested
+    @DisplayName("processPayingAndPublishSettlement 예외")
+    class ProcessPayingAndPublishSettlementExceptionTest {
+
+        @Test
+        void 존재하지_않는_주문이면_IllegalStateException을_던진다() {
+            when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.processPayingAndPublishSettlement(999L))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("[FUNDING_JUDGE] Order not found: orderId=999");
+        }
+    }
+
+    @Nested
+    @DisplayName("processCancelAndPublishRefund 예외")
+    class ProcessCancelAndPublishRefundExceptionTest {
+
+        @Test
+        void 존재하지_않는_주문이면_IllegalStateException을_던진다() {
+            when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.processCancelAndPublishRefund(999L))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("[FUNDING_JUDGE] Order not found: orderId=999");
+        }
+    }
+
 }

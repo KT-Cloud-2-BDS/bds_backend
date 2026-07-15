@@ -276,4 +276,31 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
     }
+
+    @Nested
+    @DisplayName("processPayingAndPublishSettlement 예외 통합테스트")
+    class ProcessPayingAndPublishSettlementExceptionIntegrationTest {
+
+        // 존재하지 않는 주문 → IllegalStateException + 에러 메시지 확인
+        @Test
+        void 존재하지_않는_주문이면_IllegalStateException을_던진다() {
+            assertThatThrownBy(() -> orderService.processPayingAndPublishSettlement(9999L))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("[FUNDING_JUDGE] Order not found: orderId=9999");
+        }
+    }
+
+    @Nested
+    @DisplayName("processCancelAndPublishRefund 예외 통합테스트")
+    class ProcessCancelAndPublishRefundExceptionIntegrationTest {
+
+        // 존재하지 않는 주문 → IllegalStateException + 에러 메시지 확인
+        @Test
+        void 존재하지_않는_주문이면_IllegalStateException을_던진다() {
+            assertThatThrownBy(() -> orderService.processCancelAndPublishRefund(9999L))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("[FUNDING_JUDGE] Order not found: orderId=9999");
+        }
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.bds.order.infrastructure.order;
 
+import com.bds.order.domain.order.OrderStatus;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> {
@@ -36,9 +38,14 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
             "WHERE o.memberId = :memberId AND o.id = :orderId")
     Optional<OrderDetailProjection> findOrderWithFunding(@Param("memberId") Long memberId, @Param("orderId") Long orderId);
 
+    @Query("SELECT DISTINCT o FROM OrderJpaEntity o " +
+            "JOIN o.orderRewards orw " +
+            "JOIN orw.reward r " +
+            "WHERE r.funding.id = :fundingId AND o.status = :status")
+    List<OrderJpaEntity> findByFundingIdAndStatus(@Param("fundingId") Long fundingId, @Param("status") OrderStatus status);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "0"))
     @Query("SELECT o FROM OrderJpaEntity o JOIN FETCH o.orderRewards WHERE o.id = :orderId")
     Optional<OrderJpaEntity> findByIdForUpdate(@Param("orderId") Long orderId);
-
 }

@@ -11,6 +11,7 @@ import com.bds.order.domain.orderReward.OrderRewardRepository;
 import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
+import com.bds.order.fixture.OrderFixture;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
@@ -19,6 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -316,4 +319,128 @@ class OrderServiceUnitTest {
             assertThat(result.totalBillingAmount()).isEqualTo(36000L);
         }
     }
+
+    @Nested
+    @DisplayName("processStatusUpdate")
+    class ProcessStatusUpdateTest {
+
+        @ParameterizedTest(name = "{0} → {1}")
+        @CsvSource({
+                "PAYING, PAID",
+                "PAYING, CONFIRMED",
+                "PAID, CONFIRMED",
+                "CANCELLED, REFUNDED"
+        })
+        void 허용된_상태_전이는_저장된다(OrderStatus from, OrderStatus to) {
+            Order order = OrderFixture.createOrder(from);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            orderService.processStatusUpdate(1L, to);
+
+            assertThat(order.getStatus()).isEqualTo(to);
+            verify(orderRepository).save(order);
+        }
+
+        @Test
+        void 존재하지_않는_주문이면_save를_호출하지_않는다() {
+            when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
+
+            orderService.processStatusUpdate(999L, OrderStatus.PAID);
+
+            verify(orderRepository, never()).save(any());
+        }
+
+        @Test
+        void 전이_불가능한_상태면_save를_호출하지_않는다() {
+            Order order = OrderFixture.createOrder(OrderStatus.REFUNDED);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            orderService.processStatusUpdate(1L, OrderStatus.PAID);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUNDED);
+            verify(orderRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("processCancelledUpdate")
+    class ProcessCancelledUpdateTest {
+
+        @Test
+        void 취소_가능한_상태에서_cancelReason과_함께_취소된다() {
+            Order order = OrderFixture.createOrder(OrderStatus.PAYING);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            orderService.processCancelledUpdate(1L, "PAYMENT_CANCELLED");
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+            assertThat(order.getCancelReason()).isEqualTo("PAYMENT_CANCELLED");
+            verify(orderRepository).save(order);
+        }
+
+        @Test
+        void 취소_시_재고가_복구된다() {
+            OrderReward orw = OrderReward.reconstitute(1L, 1L, 10L, 2, 3000L, 20000L);
+            Order order = Order.reconstitute(
+                    1L, "ORD-001", 1L, OrderStatus.PAYING,
+                    20000L, 3000L, List.of(orw),
+                    null, LocalDateTime.now(), LocalDateTime.now(), null, null
+            );
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            orderService.processCancelledUpdate(1L, "PAYMENT_CANCELLED");
+
+            verify(rewardRepository).increaseRemainQty(10L, 2);
+        }
+
+        @Test
+        void 존재하지_않는_주문이면_아무_동작도_하지_않는다() {
+            when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
+
+            orderService.processCancelledUpdate(999L, "PAYMENT_CANCELLED");
+
+            verify(orderRepository, never()).save(any());
+            verify(rewardRepository, never()).increaseRemainQty(anyLong(), anyInt());
+        }
+    }
+
+    @Nested
+    @DisplayName("processPayingAndPublishSettlement")
+    class ProcessPayingAndPublishSettlementTest {
+
+        @Test
+        void RESERVED_주문을_PAYING으로_변경하고_저장한다() {
+            Order order = OrderFixture.createOrder(OrderStatus.RESERVED);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            orderService.processPayingAndPublishSettlement(1L);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);
+            verify(orderRepository).save(order);
+        }
+    }
+
+    @Nested
+    @DisplayName("processCancelAndPublishRefund")
+    class ProcessCancelAndPublishRefundTest {
+
+        @Test
+        void PAID_주문을_CANCELLED로_변경하고_재고를_복구한다() {
+            OrderReward orw = OrderReward.reconstitute(1L, 1L, 10L, 2, 3000L, 20000L);
+            Order order = Order.reconstitute(
+                    1L, "ORD-001", 1L, OrderStatus.PAID,
+                    20000L, 3000L, List.of(orw),
+                    null, LocalDateTime.now(), LocalDateTime.now(), null, null
+            );
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            orderService.processCancelAndPublishRefund(1L);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+            assertThat(order.getCancelReason()).isEqualTo("FUNDING_FAILED");
+            verify(rewardRepository).increaseRemainQty(10L, 2);
+            verify(orderRepository).save(order);
+        }
+    }
+
 }
