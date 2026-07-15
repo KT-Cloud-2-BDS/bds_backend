@@ -2,8 +2,14 @@ rootProject.name = 'bds-backend'
 
 // 공통 라이브러리 모듈 — 각 서비스 JAR에 포함되어 배포됨
 include 'modules:common'
-include 'libs:bds-events'
-include 'modules:messaging'
+
+// sparse-checkout 환경에서 디렉토리가 존재할 때만 포함
+if (file('libs/bds-events').exists()) {
+    include 'libs:bds-events'
+}
+if (file('modules/messaging').exists()) {
+    include 'modules:messaging'
+}
 
 // 플랫폼 서비스 — sparse-checkout 환경에서 디렉토리가 존재할 때만 포함
 ['config-service', 'discovery-service'].each { svc ->
