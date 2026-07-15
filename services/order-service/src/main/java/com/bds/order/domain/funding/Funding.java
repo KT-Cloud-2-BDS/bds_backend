@@ -32,6 +32,16 @@ public class Funding {
                 participationCnt, goalAmount, currentAmount, isSuccess, createdAt, updatedAt);
     }
 
+    public static Funding create(String title, Long creatorId, Long goalAmount,
+                                 LocalDateTime startAt, LocalDateTime holdTo, LocalDateTime payAt) {
+        return new Funding(
+                null, title, creatorId, FundingStatus.SCHEDULED,
+                startAt, holdTo, payAt,
+                0, goalAmount, 0L, false,
+                LocalDateTime.now(), LocalDateTime.now()
+        );
+    }
+
     public boolean isFuningPeriod(LocalDateTime now) {
         return now.isAfter(startAt) && now.isBefore(holdTo);
     }

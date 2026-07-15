@@ -52,6 +52,10 @@ public class FundingJpaEntity extends BaseEntity {
 
     private Boolean isSuccess;
 
-    @OneToMany(mappedBy = "funding", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "funding", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RewardJpaEntity> rewards = new ArrayList<>();
+
+    public void addRewards(List<RewardJpaEntity> rewardEntities) {
+        this.rewards.addAll(rewardEntities);
+    }
 }

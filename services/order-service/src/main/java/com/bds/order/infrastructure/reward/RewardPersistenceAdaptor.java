@@ -30,4 +30,11 @@ public class RewardPersistenceAdaptor implements RewardRepository {
         return rewardJpaRepository.decreaseStock(id, qty);
     }
 
+    @Override
+    public List<Reward> findByFundingId(Long fundingId) {
+        return rewardJpaRepository.findByFundingId(fundingId).stream()
+                .map(rewardMapper::toDomain)
+                .toList();
+    }
+
 }

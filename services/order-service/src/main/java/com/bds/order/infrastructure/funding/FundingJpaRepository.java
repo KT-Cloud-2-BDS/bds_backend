@@ -39,4 +39,6 @@ public interface FundingJpaRepository extends JpaRepository<FundingJpaEntity, Lo
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("SELECT f FROM FundingJpaEntity f WHERE f.id = :fundingId")
     Optional<FundingJpaEntity> findByIdForUpdate(@Param("fundingId") Long fundingId);
+
+    List<FundingJpaEntity> findByStatus(FundingStatus status);
 }

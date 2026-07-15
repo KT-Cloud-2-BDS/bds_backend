@@ -3,6 +3,10 @@ package com.bds.order.infrastructure.funding;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.reward.BadgeType;
+import com.bds.order.infrastructure.reward.RewardJpaEntity;
+import com.bds.order.infrastructure.reward.RewardJpaRepository;
+import com.bds.order.presentation.dto.FundingCreateRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -15,12 +19,28 @@ import java.util.Optional;
 public class FundingPersistenceAdaptor implements FundingRepository {
 
     private final FundingJpaRepository fundingJpaRepository;
+    private final RewardJpaRepository rewardJpaRepository;
     private final FundingMapper fundingMapper;
 
     @Override
     public Optional<Funding> findById(Long id) {
         return fundingJpaRepository.findById(id)
                 .map(fundingMapper::toDomain);
+    }
+
+    @Override
+    public List<Funding> findAll() {
+        return fundingJpaRepository.findAll().stream()
+                .map(fundingMapper::toDomain)
+                .toList();
+    }
+
+
+    @Override
+    public List<Funding> findByStatus(FundingStatus status) {
+        return fundingJpaRepository.findByStatus(status).stream()
+                .map(fundingMapper::toDomain)
+                .toList();
     }
 
     @Override
@@ -60,5 +80,24 @@ public class FundingPersistenceAdaptor implements FundingRepository {
     @Override
     public void save(Funding funding) {
         fundingJpaRepository.save(fundingMapper.toJpaEntity(funding));
+    }
+
+    @Override
+    public Funding saveWithRewards(Funding funding, List<FundingCreateRequestDto.RewardCreateDto> rewards) {
+        FundingJpaEntity fundingEntity = fundingMapper.toJpaEntity(funding);
+
+        List<RewardJpaEntity> rewardEntities = rewards.stream()
+                .map(r -> new RewardJpaEntity(
+                        null, fundingEntity, r.name(), r.description(),
+                        r.limitQty(), r.limitQty(),
+                        r.badgeType() != null ? BadgeType.valueOf(r.badgeType()) : null,
+                        r.price(), r.offerAt(), r.shippingCharge()
+                ))
+                .toList();
+
+        fundingEntity.addRewards(rewardEntities);
+        FundingJpaEntity saved = fundingJpaRepository.save(fundingEntity);
+
+        return fundingMapper.toDomain(saved);
     }
 }
