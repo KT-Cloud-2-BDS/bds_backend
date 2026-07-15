@@ -32,21 +32,21 @@ public class FundingPersistenceAdaptor implements FundingRepository {
 
     @Override
     public List<Funding> findByStatusAndStartAtBeforeOrEqual(FundingStatus status, LocalDateTime now) {
-        return fundingJpaRepository.findByStatusAndStartAtBeforeOrEqual(status.name(), now).stream()
+        return fundingJpaRepository.findByStatusAndStartAtBeforeOrEqual(status, now).stream()
                 .map(fundingMapper::toDomain)
                 .toList();
     }
 
     @Override
     public List<Funding> findByStatusAndStartAtAfter(FundingStatus status, LocalDateTime now) {
-        return fundingJpaRepository.findByStatusAndStartAtAfter(status.name(), now).stream()
+        return fundingJpaRepository.findByStatusAndStartAtAfter(status, now).stream()
                 .map(fundingMapper::toDomain)
                 .toList();
     }
 
     @Override
     public List<Funding> findByStatusAndHoldToAfter(FundingStatus status, LocalDateTime now) {
-        return fundingJpaRepository.findByStatusAndHoldToAfter(status.name(), now).stream()
+        return fundingJpaRepository.findByStatusAndHoldToAfter(status, now).stream()
                 .map(fundingMapper::toDomain)
                 .toList();
     }

@@ -1,5 +1,6 @@
 package com.bds.order.infrastructure.funding;
 
+import com.bds.order.domain.funding.FundingStatus;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,12 +18,12 @@ public interface FundingJpaRepository extends JpaRepository<FundingJpaEntity, Lo
     @Query("SELECT f FROM FundingJpaEntity f " +
             "WHERE f.status = :status " +
             "AND f.startAt > :now")
-    List<FundingJpaEntity> findByStatusAndStartAtAfter(@Param("status") String status, @Param("now") LocalDateTime now);
+    List<FundingJpaEntity> findByStatusAndStartAtAfter(@Param("status") FundingStatus status, @Param("now") LocalDateTime now);
 
     @Query("SELECT f FROM FundingJpaEntity f " +
             "WHERE f.status = :status " +
             "AND f.holdTo > :now")
-    List<FundingJpaEntity> findByStatusAndHoldToAfter(@Param("status") String status, @Param("now") LocalDateTime now);
+    List<FundingJpaEntity> findByStatusAndHoldToAfter(@Param("status") FundingStatus status, @Param("now") LocalDateTime now);
 
     @Query("SELECT f FROM FundingJpaEntity f " +
             "WHERE f.status NOT IN ('SUCCESS', 'FAILED') " +
@@ -32,7 +33,7 @@ public interface FundingJpaRepository extends JpaRepository<FundingJpaEntity, Lo
     @Query("SELECT f FROM FundingJpaEntity f " +
             "WHERE f.status = :status " +
             "AND f.startAt <= :now")
-    List<FundingJpaEntity> findByStatusAndStartAtBeforeOrEqual(@Param("status") String status, @Param("now") LocalDateTime now);
+    List<FundingJpaEntity> findByStatusAndStartAtBeforeOrEqual(@Param("status") FundingStatus status, @Param("now") LocalDateTime now);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
