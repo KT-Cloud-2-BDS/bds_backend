@@ -13,8 +13,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * member-service가 Feign으로만 호출하는 서비스 간 내부 API.
+ * /api/** 접두사를 쓰지 않아 게이트웨이의 어떤 라우팅 규칙과도 매칭되지 않으므로,
+ * 외부 클라이언트는 게이트웨이를 통해 이 엔드포인트에 도달할 수 없다.
+ */
 @RestController
-@RequestMapping("/api/auths")
+@RequestMapping("/internal/auths")
 @RequiredArgsConstructor
 public class AuthInternalController {
 

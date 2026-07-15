@@ -76,4 +76,31 @@ class InternalGatewaySecretFilterUnitTest {
     void 빈_시크릿_생성_실패() {
         assertThrows(IllegalStateException.class, () -> new InternalGatewaySecretFilter(" "));
     }
+
+    @Test
+    @DisplayName("/internal/ 경로는 신원 헤더가 없어도 내부 시크릿이 없으면 401로 차단한다")
+    void 내부경로_신원헤더_없어도_시크릿_없으면_차단() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/internal/auths/account");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(chain.getRequest()).isNull();
+        assertThat(response.getStatus()).isEqualTo(401);
+    }
+
+    @Test
+    @DisplayName("/internal/ 경로는 신원 헤더 없이도 올바른 내부 시크릿이 있으면 통과시킨다")
+    void 내부경로_올바른_시크릿이면_통과() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("DELETE", "/internal/auths/1");
+        request.addHeader(InternalGatewaySecretFilter.INTERNAL_SECRET_HEADER, "correct-secret");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
 }

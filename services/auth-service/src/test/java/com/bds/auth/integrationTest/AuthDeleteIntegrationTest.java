@@ -59,7 +59,8 @@ public class AuthDeleteIntegrationTest extends AbstractAuthIntegrationTest {
 
 
         // when : 탈퇴 API 호출
-        mockMvc.perform(delete("/api/auths/" + authId))
+        mockMvc.perform(delete("/internal/auths/" + authId)
+                .header("X-Internal-Secret", "test-internal-secret"))
             .andDo(print())
 
             // then : 검증 (HTTP 상태 200 & DB 확인)

@@ -60,7 +60,8 @@ public class AuthCreateIntegrationTest extends AbstractAuthIntegrationTest {
 
 
         // when : 내부 API 컨트롤러 호출 (신규 가입)
-        mockMvc.perform(post("/api/auths/account")
+        mockMvc.perform(post("/internal/auths/account")
+                .header("X-Internal-Secret", "test-internal-secret")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
             .andDo(print())
@@ -113,7 +114,8 @@ public class AuthCreateIntegrationTest extends AbstractAuthIntegrationTest {
 
 
         // when : 내부 API 호출 (탈퇴 유저가 동일 이메일로 재가입 시도)
-        mockMvc.perform(post("/api/auths/account")
+        mockMvc.perform(post("/internal/auths/account")
+                .header("X-Internal-Secret", "test-internal-secret")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
             .andDo(print())

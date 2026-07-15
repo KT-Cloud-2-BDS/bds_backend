@@ -17,12 +17,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * 막더라도 같은 네트워크 안에서는 누구나 흉내 낼 수 있다(1차 방어는 인프라 레벨 우회 가능).
  * 신원 헤더가 실려온 요청은 게이트웨이만 아는 내부 시크릿(X-Internal-Secret)이
  * 함께 있어야만 통과시켜, 위조된 신원 헤더를 애플리케이션 레벨에서 2차로 차단한다.
+ * 서비스 간 내부 API(경로가 /internal/로 시작)는 신원 헤더를 실어 보내지 않으므로,
+ * 신원 헤더 유무와 무관하게 항상 같은 시크릿을 요구해 보호한다.
  */
 public class InternalGatewaySecretFilter extends OncePerRequestFilter {
 
     public static final String INTERNAL_SECRET_HEADER = "X-Internal-Secret";
 
     private static final String[] IDENTITY_HEADERS = {"X-User-Id", "X-User-Email", "X-User-Roles"};
+    private static final String INTERNAL_PATH_PREFIX = "/internal/";
 
     private final String expectedSecret;
 
@@ -37,12 +40,16 @@ public class InternalGatewaySecretFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
         throws ServletException, IOException {
 
-        if (claimsIdentity(request) && !isValidSecret(request.getHeader(INTERNAL_SECRET_HEADER))) {
+        if (requiresSecret(request) && !isValidSecret(request.getHeader(INTERNAL_SECRET_HEADER))) {
             respondUnauthorized(response);
             return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean requiresSecret(HttpServletRequest request) {
+        return claimsIdentity(request) || isInternalPath(request);
     }
 
     private boolean claimsIdentity(HttpServletRequest request) {
@@ -52,6 +59,10 @@ public class InternalGatewaySecretFilter extends OncePerRequestFilter {
             }
         }
         return false;
+    }
+
+    private boolean isInternalPath(HttpServletRequest request) {
+        return request.getRequestURI().startsWith(INTERNAL_PATH_PREFIX);
     }
 
     private boolean isValidSecret(String providedSecret) {

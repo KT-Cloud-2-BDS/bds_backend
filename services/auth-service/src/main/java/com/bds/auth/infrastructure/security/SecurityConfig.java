@@ -21,7 +21,7 @@ public class SecurityConfig {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers("/api/auths/**");
+        return (web) -> web.ignoring().requestMatchers("/api/auths/mail", "/api/auths/mailCheck", "/api/auths/login");
     }
 
     @Bean

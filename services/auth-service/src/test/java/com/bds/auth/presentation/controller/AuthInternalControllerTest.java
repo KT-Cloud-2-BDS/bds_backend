@@ -33,7 +33,7 @@ class AuthInternalControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    @DisplayName("POST /api/auths/account는 생성된 계정의 authId를 반환한다")
+    @DisplayName("POST /internal/auths/account는 생성된 계정의 authId를 반환한다")
     void 계정생성_성공() throws Exception {
         // given
         given(authService.createAccount("yeojin@email.com", "password123!")).willReturn(1L);
@@ -43,7 +43,7 @@ class AuthInternalControllerTest {
         );
 
         // when & then
-        mockMvc.perform(post("/api/auths/account")
+        mockMvc.perform(post("/internal/auths/account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
             .andExpect(status().isOk())
@@ -53,10 +53,10 @@ class AuthInternalControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/auths/{authId}는 계정을 삭제하고 200을 반환한다")
+    @DisplayName("DELETE /internal/auths/{authId}는 계정을 삭제하고 200을 반환한다")
     void 계정삭제_성공() throws Exception {
         // when & then
-        mockMvc.perform(delete("/api/auths/{authId}", 1L))
+        mockMvc.perform(delete("/internal/auths/{authId}", 1L))
             .andExpect(status().isOk());
 
         verify(authService).deleteAuth(1L);
