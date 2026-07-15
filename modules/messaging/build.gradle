@@ -1,0 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    compileOnly 'org.springframework.modulith:spring-modulith-events-core'
+}

@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:authdb;MODE=MySQL
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+jwt:
+  secret: "test-secret-key-must-be-long-enough-for-hs256-algorithm"
+  expiration:
+    access: 3600000
+    refresh: 604800000
+
+mail:
+  host: smtp.naver.com
+  port: 465
+  username: test-user
+  password: test-password

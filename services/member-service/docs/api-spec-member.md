@@ -2,21 +2,20 @@
 
 ### 엔드포인트 목록
 
-| method | path                         | auth required | 설명                     |
-|--------|------------------------------|---------------|------------------------|
-| POST   | /api/member/signup           | N             | 플랫폼 자체 회원가입(1)         |
-| POST   | /api/member/social           | N             | 소셜 회원가입 및 로그인(2)       |
-| POST   | /api/member/login            | N             | 로그인(3)                 |
-| GET    | /api/member/info             | O             | 내 정보(이메일, 닉네임) 조회(6)   |
-| PATCH  | /api/member/info             | O             | 내 정보(닉네임) 수정(7)        |
-| PATCH  | /api/member/password/reset   | N             | 비밀번호 변경(8)             |
-| DELETE | /api/member/delete           | O             | 회원 탈퇴(10)              |
-| PATCH  | /api/member/role             | O             | 회원 권한 변경(서포터, 메이커)(11) |
+| method | path                        | auth required | 설명                    |
+|--------|-----------------------------|---------------|-----------------------|
+| POST   | /api/members/signup         | N             | 플랫폼 자체 회원가입(1)        |
+| POST   | /api/members/social         | N             | 소셜 회원가입 및 로그인(2)      |
+| GET    | /api/members/info           | O             | 내 정보(이메일, 닉네임) 조회(6)  |
+| PATCH  | /api/members/info           | O             | 내 정보(닉네임) 수정(7)       |
+| PATCH  | /api/members/password/reset | N             | 비밀번호 변경(8)            |
+| DELETE | /api/members/delete         | O             | 회원 탈퇴(10)             |
+| PATCH  | /api/members/role           | O             | 회원 권한 변경(서포터, 메이커)(11) |
 
 ### 플랫폼 자체 회원가입
 
 ```
-POST /api/member/signup
+POST /api/members/signup
 ```
 
 Auth Required: **N**
@@ -49,7 +48,7 @@ Validation / Business Rules
 
 ### 소셜 회원가입 및 로그인
 ```
-POST /api/member/social
+POST /api/members/social
 ```
 Auth Required: **N**
 
@@ -79,41 +78,9 @@ Validation / Business Rules
 
 ---
 
-### 로그인
-```
-POST /api/member/login
-```
-
-Auth Required: **N**
-
-Request Body
-
-| 필드         | 타입     | 필수  | 설명              |
-|------------|--------|-----|-----------------|
-| `email`    | String | Y   | 가입한 이메일(회원 아이디) |
-| `password` | String | Y   | 비밀번호            |
-
-Response Body
-```json
-{
-  "grantType": "Bearer",
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5c...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5c...",
-  "accessTokenExpiresIn": 1800000
-}
-```
-
-Validation / Business Rules
-- 인증 서버의 로그인 인증 요청에 따라 실행되는 내부 API
-- 회원은 `email`과 `password`를 통해 로그인을 요청
-- 입력된 `email`을 기반으로 회원 테이블 조회 후 존재하지 않는 경우 예외 반환
-- DB에 저장된 password와 입력된 password의 BCrypt 검증을 진행해 일치 여부를 인증 서버로 응답
-
----
-
 ### 내 정보 조회
 ```
-GET /api/member/info
+GET /api/members/info
 ```
 Auth Required: **O**
 
@@ -133,7 +100,7 @@ Validation / Business Rules
 
 ### 내 정보 수정
 ```
-PATCH /api/member/info
+PATCH /api/members/info
 ```
 Auth Required: **O**
 
@@ -159,7 +126,7 @@ Validation / Business Rules
 
 ### 비밀번호 변경
 ```
-PATCH /api/member/password/reset
+PATCH /api/members/password/reset
 ```
 Auth Required: **N**
 
@@ -186,7 +153,7 @@ Validation / Business Rules
 
 ### 회원 탈퇴
 ```
-DELETE /api/member/delete
+DELETE /api/members/delete
 ```
 Auth Required: **O**
 
@@ -207,7 +174,7 @@ Validation / Business Rules
 ### 회원 권한 변경
 
 ```
-PATCH /api/member/role 
+PATCH /api/members/role 
 ```
 
 Auth Required: **O**
