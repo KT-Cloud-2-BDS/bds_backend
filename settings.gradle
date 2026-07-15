@@ -11,8 +11,8 @@ if (file('modules/messaging').exists()) {
     include 'modules:messaging'
 }
 
-// 플랫폼 서비스 — sparse-checkout 환경에서 디렉토리가 존재할 때만 포함
-['config-service', 'discovery-service'].each { svc ->
+// 플랫폼 서비스 — 비즈니스 로직 없이 다른 서비스를 지원하는 인프라 성격의 서버 (sparse-checkout 환경에서 디렉토리가 존재할 때만 포함)
+['config-service', 'discovery-service', 'gateway-service'].each { svc ->
     if (file("platform/${svc}").exists()) {
         include "platform:${svc}"
     }
@@ -20,7 +20,7 @@ if (file('modules/messaging').exists()) {
 
 // 마이크로서비스 — sparse-checkout 환경에서 디렉토리가 존재할 때만 포함
 // Java(Spring) 외 다른 언어를 사용하는 서비스는 이 목록에서 제외하고 해당 CI yml에서 직접 빌드
-['auth-service', 'chat-service', 'member-service', 'notification-service', 'order-service', 'payment-service', 'gateway-service'].each { svc ->
+['auth-service', 'chat-service', 'member-service', 'notification-service', 'order-service', 'payment-service'].each { svc ->
     if (file("services/${svc}").exists()) {
         include "services:${svc}"
     }
