@@ -163,7 +163,7 @@ class FundingPersistenceAdaptorUnitTest {
 
         @Test
         void 해당_조건의_펀딩을_반환한다() {
-            FundingJpaEntity 가entity = createEntity(1L, FundingStatus.SCHEDULED);
+            FundingJpaEntity entity = createEntity(1L, FundingStatus.SCHEDULED);
             Funding funding = createDomain(1L, FundingStatus.SCHEDULED);
 
             given(fundingJpaRepository.findByStatusAndStartAtAfter(FundingStatus.SCHEDULED, NOW))
