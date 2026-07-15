@@ -20,12 +20,11 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class RewardPersistenceAdaptorUnitTest {
 
+    private static final LocalDateTime NOW = LocalDateTime.now();
     @Mock
     private RewardJpaRepository rewardJpaRepository;
-
     @Mock
     private RewardMapper rewardMapper;
-
     @InjectMocks
     private RewardPersistenceAdaptor rewardPersistenceAdaptor;
 
@@ -37,14 +36,13 @@ class RewardPersistenceAdaptorUnitTest {
         void 리워드_목록을_반환한다() {
             List<Long> ids = List.of(1L, 2L);
             Long fundingId = 1L;
-            LocalDateTime now = LocalDateTime.now();
 
             RewardJpaEntity entity = new RewardJpaEntity(
                     1L, null, "리워드A", "설명", 100, 50,
-                    BadgeType.ULTRA_EARLY_BIRD, 10000L, now.plusDays(60), 3000L
+                    BadgeType.ULTRA_EARLY_BIRD, 10000L, NOW.plusDays(60), 3000L
             );
             Reward reward = Reward.of(1L, fundingId, "리워드A", "설명", 100, 50,
-                    BadgeType.ULTRA_EARLY_BIRD, 10000L, now.plusDays(60), 3000L);
+                    BadgeType.ULTRA_EARLY_BIRD, 10000L, NOW.plusDays(60), 3000L);
 
             given(rewardJpaRepository.findAllByIdAndFundingId(ids, fundingId))
                     .willReturn(List.of(entity));
@@ -54,6 +52,38 @@ class RewardPersistenceAdaptorUnitTest {
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getName()).isEqualTo("리워드A");
+        }
+    }
+
+    @Nested
+    @DisplayName("펀딩ID로 리워드 조회")
+    class FindByFundingIdTest {
+
+        @Test
+        void 해당_펀딩의_리워드_목록을_반환한다() {
+            RewardJpaEntity entity = new RewardJpaEntity(
+                    1L, null, "리워드A", "설명", 100, 50,
+                    null, 10000L, NOW.plusDays(60), 3000L
+            );
+            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 50,
+                    null, 10000L, NOW.plusDays(60), 3000L);
+
+            given(rewardJpaRepository.findByFundingId(1L)).willReturn(List.of(entity));
+            given(rewardMapper.toDomain(entity)).willReturn(reward);
+
+            List<Reward> result = rewardPersistenceAdaptor.findByFundingId(1L);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getFundingId()).isEqualTo(1L);
+        }
+
+        @Test
+        void 리워드가_없으면_빈_목록을_반환한다() {
+            given(rewardJpaRepository.findByFundingId(999L)).willReturn(List.of());
+
+            List<Reward> result = rewardPersistenceAdaptor.findByFundingId(999L);
+
+            assertThat(result).isEmpty();
         }
     }
 

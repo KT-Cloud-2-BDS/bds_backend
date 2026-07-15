@@ -5,6 +5,8 @@ import com.bds.order.domain.reward.Reward;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.LocalDateTime;
 
@@ -25,48 +27,31 @@ class RewardUnitTest {
         }
 
         @Test
-        void 수량이_1이면_단가를_반환한다() {
+        void 수량이_1일_때_가격을_그대로_반환한다() {
             Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 50,
-                    null, 25000L, LocalDateTime.now(), 3000L);
+                    BadgeType.EARLY_BIRD, 25000L, LocalDateTime.now(), 3000L);
 
             assertThat(reward.calculateAmount(1)).isEqualTo(25000L);
         }
     }
 
     @Nested
-    @DisplayName("리워드 재고 검증")
+    @DisplayName("재고 충분 여부 확인")
     class IsStockSufficientTest {
 
-        @Test
-        void 재고가_충분하면_true를_반환한다() {
-            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 10,
+        @ParameterizedTest(name = "remainQty={0}, requiredQty={1} → {2}")
+        @CsvSource({
+                "10, 5, true",
+                "10, 10, true",
+                "10, 11, false",
+                "0, 1, false",
+                "1, 1, true",
+        })
+        void 재고_충분_여부를_반환한다(int remainQty, int requiredQty, boolean expected) {
+            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, remainQty,
                     null, 10000L, LocalDateTime.now(), 3000L);
 
-            assertThat(reward.isStockSufficient(5)).isTrue();
-        }
-
-        @Test
-        void 재고와_요청수량이_같으면_true를_반환한다() {
-            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 5,
-                    null, 10000L, LocalDateTime.now(), 3000L);
-
-            assertThat(reward.isStockSufficient(5)).isTrue();
-        }
-
-        @Test
-        void 재고가_부족하면_false를_반환한다() {
-            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 3,
-                    null, 10000L, LocalDateTime.now(), 3000L);
-
-            assertThat(reward.isStockSufficient(5)).isFalse();
-        }
-
-        @Test
-        void 재고가_0이면_false를_반환한다() {
-            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 0,
-                    null, 10000L, LocalDateTime.now(), 3000L);
-
-            assertThat(reward.isStockSufficient(1)).isFalse();
+            assertThat(reward.isStockSufficient(requiredQty)).isEqualTo(expected);
         }
     }
 }
