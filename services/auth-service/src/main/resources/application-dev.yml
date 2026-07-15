@@ -43,3 +43,8 @@ jwt:
     # 로컬 개발 전용 키
     # 운영 환경(application-prod.yml)에서는 반드시 JWT_RSA_PRIVATE_KEY 환경변수로 주입한다.
     private-key: ${JWT_RSA_PRIVATE_KEY}
+
+internal:
+  # 게이트웨이와 다운스트림 서비스가 공유하는 내부 시크릿(로컬 개발 전용 기본값).
+  # 운영 환경(application-prod.yml)에서는 반드시 INTERNAL_GATEWAY_SECRET 환경변수로 주입한다.
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}

@@ -28,8 +28,10 @@ class JwtClaimForwardingFilterUnitTest {
     private static final String USER_ID_HEADER = "X-User-Id";
     private static final String USER_EMAIL_HEADER = "X-User-Email";
     private static final String USER_ROLES_HEADER = "X-User-Roles";
+    private static final String INTERNAL_SECRET_HEADER = "X-Internal-Secret";
+    private static final String INTERNAL_SECRET_VALUE = "test-internal-secret";
 
-    private final JwtClaimForwardingFilter filter = new JwtClaimForwardingFilter();
+    private final JwtClaimForwardingFilter filter = new JwtClaimForwardingFilter(INTERNAL_SECRET_VALUE);
 
     @Test
     @DisplayName("유효한 JWT 인증 정보가 있으면 sub/email/roles 클레임을 헤더로 변환해 전달한다")
@@ -48,6 +50,7 @@ class JwtClaimForwardingFilterUnitTest {
         assertEquals("42", downstreamRequest.getHeaders().getFirst(USER_ID_HEADER));
         assertEquals("yeojin@email.com", downstreamRequest.getHeaders().getFirst(USER_EMAIL_HEADER));
         assertEquals("SUPPORTER,MAKER", downstreamRequest.getHeaders().getFirst(USER_ROLES_HEADER));
+        assertEquals(INTERNAL_SECRET_VALUE, downstreamRequest.getHeaders().getFirst(INTERNAL_SECRET_HEADER));
     }
 
     @Test
@@ -83,11 +86,25 @@ class JwtClaimForwardingFilterUnitTest {
         assertFalse(downstreamRequest.getHeaders().containsHeader(USER_ROLES_HEADER));
     }
 
+    @Test
+    @DisplayName("클라이언트가 내부 시크릿 헤더를 직접 실어 보내도 항상 제거한다")
+    void 클라이언트_위조_내부시크릿_항상_제거() {
+        ServerWebExchange exchange = exchangeWithClientSuppliedHeaders();
+        AtomicReference<ServerWebExchange> captured = new AtomicReference<>();
+
+        StepVerifier.create(filter.filter(exchange, capturingChain(captured)))
+            .verifyComplete();
+
+        ServerHttpRequest downstreamRequest = captured.get().getRequest();
+        assertFalse(downstreamRequest.getHeaders().containsHeader(INTERNAL_SECRET_HEADER));
+    }
+
     private ServerWebExchange exchangeWithClientSuppliedHeaders() {
         return MockServerWebExchange.from(MockServerHttpRequest.get("/api/members/me")
             .header(USER_ID_HEADER, "spoofed-id")
             .header(USER_EMAIL_HEADER, "spoofed@evil.com")
             .header(USER_ROLES_HEADER, "ADMIN")
+            .header(INTERNAL_SECRET_HEADER, "spoofed-secret")
             .build());
     }
 
