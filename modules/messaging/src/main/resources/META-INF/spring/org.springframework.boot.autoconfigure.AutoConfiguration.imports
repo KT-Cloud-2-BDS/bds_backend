@@ -1,0 +1,2 @@
+com.bds.messaging.BdsRabbitAutoConfig
+com.bds.messaging.BdsEventPublicationAutoConfig
