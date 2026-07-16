@@ -4,13 +4,10 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Component
-@EnableAsync
 public class SseEmitterManager {
 
   private static final long SSE_TIMEOUT = 30 * 60 * 1000L;
@@ -41,7 +38,6 @@ public class SseEmitterManager {
   }
 
   // SSE Emitter Send 로직
-  @Async
   public void send(Long memberId, String eventName, Object data) {
     SseEmitter sseEmitter = emitters.get(memberId);
     if (sseEmitter == null) {
@@ -57,6 +53,11 @@ public class SseEmitterManager {
     } catch (IOException e) {
       emitters.remove(memberId, sseEmitter);
     }
+  }
+
+  // sse 존재 확인용
+  public boolean exist(Long memberId) {
+    return emitters.containsKey(memberId);
   }
 
   public void remove(Long memberId) {

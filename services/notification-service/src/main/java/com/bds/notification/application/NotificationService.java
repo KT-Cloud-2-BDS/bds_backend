@@ -3,6 +3,7 @@ package com.bds.notification.application;
 import com.bds.notification.application.dto.FundingNotificationCommandDto;
 import com.bds.notification.application.dto.OrderNotificationMessageDto;
 import com.bds.notification.application.dto.PushNotificationDto;
+import com.bds.notification.application.event.NotificationCreatedEvent;
 import com.bds.notification.common.exception.BusinessException;
 import com.bds.notification.common.exception.ErrorCode;
 import com.bds.notification.domain.notification.entity.NotificationChannel;
@@ -20,6 +21,7 @@ import com.bds.notification.presentation.dto.UnreadCountResponseDto;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +36,7 @@ public class NotificationService {
   private final SseEmitterManager sseEmitterManager;
   private final NotificationRepository notificationRepository;
   private final NotificationSubscriptionRepository notificationSubscriptionRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   // 생성한 SSE Emitter 반환
   public SseEmitter connect(Long memberId) {
@@ -116,7 +119,8 @@ public class NotificationService {
 
     notificationRepository.save(notification);
 
-    sseEmitterManager.send(memberId, "notification", PushNotificationDto.from(notification));
+    eventPublisher.publishEvent(
+        new NotificationCreatedEvent(memberId, PushNotificationDto.from(notification)));
   }
 
   // 주문 상태 알림 생성

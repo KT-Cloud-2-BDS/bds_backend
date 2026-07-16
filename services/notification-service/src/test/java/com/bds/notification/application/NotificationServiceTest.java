@@ -3,7 +3,6 @@ package com.bds.notification.application;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -13,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.bds.notification.application.dto.FundingNotificationCommandDto;
 import com.bds.notification.application.dto.OrderNotificationMessageDto;
+import com.bds.notification.application.event.NotificationCreatedEvent;
 import com.bds.notification.common.exception.BusinessException;
 import com.bds.notification.common.exception.ErrorCode;
 import com.bds.notification.domain.notification.entity.NotificationType;
@@ -35,6 +35,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -52,6 +53,9 @@ public class NotificationServiceTest {
 
   @Mock
   SseEmitterManager sseEmitterManager;
+
+  @Mock
+  ApplicationEventPublisher eventPublisher;
 
   @InjectMocks
   NotificationService notificationService;
@@ -254,7 +258,7 @@ public class NotificationServiceTest {
 
       //then
       verify(notificationRepository).save(any(Notification.class));
-      verify(sseEmitterManager).send(eq(1L), eq("notification"), any());
+      verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
     }
 
     @Test
@@ -292,7 +296,7 @@ public class NotificationServiceTest {
 
       //then
       verify(notificationRepository).save(any(Notification.class));
-      verify(sseEmitterManager).send(eq(1L), eq("notification"), any());
+      verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
     }
   }
 
@@ -307,7 +311,9 @@ public class NotificationServiceTest {
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
           NotificationType.FUNDING_START, "123", "PRODUCT"
       );
-      when(notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT, 123L))
+      when(
+          notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
+              123L))
           .thenReturn(List.of(1L, 2L, 3L));
 
       //when
@@ -315,7 +321,8 @@ public class NotificationServiceTest {
 
       //then
       verify(notificationRepository, times(3)).save(any(Notification.class));
-      verify(sseEmitterManager, times(3)).send(any(Long.class), eq("notification"), any());
+      verify(eventPublisher, times(3)).publishEvent(any(NotificationCreatedEvent.class));
+
     }
 
     @Test
@@ -325,7 +332,9 @@ public class NotificationServiceTest {
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
           NotificationType.FUNDING_SUCCESS, "123", "PRODUCT"
       );
-      when(notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT, 123L))
+      when(
+          notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
+              123L))
           .thenReturn(List.of(1L));
 
       //when
@@ -333,7 +342,7 @@ public class NotificationServiceTest {
 
       //then
       verify(notificationRepository).save(any(Notification.class));
-      verify(sseEmitterManager).send(any(Long.class), eq("notification"), any());
+      verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
     }
 
     @Test
@@ -343,7 +352,9 @@ public class NotificationServiceTest {
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
           NotificationType.FUNDING_FAIL, "123", "PRODUCT"
       );
-      when(notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT, 123L))
+      when(
+          notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
+              123L))
           .thenReturn(List.of(1L));
 
       //when
@@ -351,7 +362,7 @@ public class NotificationServiceTest {
 
       //then
       verify(notificationRepository).save(any(Notification.class));
-      verify(sseEmitterManager).send(any(Long.class), eq("notification"), any());
+      verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
     }
 
     @Test
@@ -361,7 +372,9 @@ public class NotificationServiceTest {
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
           NotificationType.FUNDING_START, "123", "PRODUCT"
       );
-      when(notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT, 123L))
+      when(
+          notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
+              123L))
           .thenReturn(List.of());
 
       //when
