@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.UriUtils;
 
 /**
  * 게이트웨이가 심어주는 X-User-Id 등 신원 헤더는, 보안그룹으로 서비스 포트 직접 접근을
@@ -62,7 +63,12 @@ public class InternalGatewaySecretFilter extends OncePerRequestFilter {
     }
 
     private boolean isInternalPath(HttpServletRequest request) {
-        return request.getRequestURI().startsWith(INTERNAL_PATH_PREFIX);
+        try {
+            String decodedPath = UriUtils.decode(request.getRequestURI(), StandardCharsets.UTF_8);
+            return decodedPath.startsWith(INTERNAL_PATH_PREFIX);
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
     }
 
     private boolean isValidSecret(String providedSecret) {
