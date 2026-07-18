@@ -8,7 +8,8 @@ import java.util.UUID;
 public record SettlementBatchRequestDto(
         UUID batchId,
         SettlementType type,
-        Long creatorMemberId,   // SETTLEMENT_CONFIRMED, RESERVED_FUNDING_CONFIRMED만 필수
+        Long creatorMemberId,// SETTLEMENT_CONFIRMED, RESERVED_FUNDING_CONFIRMED만 필수
+        Long productId,
         List<SettlementItem> items
 ) {
     public record SettlementItem(
