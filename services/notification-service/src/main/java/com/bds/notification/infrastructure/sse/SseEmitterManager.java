@@ -1,5 +1,6 @@
 package com.bds.notification.infrastructure.sse;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +35,29 @@ public class SseEmitterManager {
   public Optional<SseEmitter> findByMemberId(Long memberId) {
     return Optional.ofNullable(emitters.get(memberId));
 
+  }
+
+  // SSE Emitter Send 로직
+  public void send(Long memberId, String eventName, Object data) {
+    SseEmitter sseEmitter = emitters.get(memberId);
+    if (sseEmitter == null) {
+      return;
+    }
+
+    try {
+      sseEmitter.send(
+          SseEmitter.event()
+              .name(eventName)
+              .data(data) // TODO: String으로 넣을지 고민해봐야함.또는 data안에 title이랑 body를 넣는다면 이거 객체를 만들어야할듯
+      );
+    } catch (IOException e) {
+      emitters.remove(memberId, sseEmitter);
+    }
+  }
+
+  // sse 존재 확인용
+  public boolean exist(Long memberId) {
+    return emitters.containsKey(memberId);
   }
 
   public void remove(Long memberId) {
