@@ -26,61 +26,59 @@ public class FundingStatusUpdater {
     private final OrderService orderService;
 
     @Transactional
-    public void judgeFunding(Long fundingId) {
+    public boolean judgeFunding(Long fundingId) {
         Funding funding = fundingRepository.findByIdForUpdate(fundingId)
                 .orElseThrow(() -> new IllegalStateException(
                         "[FUNDING_JUDGE] Funding not found: fundingId=" + fundingId));
 
         if (funding.getStatus() != FundingStatus.ACTIVE && funding.getStatus() != FundingStatus.HOLDING) {
-            log.warn("[FUNDING_JUDGE] 판정 불가 상태: fundingId={}, status={}", fundingId, funding.getStatus());
-            return;
+            throw new IllegalStateException(
+                    "[FUNDING_JUDGE] 판정 불가 상태: fundingId=" + fundingId + ", status=" + funding.getStatus());
         }
 
         boolean isSuccess = funding.getCurrentAmount() >= funding.getGoalAmount();
 
         if (isSuccess) {
-            handleFundingSuccess(funding);
+            funding.markSuccess();
         } else {
-            handleFundingFailure(funding);
+            funding.markFailed();
         }
+
+        fundingRepository.save(funding);
+
+        return isSuccess;
     }
 
-    private void handleFundingSuccess(Funding funding) {
-        funding.markSuccess();
-        fundingRepository.save(funding);
-        log.info("[FUNDING_JUDGE] 펀딩 성공 - fundingId: {}", funding.getId());
+    public void handleFundingSuccess(Long fundingId) {
         // TODO: Funding 성공 Notification Message 발행
 
         // 즉시 주문 (PAID) → 정산 요청 발행
-        List<Order> paidOrders = orderRepository.findByFundingIdAndStatus(funding.getId(), OrderStatus.PAID);
+        List<Order> paidOrders = orderRepository.findByFundingIdAndStatus(fundingId, OrderStatus.PAID);
         for (Order order : paidOrders) {
             orderService.publishSettlement(order.getId());
         }
         log.info("[FUNDING_JUDGE] 즉시 주문 정산 요청 - {}건", paidOrders.size());
 
         // 예약 주문 (RESERVED) → PAYING + 결제 요청 발행
-        List<Order> reservedOrders = orderRepository.findByFundingIdAndStatus(funding.getId(), OrderStatus.RESERVED);
+        List<Order> reservedOrders = orderRepository.findByFundingIdAndStatus(fundingId, OrderStatus.RESERVED);
         for (Order order : reservedOrders) {
             orderService.processPayingAndPublishSettlement(order.getId());
         }
         log.info("[FUNDING_JUDGE] 예약 주문 결제 요청 - {}건", reservedOrders.size());
     }
 
-    private void handleFundingFailure(Funding funding) {
-        funding.markFailed();
-        fundingRepository.save(funding);
-        log.info("[FUNDING_JUDGE] 펀딩 실패 - fundingId: {}", funding.getId());
+    public void handleFundingFailure(Long fundingId) {
         // TODO: Funding 실패 Notification Message 발행
 
         // 즉시 주문 (PAID) → CANCELLED + 환불 요청 발행
-        List<Order> paidOrders = orderRepository.findByFundingIdAndStatus(funding.getId(), OrderStatus.PAID);
+        List<Order> paidOrders = orderRepository.findByFundingIdAndStatus(fundingId, OrderStatus.PAID);
         for (Order order : paidOrders) {
             orderService.processCancelAndPublishRefund(order.getId());
         }
         log.info("[FUNDING_JUDGE] 즉시 주문 환불 요청 - {}건", paidOrders.size());
 
         // 예약 주문 (RESERVED) → CANCELLED 내부 처리 (결제 안 했으니 Pay 요청 없음)
-        List<Order> reservedOrders = orderRepository.findByFundingIdAndStatus(funding.getId(), OrderStatus.RESERVED);
+        List<Order> reservedOrders = orderRepository.findByFundingIdAndStatus(fundingId, OrderStatus.RESERVED);
         for (Order order : reservedOrders) {
             orderService.processCancelledUpdate(order.getId(), CancelReason.FUNDING_FAILED.name());
         }

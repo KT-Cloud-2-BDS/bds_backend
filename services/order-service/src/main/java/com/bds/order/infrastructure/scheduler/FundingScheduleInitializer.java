@@ -4,12 +4,12 @@ package com.bds.order.infrastructure.scheduler;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.infrastructure.funding.FundingJudgmentOrchestrator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,10 +21,10 @@ public class FundingScheduleInitializer {
 
     private final FundingRepository fundingRepository;
     private final FundingTaskScheduler fundingTaskScheduler;
+    private final FundingJudgmentOrchestrator fundingJudgmentOrchestrator;
     private final FundingStatusUpdater fundingStatusUpdater;
 
     @EventListener(ApplicationReadyEvent.class)
-    @Transactional
     public void init() {
         LocalDateTime now = LocalDateTime.now();
 
@@ -46,7 +46,7 @@ public class FundingScheduleInitializer {
         // 3. not SUCCESS/FAILED, holdTo <= now → 즉시 판정
         List<Funding> missedFundings = fundingRepository.findFundingsReadyForJudgment(now);
         for (Funding funding : missedFundings) {
-            fundingStatusUpdater.judgeFunding(funding.getId());
+            fundingJudgmentOrchestrator.execute(funding.getId());
         }
         log.info("[FUNDING_SCHEDULE_INIT] 서버 시작 보정 - {}건 즉시 판정", missedFundings.size());
 

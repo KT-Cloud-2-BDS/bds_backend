@@ -1,6 +1,7 @@
 package com.bds.order.infrastructure.scheduler;
 
 
+import com.bds.order.infrastructure.funding.FundingJudgmentOrchestrator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.task.TaskRejectedException;
@@ -17,13 +18,14 @@ import java.time.ZoneId;
 public class FundingTaskScheduler {
 
     private final TaskScheduler fundingSchedulerExecutor;
+    private final FundingJudgmentOrchestrator fundingJudgmentOrchestrator;
     private final FundingStatusUpdater fundingStatusUpdater;
 
     public void scheduleHoldToJudgment(Long fundingId, LocalDateTime holdTo) {
         Instant holdToInstant = holdTo.atZone(ZoneId.systemDefault()).toInstant();
 
         try {
-            fundingSchedulerExecutor.schedule(() -> fundingStatusUpdater.judgeFunding(fundingId), holdToInstant);
+            fundingSchedulerExecutor.schedule(() -> fundingJudgmentOrchestrator.execute(fundingId), holdToInstant);
             log.info("[FUNDING_TASK] 펀딩 판정 예약 - fundingId: {}, holdTo: {}", fundingId, holdTo);
         } catch (TaskRejectedException ex) {
             log.error("[FUNDING_TASK] 펀딩 판정 예약 거절 - fundingId: {}, holdTo: {}", fundingId, holdTo, ex);

@@ -1,10 +1,8 @@
 package com.bds.order.infrastructure.scheduler;
 
-import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
-import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.fixture.FundingFixture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,12 +27,6 @@ class FundingStatusUpdaterUnitExceptionTest {
     @Mock
     private FundingRepository fundingRepository;
 
-    @Mock
-    private OrderRepository orderRepository;
-
-    @Mock
-    private OrderService orderService;
-
     @Test
     void 존재하지_않는_fundingId로_judgeFunding_호출_시_IllegalStateException_발생() {
         when(fundingRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
@@ -46,16 +38,15 @@ class FundingStatusUpdaterUnitExceptionTest {
 
     @ParameterizedTest(name = "{0} 상태에서는 판정 불가")
     @EnumSource(value = FundingStatus.class, names = {"SCHEDULED", "SUCCESS", "FAILED"})
-    void 판정_가능_상태가_아닌_펀딩은_판정하지_않는다(FundingStatus status) {
+    void 판정_가능_상태가_아닌_펀딩은_IllegalStateException_발생(FundingStatus status) {
         Funding funding = FundingFixture.createFunding(1L, status, 1000000L, 500000L,
                 LocalDateTime.now().minusDays(30), LocalDateTime.now().minusDays(1));
 
         when(fundingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(funding));
 
-        fundingStatusUpdater.judgeFunding(1L);
-
-        verify(fundingRepository, never()).save(any());
-        verifyNoInteractions(orderService);
+        assertThatThrownBy(() -> fundingStatusUpdater.judgeFunding(1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("[FUNDING_JUDGE] 판정 불가 상태");
     }
 
     @Test
