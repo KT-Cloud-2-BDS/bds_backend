@@ -2,7 +2,9 @@ package com.bds.order.application;
 
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
+import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import com.bds.order.infrastructure.funding.FundingJpaRepository;
@@ -15,7 +17,11 @@ import com.bds.order.presentation.dto.OrderCreateRequestDto;
 import com.bds.order.presentation.dto.RewardQuantityDto;
 import com.bds.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,6 +30,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@ExtendWith(OutputCaptureExtension.class)
 class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
 
     @Autowired
@@ -73,6 +80,23 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         orderRepository.deleteAll();
         rewardJpaRepository.deleteAll();
         fundingJpaRepository.deleteAll();
+    }
+
+    private Long createBillingAndGetOrderId(Long memberId, Long rewardId, int qty) {
+        BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
+                new RewardQuantityDto(rewardId, qty)
+        ));
+        BillingResponseDto billing = orderService.createBilling(memberId, reqDto);
+        return billing.orderId();
+    }
+
+    private Long createCancelOrderAndGetOrderId() {
+        Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 1);
+
+        Order savedOrder = orderRepository.findByIdForUpdate(orderId).orElseThrow();
+        savedOrder.updateStatus(OrderStatus.PAYING);
+        savedOrder.updateStatus(OrderStatus.CANCELLED);
+        return orderRepository.save(savedOrder).getId();
     }
 
     @Nested
@@ -140,13 +164,6 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
     @DisplayName("주문 생성 예외 통합테스트")
     class CreateOrderExceptionIntegrationTest {
 
-        private Long createBillingAndGetOrderId(Long memberId, Long rewardId, int qty) {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(rewardId, qty)
-            ));
-            BillingResponseDto billing = orderService.createBilling(memberId, reqDto);
-            return billing.orderId();
-        }
 
         // 본인 주문 아님 → 예외
         @Test
@@ -278,15 +295,69 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
     }
 
     @Nested
+    @DisplayName("processStatusUpdate 예외 통합테스트")
+    class ProcessStatusUpdateExceptionIntegrationTest {
+
+
+        @Test
+        void 존재하지_않는_주문이면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
+            orderService.processStatusUpdate(9999L, OrderStatus.PAYING);
+
+            assertThat(output.getOut()).contains("Order not found: orderId=9999");
+        }
+
+        @Transactional
+        @Test
+        void 상태_전이_불가능하면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
+            Long orderId = createCancelOrderAndGetOrderId();
+
+            orderService.processStatusUpdate(orderId, OrderStatus.PAYING);
+
+            assertThat(output.getOut()).contains("[OrderService] processStatusUpdate failed - invalid state: orderId=" + orderId);
+        }
+    }
+
+    @Nested
+    @DisplayName("processCancelledUpdate 예외 통합테스트")
+    class ProcessCancelledUpdateExceptionIntegrationTest {
+
+        @Test
+        void 존재하지_않는_주문이면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
+            orderService.processCancelledUpdate(9999L, "FUNDING_FAILED");
+
+            assertThat(output.getOut()).contains("Order not found: orderId=9999");
+        }
+
+        @Transactional
+        @Test
+        void 상태_전이_불가능하면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
+            Long orderId = createCancelOrderAndGetOrderId();
+
+            orderService.processCancelledUpdate(orderId, "FUNDING_FAILED");
+
+            assertThat(output.getOut()).contains("[OrderService] processCancelledUpdate failed - invalid state: orderId=" + orderId);
+        }
+    }
+
+    @Nested
     @DisplayName("processPayingAndPublishSettlement 예외 통합테스트")
     class ProcessPayingAndPublishSettlementExceptionIntegrationTest {
 
-        // 존재하지 않는 주문 → IllegalStateException + 에러 메시지 확인
         @Test
-        void 존재하지_않는_주문이면_IllegalStateException을_던진다() {
-            assertThatThrownBy(() -> orderService.processPayingAndPublishSettlement(9999L))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("[FUNDING_JUDGE] Order not found: orderId=9999");
+        void 존재하지_않는_주문이면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
+            orderService.processPayingAndPublishSettlement(9999L);
+
+            assertThat(output.getOut()).contains("Order not found: orderId=9999");
+        }
+
+        @Transactional
+        @Test
+        void 상태_전이_불가능하면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
+            Long orderId = createCancelOrderAndGetOrderId();
+
+            orderService.processPayingAndPublishSettlement(orderId);
+
+            assertThat(output.getOut()).contains("[OrderService] processPayingAndPublishSettlement failed - invalid state: orderId=" + orderId);
         }
     }
 
@@ -294,12 +365,21 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
     @DisplayName("processCancelAndPublishRefund 예외 통합테스트")
     class ProcessCancelAndPublishRefundExceptionIntegrationTest {
 
-        // 존재하지 않는 주문 → IllegalStateException + 에러 메시지 확인
         @Test
-        void 존재하지_않는_주문이면_IllegalStateException을_던진다() {
-            assertThatThrownBy(() -> orderService.processCancelAndPublishRefund(9999L))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("[FUNDING_JUDGE] Order not found: orderId=9999");
+        void 존재하지_않는_주문이면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
+            orderService.processCancelAndPublishRefund(9999L);
+
+            assertThat(output.getOut()).contains("Order not found: orderId=9999");
+        }
+
+        @Transactional
+        @Test
+        void 상태_전이_불가능하면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
+            Long orderId = createCancelOrderAndGetOrderId();
+
+            orderService.processCancelAndPublishRefund(orderId);
+
+            assertThat(output.getOut()).contains("[OrderService] processCancelAndPublishRefund failed - invalid state: orderId=" + orderId);
         }
     }
 

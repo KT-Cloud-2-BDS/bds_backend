@@ -4,6 +4,7 @@ package com.bds.order.application;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
@@ -22,18 +23,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 class OrderServiceUnitExceptionTest {
 
     @Mock
@@ -272,31 +277,158 @@ class OrderServiceUnitExceptionTest {
     }
 
     @Nested
-    @DisplayName("processPayingAndPublishSettlement 예외")
-    class ProcessPayingAndPublishSettlementExceptionTest {
+    @DisplayName("processStatusUpdate 예외 테스트")
+    class ProcessStatusUpdateExceptionTest {
 
         @Test
-        void 존재하지_않는_주문이면_IllegalStateException을_던진다() {
+        void 존재하지_않는_주문이면_warn_로그를_남긴다(CapturedOutput output) {
             when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> orderService.processPayingAndPublishSettlement(999L))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("[FUNDING_JUDGE] Order not found: orderId=999");
+            orderService.processStatusUpdate(999L, OrderStatus.PAYING);
+
+            assertThat(output.getOut()).contains("Order not found: orderId=999");
+        }
+
+        @Test
+        void 상태_전이_실패시_warn_로그를_남긴다(CapturedOutput output) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doThrow(new IllegalStateException("주문 상태를 CANCELLED에서 PAYING로 변경할 수 없습니다"))
+                    .when(mockOrder).updateStatus(OrderStatus.PAYING);
+
+            orderService.processStatusUpdate(1L, OrderStatus.PAYING);
+
+            assertThat(output.getOut()).contains("[OrderService] processStatusUpdate failed - invalid state: orderId=1");
+        }
+
+        @Test
+        void 예상치_못한_예외_발생시_error_로그를_남긴다(CapturedOutput output) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doThrow(new RuntimeException("DB connection failed"))
+                    .when(mockOrder).updateStatus(OrderStatus.PAYING);
+
+            orderService.processStatusUpdate(1L, OrderStatus.PAYING);
+
+            assertThat(output.getOut()).contains("[OrderService] processStatusUpdate failed - unexpected: orderId=1");
+            assertThat(output.getOut()).contains("RuntimeException");
         }
     }
 
     @Nested
-    @DisplayName("processCancelAndPublishRefund 예외")
-    class ProcessCancelAndPublishRefundExceptionTest {
+    @DisplayName("processCancelledUpdate 예외 테스트")
+    class ProcessCancelledUpdateExceptionTest {
 
         @Test
-        void 존재하지_않는_주문이면_IllegalStateException을_던진다() {
+        void 존재하지_않는_주문이면_warn_로그를_남긴다(CapturedOutput output) {
             when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> orderService.processCancelAndPublishRefund(999L))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("[FUNDING_JUDGE] Order not found: orderId=999");
+            orderService.processCancelledUpdate(999L, "FUNDING_FAILED");
+
+            assertThat(output.getOut()).contains("Order not found: orderId=999");
+        }
+
+        @Test
+        void 상태_전이_실패시_warn_로그를_남긴다(CapturedOutput output) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doThrow(new IllegalStateException("주문 상태를 CANCELLED에서 CANCELLED로 변경할 수 없습니다"))
+                    .when(mockOrder).cancelOrder("FUNDING_FAILED");
+
+            orderService.processCancelledUpdate(1L, "FUNDING_FAILED");
+
+            assertThat(output.getOut()).contains("[OrderService] processCancelledUpdate failed - invalid state: orderId=1");
+        }
+
+        @Test
+        void 예상치_못한_예외_발생시_error_로그를_남긴다(CapturedOutput output) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doThrow(new RuntimeException("DB connection failed"))
+                    .when(mockOrder).cancelOrder("FUNDING_FAILED");
+
+            orderService.processCancelledUpdate(1L, "FUNDING_FAILED");
+
+            assertThat(output.getOut()).contains("[OrderService] processCancelledUpdate failed - unexpected: orderId=1");
+            assertThat(output.getOut()).contains("RuntimeException");
         }
     }
 
+    @Nested
+    @DisplayName("processPayingAndPublishSettlement 예외 테스트")
+    class ProcessPayingAndPublishSettlementExceptionTest {
+
+        @Test
+        void 존재하지_않는_주문이면_warn_로그를_남긴다(CapturedOutput output) {
+            when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
+
+            orderService.processPayingAndPublishSettlement(999L);
+
+            assertThat(output.getOut()).contains("Order not found: orderId=999");
+        }
+
+        @Test
+        void 상태_전이_실패시_warn_로그를_남긴다(CapturedOutput output) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doThrow(new IllegalStateException("주문 상태를 CANCELLED에서 PAYING로 변경할 수 없습니다"))
+                    .when(mockOrder).updateStatus(OrderStatus.PAYING);
+
+            orderService.processPayingAndPublishSettlement(1L);
+
+            assertThat(output.getOut()).contains("[OrderService] processPayingAndPublishSettlement failed - invalid state: orderId=1");
+        }
+
+        @Test
+        void 예상치_못한_예외_발생시_error_로그를_남긴다(CapturedOutput output) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doThrow(new RuntimeException("DB connection failed"))
+                    .when(mockOrder).updateStatus(OrderStatus.PAYING);
+
+            orderService.processPayingAndPublishSettlement(1L);
+
+            assertThat(output.getOut()).contains("[OrderService] processPayingAndPublishSettlement failed - unexpected: orderId=1");
+            assertThat(output.getOut()).contains("RuntimeException");
+        }
+    }
+
+    @Nested
+    @DisplayName("processCancelAndPublishRefund 예외 테스트")
+    class ProcessCancelAndPublishRefundExceptionTest {
+
+        @Test
+        void 존재하지_않는_주문이면_warn_로그를_남긴다(CapturedOutput output) {
+            when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
+
+            orderService.processCancelAndPublishRefund(999L);
+
+            assertThat(output.getOut()).contains("Order not found: orderId=999");
+        }
+
+        @Test
+        void 상태_전이_실패시_warn_로그를_남긴다(CapturedOutput output) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doThrow(new IllegalStateException("주문 상태를 CANCELLED에서 CANCELLED로 변경할 수 없습니다"))
+                    .when(mockOrder).cancelOrder(CancelReason.FUNDING_FAILED.name());
+
+            orderService.processCancelAndPublishRefund(1L);
+
+            assertThat(output.getOut()).contains("[OrderService] processCancelAndPublishRefund failed - invalid state: orderId=1");
+        }
+
+        @Test
+        void 예상치_못한_예외_발생시_error_로그를_남긴다(CapturedOutput output) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doThrow(new RuntimeException("DB connection failed"))
+                    .when(mockOrder).cancelOrder(CancelReason.FUNDING_FAILED.name());
+
+            orderService.processCancelAndPublishRefund(1L);
+
+            assertThat(output.getOut()).contains("[OrderService] processCancelAndPublishRefund failed - unexpected: orderId=1");
+            assertThat(output.getOut()).contains("RuntimeException");
+        }
+    }
 }
