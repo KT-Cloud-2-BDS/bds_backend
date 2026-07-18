@@ -1,5 +1,7 @@
 package com.bds.notification.application;
 
+import com.bds.notification.application.dto.ChatNotificationMessageDto;
+import com.bds.notification.application.dto.ChatPushNotificationDto;
 import com.bds.notification.application.dto.FundingNotificationCommandDto;
 import com.bds.notification.application.dto.OrderNotificationMessageDto;
 import com.bds.notification.application.dto.PushNotificationDto;
@@ -141,6 +143,7 @@ public class NotificationService {
         NotificationChannel.SSE);
   }
 
+  @Transactional
   public void createFundingNotification(FundingNotificationCommandDto command) {
     List<Long> memberIds = notificationSubscriptionRepository.findSubscribedMemberIds(
         SubscriptionTargetType.valueOf(command.targetType()),
@@ -166,8 +169,16 @@ public class NotificationService {
       createNotification(memberId, command.type(), command.targetId(), title, body,
           NotificationChannel.SSE);
     });
+  }
 
-
+  // TODO: 트랜잭션이 발생하지 않아서 event로 전달하지 못했음. 이건 추후 고민이 필요해보임. 그런데 fallback구조까지 다 들어나서 별로 안좋은 코드처럼 보임
+  public void sendChatNotification(ChatNotificationMessageDto dto) {
+    if (sseEmitterManager.exist(dto.receiverId())) {
+      ChatPushNotificationDto payload = new ChatPushNotificationDto("새로운 채팅이 도착했습니다", dto.content(),
+          dto.roomId());
+      sseEmitterManager.send(dto.receiverId(), "chat", payload);
+    }
+    // TODO: FCM Fallback
   }
 
 
