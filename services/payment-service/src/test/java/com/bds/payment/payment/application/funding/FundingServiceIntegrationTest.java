@@ -256,6 +256,42 @@ class FundingServiceIntegrationTest {
             WalletJpaEntity creatorWallet = walletJpaRepository.findById(creatorWalletId).orElseThrow();
             assertThat(creatorWallet.getBalance()).isEqualTo(20000L);
         }
+
+        @Test
+        void 재시도시_이미_생성된_항목은_ALREADY_CONFIRMED로_스킵된다() {
+            // given
+            Long creatorId = 999L;
+            Long productId = 100L;
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(creatorId).balance(0L).build());
+
+            for (int i = 0; i < 2; i++) {
+                Long memberId = (long) (i + 1);
+                walletJpaRepository.save(WalletJpaEntity.builder().memberId(memberId).balance(30000L).build());
+            }
+
+            SettlementBatchRequestDto batchDto = new SettlementBatchRequestDto(
+                    UuidCreator.getTimeOrderedEpoch(),
+                    null,
+                    creatorId,
+                    productId,
+                    List.of(
+                            new SettlementItem(201L, 1L, 10000L),
+                            new SettlementItem(202L, 2L, 10000L)
+                    )
+            );
+
+            // 첫 배치 실행
+            fundingService.confirmReservedFunding(batchDto);
+
+            // when: 같은 배치 재시도
+            SettlementResultResponseDto retryResult = fundingService.confirmReservedFunding(batchDto);
+
+            // then
+            assertThat(retryResult.successItems()).hasSize(2);
+            assertThat(retryResult.successItems())
+                    .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
+            assertThat(retryResult.failedItems()).isEmpty();
+        }
     }
 
     @Nested

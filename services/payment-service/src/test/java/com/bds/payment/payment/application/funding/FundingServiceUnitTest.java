@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -235,6 +236,21 @@ class FundingServiceUnitTest {
             assertEquals(2, result.successItems().size());
             assertEquals(1, result.failedItems().size());
             verify(processor).creditCreatorForBatch(any(), any(), anyString());
+        }
+
+        @Test
+        void 멱등성_스킵된_항목은_ALREADY_CONFIRMED로_표시한다() {
+            // given
+            SettlementBatchRequestDto dto = createBatchDto(2);
+            given(processor.processReservedFundingItem(any(), any())).willReturn(0L);
+
+            // when
+            SettlementResultResponseDto result = fundingService.confirmReservedFunding(dto);
+
+            // then
+            assertThat(result.successItems()).hasSize(2);
+            assertThat(result.successItems())
+                    .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
         }
 
         private SettlementBatchRequestDto createBatchDto(int itemCount) {
