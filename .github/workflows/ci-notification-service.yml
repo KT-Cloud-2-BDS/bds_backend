@@ -48,6 +48,8 @@ jobs:
           sparse-checkout: |
             services/notification-service
             modules/common
+            modules/messaging
+            libs/bds-events
             build.gradle
             settings.gradle
             gradlew
