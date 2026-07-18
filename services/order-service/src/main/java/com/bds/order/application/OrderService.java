@@ -182,8 +182,11 @@ public class OrderService {
                 order.updateStatus(targetStatus);
                 orderRepository.save(order);
             } catch (IllegalStateException e) {
-                log.warn("Status transition failed: orderId={}, target={}, reason={}",
+                log.warn("[OrderService] processStatusUpdate failed - invalid state: orderId={}, target={}, reason={}",
                         orderId, targetStatus, e.getMessage());
+            } catch (Exception e) {
+                log.error("[OrderService] processStatusUpdate failed - unexpected: orderId={}, target={}, exceptionType={}, reason={}",
+                        orderId, targetStatus, e.getClass().getSimpleName(), e.getMessage());
             }
         });
     }
@@ -198,7 +201,11 @@ public class OrderService {
                 );
                 orderRepository.save(order);
             } catch (IllegalStateException e) {
-                log.warn("Cancel failed: orderId={}, reason={}", orderId, e.getMessage());
+                log.warn("[OrderService] processCancelledUpdate failed - invalid state: orderId={}, reason={}",
+                        orderId, e.getMessage());
+            } catch (Exception e) {
+                log.error("[OrderService] processCancelledUpdate failed - unexpected: orderId={}, exceptionType={}, reason={}",
+                        orderId, e.getClass().getSimpleName(), e.getMessage());
             }
         });
     }
@@ -211,30 +218,42 @@ public class OrderService {
 
     @Transactional
     public void processPayingAndPublishSettlement(Long orderId) {
-        Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> new IllegalStateException(
-                        "[FUNDING_JUDGE] Order not found: orderId=" + orderId));
+        findOrderForUpdate(orderId).ifPresent(order -> {
+            try {
+                order.updateStatus(OrderStatus.PAYING);
+                orderRepository.save(order);
 
-        order.updateStatus(OrderStatus.PAYING);
-        orderRepository.save(order);
-
-        // TODO: Outbox에 결제 요청 메시지 저장 (PAY 측 스펙 확정 후)
-        // outboxRepository.save(OutboxMessage.create(...))
+                // TODO: Outbox에 결제 요청 메시지 저장 (PAY 측 스펙 확정 후)
+                // outboxRepository.save(OutboxMessage.create(...))
+            } catch (IllegalStateException e) {
+                log.warn("[OrderService] processPayingAndPublishSettlement failed - invalid state: orderId={}, reason={}",
+                        orderId, e.getMessage());
+            } catch (Exception e) {
+                log.error("[OrderService] processPayingAndPublishSettlement failed - unexpected: orderId={}, exceptionType={}, reason={}",
+                        orderId, e.getClass().getSimpleName(), e.getMessage());
+            }
+        });
     }
 
     @Transactional
     public void processCancelAndPublishRefund(Long orderId) {
-        Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> new IllegalStateException(
-                        "[FUNDING_JUDGE] Order not found: orderId=" + orderId));
+        findOrderForUpdate(orderId).ifPresent(order -> {
+            try {
+                order.cancelOrder(CancelReason.FUNDING_FAILED.name());
+                order.getOrderRewards().forEach(orw ->
+                        rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
+                );
+                orderRepository.save(order);
 
-        order.cancelOrder(CancelReason.FUNDING_FAILED.name());
-        order.getOrderRewards().forEach(orw ->
-                rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
-        );
-        orderRepository.save(order);
-
-        // TODO: Outbox에 환불 요청 메시지 저장 (PAY 측 스펙 확정 후)
+                // TODO: Outbox에 환불 요청 메시지 저장 (PAY 측 스펙 확정 후)
+            } catch (IllegalStateException e) {
+                log.warn("[OrderService] processCancelAndPublishRefund failed - invalid state: orderId={}, reason={}",
+                        orderId, e.getMessage());
+            } catch (Exception e) {
+                log.error("[OrderService] processCancelAndPublishRefund failed - unexpected: orderId={}, exceptionType={}, reason={}",
+                        orderId, e.getClass().getSimpleName(), e.getMessage());
+            }
+        });
     }
 
     private Optional<Order> findOrderForUpdate(Long orderId) {
