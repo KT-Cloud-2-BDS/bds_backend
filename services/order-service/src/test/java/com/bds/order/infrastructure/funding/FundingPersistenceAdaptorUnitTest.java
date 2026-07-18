@@ -227,15 +227,29 @@ class FundingPersistenceAdaptorUnitTest {
     class SaveTest {
 
         @Test
-        void 펀딩을_저장한다() {
-            Funding funding = createDomain(1L, FundingStatus.SUCCESS);
-            FundingJpaEntity entity = createEntity(1L, FundingStatus.SUCCESS);
+        void 새로운_펀딩을_저장한다() {
+            Funding funding = createDomain(null, FundingStatus.SCHEDULED);
+            FundingJpaEntity entity = createEntity(null, FundingStatus.SCHEDULED);
 
             given(fundingMapper.toJpaEntity(funding)).willReturn(entity);
 
             fundingPersistenceAdaptor.save(funding);
 
             verify(fundingJpaRepository).save(entity);
+        }
+
+        @Test
+        void 기존_펀딩이_있으면_update를_실행한다() {
+            FundingJpaEntity entity = createEntity(1L, FundingStatus.ACTIVE);
+            given(fundingJpaRepository.findById(1L)).willReturn(Optional.of(entity));
+
+            Funding funding = Funding.of(1L, "Title", 100L, FundingStatus.SUCCESS,
+                    NOW.minusDays(10), NOW.plusDays(30), NOW.plusDays(60),
+                    0, 1000000L, 500000L, true, NOW, NOW);
+            fundingPersistenceAdaptor.save(funding);
+
+            assertThat(entity.getStatus()).isEqualTo(FundingStatus.SUCCESS);
+            assertThat(entity.getIsSuccess()).isTrue();
         }
     }
 
