@@ -6,7 +6,6 @@ import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.domain.order.CancelReason;
-import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +23,8 @@ public class FundingStatusUpdater {
     private final FundingRepository fundingRepository;
     private final OrderRepository orderRepository;
     private final OrderService orderService;
+
+    private final int CHUNK_SIZE = 500;
 
     @Transactional
     public boolean judgeFunding(Long fundingId) {
@@ -49,41 +50,79 @@ public class FundingStatusUpdater {
         return isSuccess;
     }
 
+
     public void handleFundingSuccess(Long fundingId) {
         // TODO: Funding 성공 Notification Message 발행
 
+        int chunkSize = 500;
+
         // 즉시 주문 (PAID) → 정산 요청 발행
-        List<Order> paidOrders = orderRepository.findByFundingIdAndStatus(fundingId, OrderStatus.PAID);
-        for (Order order : paidOrders) {
-            orderService.publishSettlement(order.getId());
+        Long lastOrderId = 0L;
+        while (true) {
+            List<Long> paidOrderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, OrderStatus.PAID, lastOrderId, chunkSize);
+            if (paidOrderIds.isEmpty()) break;
+
+            for (Long orderId : paidOrderIds) {
+                orderService.publishSettlement(orderId);
+            }
+            lastOrderId = paidOrderIds.get(paidOrderIds.size() - 1);
+
+            if (paidOrderIds.size() < chunkSize) break;
         }
-        log.info("[FUNDING_JUDGE] 즉시 주문 정산 요청 - {}건", paidOrders.size());
 
         // 예약 주문 (RESERVED) → PAYING + 결제 요청 발행
-        List<Order> reservedOrders = orderRepository.findByFundingIdAndStatus(fundingId, OrderStatus.RESERVED);
-        for (Order order : reservedOrders) {
-            orderService.processPayingAndPublishSettlement(order.getId());
+        lastOrderId = 0L;
+        while (true) {
+            List<Long> reservedOrderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, OrderStatus.RESERVED, lastOrderId, chunkSize);
+            if (reservedOrderIds.isEmpty()) break;
+
+            for (Long orderId : reservedOrderIds) {
+                orderService.processPayingAndPublishSettlement(orderId);
+            }
+            lastOrderId = reservedOrderIds.get(reservedOrderIds.size() - 1);
+
+            if (reservedOrderIds.size() < chunkSize) break;
         }
-        log.info("[FUNDING_JUDGE] 예약 주문 결제 요청 - {}건", reservedOrders.size());
+
+        log.info("[FUNDING_JUDGE] 펀딩 성공 주문 처리 완료 - fundingId: {}", fundingId);
     }
 
     public void handleFundingFailure(Long fundingId) {
         // TODO: Funding 실패 Notification Message 발행
 
-        // 즉시 주문 (PAID) → CANCELLED + 환불 요청 발행
-        List<Order> paidOrders = orderRepository.findByFundingIdAndStatus(fundingId, OrderStatus.PAID);
-        for (Order order : paidOrders) {
-            orderService.processCancelAndPublishRefund(order.getId());
-        }
-        log.info("[FUNDING_JUDGE] 즉시 주문 환불 요청 - {}건", paidOrders.size());
+        int chunkSize = 500;
 
-        // 예약 주문 (RESERVED) → CANCELLED 내부 처리 (결제 안 했으니 Pay 요청 없음)
-        List<Order> reservedOrders = orderRepository.findByFundingIdAndStatus(fundingId, OrderStatus.RESERVED);
-        for (Order order : reservedOrders) {
-            orderService.processCancelledUpdate(order.getId(), CancelReason.FUNDING_FAILED.name());
+        // 즉시 주문 (PAID) → CANCELLED + 환불 요청 발행
+        Long lastOrderId = 0L;
+        while (true) {
+            List<Long> paidOrderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, OrderStatus.PAID, lastOrderId, chunkSize);
+            if (paidOrderIds.isEmpty()) break;
+
+            for (Long orderId : paidOrderIds) {
+                orderService.processCancelAndPublishRefund(orderId);
+            }
+            lastOrderId = paidOrderIds.get(paidOrderIds.size() - 1);
+
+            if (paidOrderIds.size() < chunkSize) break;
         }
-        log.info("[FUNDING_JUDGE] 예약 주문 취소 - {}건", reservedOrders.size());
+
+        // 예약 주문 (RESERVED) → CANCELLED 내부 처리
+        lastOrderId = 0L;
+        while (true) {
+            List<Long> reservedOrderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, OrderStatus.RESERVED, lastOrderId, chunkSize);
+            if (reservedOrderIds.isEmpty()) break;
+
+            for (Long orderId : reservedOrderIds) {
+                orderService.processCancelledUpdate(orderId, CancelReason.FUNDING_FAILED.name());
+            }
+            lastOrderId = reservedOrderIds.get(reservedOrderIds.size() - 1);
+
+            if (reservedOrderIds.size() < chunkSize) break;
+        }
+
+        log.info("[FUNDING_JUDGE] 펀딩 실패 주문 처리 완료 - fundingId: {}", fundingId);
     }
+
 
     // TODO: Funding 시작 Notification Message 발행
     @Transactional

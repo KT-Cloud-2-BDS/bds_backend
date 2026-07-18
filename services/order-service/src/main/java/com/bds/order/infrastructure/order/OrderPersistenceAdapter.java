@@ -4,6 +4,7 @@ import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
@@ -40,10 +41,8 @@ public class OrderPersistenceAdapter implements OrderRepository {
     }
 
     @Override
-    public List<Order> findByFundingIdAndStatus(Long fundingId, OrderStatus status) {
-        return orderJpaRepository.findByFundingIdAndStatus(fundingId, status).stream()
-                .map(orderMapper::toDomain)
-                .toList();
+    public List<Long> findOrderIdsByFundingIdAndStatus(Long fundingId, OrderStatus status, Long lastOrderId, int size) {
+        return orderJpaRepository.findOrderIdsByFundingIdAndStatus(fundingId, status, lastOrderId, PageRequest.of(0, size));
     }
 
     @Override

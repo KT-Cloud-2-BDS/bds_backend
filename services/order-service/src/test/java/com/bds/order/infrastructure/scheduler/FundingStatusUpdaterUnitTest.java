@@ -4,11 +4,9 @@ import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
-import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.fixture.FundingFixture;
-import com.bds.order.fixture.OrderFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -78,29 +76,29 @@ class FundingStatusUpdaterUnitTest {
         }
     }
 
-
     @Nested
     @DisplayName("handleFundingSuccess")
     class HandleFundingSuccessTest {
 
         @Test
         void PAID_주문에_정산_요청하고_RESERVED_주문에_결제_요청한다() {
-            Order paidOrder = OrderFixture.createOrder(1L, OrderStatus.PAID);
-            Order reservedOrder = OrderFixture.createOrder(2L, OrderStatus.RESERVED);
-
-            when(orderRepository.findByFundingIdAndStatus(1L, OrderStatus.PAID)).thenReturn(List.of(paidOrder));
-            when(orderRepository.findByFundingIdAndStatus(1L, OrderStatus.RESERVED)).thenReturn(List.of(reservedOrder));
+            when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
+                    .thenReturn(List.of(1L));
+            when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.RESERVED), eq(0L), eq(500)))
+                    .thenReturn(List.of(2L));
 
             fundingStatusUpdater.handleFundingSuccess(1L);
 
-            verify(orderService).publishSettlement(paidOrder.getId());
-            verify(orderService).processPayingAndPublishSettlement(reservedOrder.getId());
+            verify(orderService).publishSettlement(1L);
+            verify(orderService).processPayingAndPublishSettlement(2L);
         }
 
         @Test
         void 해당_펀딩에_주문이_없으면_orderService_호출_없음() {
-            when(orderRepository.findByFundingIdAndStatus(1L, OrderStatus.PAID)).thenReturn(List.of());
-            when(orderRepository.findByFundingIdAndStatus(1L, OrderStatus.RESERVED)).thenReturn(List.of());
+            when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
+                    .thenReturn(List.of());
+            when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.RESERVED), eq(0L), eq(500)))
+                    .thenReturn(List.of());
 
             fundingStatusUpdater.handleFundingSuccess(1L);
 
@@ -114,22 +112,23 @@ class FundingStatusUpdaterUnitTest {
 
         @Test
         void PAID_주문에_환불_요청하고_RESERVED_주문을_취소한다() {
-            Order paidOrder = OrderFixture.createOrder(1L, OrderStatus.PAID);
-            Order reservedOrder = OrderFixture.createOrder(2L, OrderStatus.RESERVED);
-
-            when(orderRepository.findByFundingIdAndStatus(1L, OrderStatus.PAID)).thenReturn(List.of(paidOrder));
-            when(orderRepository.findByFundingIdAndStatus(1L, OrderStatus.RESERVED)).thenReturn(List.of(reservedOrder));
+            when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
+                    .thenReturn(List.of(1L));
+            when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.RESERVED), eq(0L), eq(500)))
+                    .thenReturn(List.of(2L));
 
             fundingStatusUpdater.handleFundingFailure(1L);
 
-            verify(orderService).processCancelAndPublishRefund(paidOrder.getId());
-            verify(orderService).processCancelledUpdate(reservedOrder.getId(), "FUNDING_FAILED");
+            verify(orderService).processCancelAndPublishRefund(1L);
+            verify(orderService).processCancelledUpdate(2L, "FUNDING_FAILED");
         }
 
         @Test
         void 해당_펀딩에_주문이_없으면_orderService_호출_없음() {
-            when(orderRepository.findByFundingIdAndStatus(1L, OrderStatus.PAID)).thenReturn(List.of());
-            when(orderRepository.findByFundingIdAndStatus(1L, OrderStatus.RESERVED)).thenReturn(List.of());
+            when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
+                    .thenReturn(List.of());
+            when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.RESERVED), eq(0L), eq(500)))
+                    .thenReturn(List.of());
 
             fundingStatusUpdater.handleFundingFailure(1L);
 
