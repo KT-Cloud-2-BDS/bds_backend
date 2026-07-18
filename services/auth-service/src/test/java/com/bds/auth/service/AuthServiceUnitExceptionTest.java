@@ -141,6 +141,105 @@ public class AuthServiceUnitExceptionTest {
     }
 
     @Nested
+    @DisplayName("비밀번호 재설정 인증 코드 발송 예외")
+    public class SendPasswordResetVerificationCodeException {
+        @Test
+        @DisplayName("가입되지 않은 이메일이면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        public void 가입안된이메일_예외() {
+            // given
+            String email = "notfound@email.com";
+            given(authRepository.findByEmail(email)).willReturn(Optional.empty());
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.sendPasswordResetVerificationCode(email);
+            });
+            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("ACTIVE 상태가 아닌 계정이면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        public void 비활성계정_예외() {
+            // given
+            String email = "deleted@email.com";
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getStatus()).willReturn(Status.DELETED);
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.sendPasswordResetVerificationCode(email);
+            });
+            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("비밀번호 재설정 인증 코드 검증 예외")
+    public class VerifyPasswordResetCodeException {
+        @Test
+        @DisplayName("Redis에 인증 코드가 만료되어 존재하지 않으면 VERIFICATION_CODE_EXPIRED 예외가 터진다")
+        public void 인증코드_만료_예외() {
+            // given
+            String email = "yeojin@email.com";
+            given(tokenCacheRepository.get("pw-reset:" + email)).willReturn(null);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.verifyPasswordResetCode(email, "123456");
+            });
+            assertEquals(ErrorCode.VERIFICATION_CODE_EXPIRED, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Redis에 저장된 코드와 입력받은 코드가 일치하지 않으면 VERIFICATION_CODE_MISMATCH 예외가 터진다")
+        public void 인증코드_불일치_예외() {
+            // given
+            String email = "yeojin@email.com";
+            given(tokenCacheRepository.get("pw-reset:" + email)).willReturn("123456");
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.verifyPasswordResetCode(email, "999999");
+            });
+            assertEquals(ErrorCode.VERIFICATION_CODE_MISMATCH, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("비밀번호 재설정 예외")
+    public class ResetPasswordException {
+        @Test
+        @DisplayName("변경 권한 티켓이 없으면 UNVERIFIED_EMAIL 예외가 터진다")
+        public void 변경권한없음_예외() {
+            // given
+            String email = "yeojin@email.com";
+            given(tokenCacheRepository.get("pw-reset-verified:" + email)).willReturn(null);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.resetPassword(email, "newPassword123!");
+            });
+            assertEquals(ErrorCode.UNVERIFIED_EMAIL, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("변경 권한 티켓은 유효하나 계정이 존재하지 않으면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        public void 계정없음_예외() {
+            // given
+            String email = "yeojin@email.com";
+            given(tokenCacheRepository.get("pw-reset-verified:" + email)).willReturn("true");
+            given(authRepository.findByEmail(email)).willReturn(Optional.empty());
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.resetPassword(email, "newPassword123!");
+            });
+            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+        }
+    }
+
+    @Nested
     @DisplayName("로그인 예외")
     public class LoginException {
         @Test
@@ -291,6 +390,41 @@ public class AuthServiceUnitExceptionTest {
                 authService.reissueToken(refreshToken);
             });
             assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("로그인 상태 비밀번호 변경 예외")
+    public class ChangePasswordException {
+        @Test
+        @DisplayName("계정의 로컬 로그인 정보가 존재하지 않으면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        public void 로컬로그인정보없음_예외() {
+            // given
+            Long authId = 999L;
+            given(authLocalRepository.findByAuthId(authId)).willReturn(Optional.empty());
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.changePassword(authId, "currentPassword", "newPassword123!");
+            });
+            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("현재 비밀번호가 일치하지 않으면 INVALID_PASSWORD 예외가 터진다")
+        public void 현재비밀번호_불일치_예외() {
+            // given
+            Long authId = 1L;
+            AuthLocal authLocal = AuthLocal.of(1L, "encodedPassword", authId);
+
+            given(authLocalRepository.findByAuthId(authId)).willReturn(Optional.of(authLocal));
+            given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.changePassword(authId, "wrongPassword", "newPassword123!");
+            });
+            assertEquals(ErrorCode.INVALID_PASSWORD, exception.getErrorCode());
         }
     }
 

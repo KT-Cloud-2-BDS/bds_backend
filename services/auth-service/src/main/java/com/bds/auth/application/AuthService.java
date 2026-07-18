@@ -103,6 +103,68 @@ public class AuthService {
     }
 
     @Transactional
+    public void sendPasswordResetVerificationCode(String email) {
+        Auth auth = authRepository.findByEmail(email)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        if (auth.getStatus() != Status.ACTIVE) {
+            throw new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        String verificationCode = String.valueOf(SECURE_RANDOM.nextInt(900_000) + 100_000);
+
+        tokenCacheRepository.put("pw-reset:" + email, verificationCode, 3);
+        emailService.sendPasswordResetVerificationEmail(email, verificationCode);
+    }
+
+    @Transactional
+    public void verifyPasswordResetCode(String email, String code) {
+        String redisCode = tokenCacheRepository.get("pw-reset:" + email);
+
+        if (redisCode == null) {
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_EXPIRED);
+        }
+        if (!code.equals(redisCode)) {
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_MISMATCH);
+        }
+
+        tokenCacheRepository.delete("pw-reset:" + email);
+        tokenCacheRepository.put("pw-reset-verified:" + email, "true", 3);
+    }
+
+    @Transactional
+    public void resetPassword(String email, String newPassword) {
+        String ticket = tokenCacheRepository.get("pw-reset-verified:" + email);
+        if (!"true".equals(ticket)) {
+            throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
+        }
+
+        Auth auth = authRepository.findByEmail(email)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        AuthLocal authLocal = authLocalRepository.findByAuthId(auth.getId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        authLocal.changePassword(passwordEncoder.encode(newPassword));
+        authLocalRepository.save(authLocal);
+
+        tokenCacheRepository.delete("pw-reset-verified:" + email);
+    }
+
+    @Transactional
+    public void changePassword(Long authId, String currentPassword, String newPassword) {
+        AuthLocal authLocal = authLocalRepository.findByAuthId(authId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        if (!passwordEncoder.matches(currentPassword, authLocal.getPassword())) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        authLocal.changePassword(passwordEncoder.encode(newPassword));
+        authLocalRepository.save(authLocal);
+    }
+
+    @Transactional
     public AuthLoginResponseDto login(String email, String password) {
         Auth auth = authRepository.findByEmail(email)
             .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN_CREDENTIALS));

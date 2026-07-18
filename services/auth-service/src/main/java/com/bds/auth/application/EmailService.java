@@ -35,4 +35,22 @@ public class EmailService {
         } catch (MailException e) {
         }
     }
+
+    @Async
+    public void sendPasswordResetVerificationEmail(String toEmail, String code) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(senderEmail);
+            message.setTo(toEmail);
+            message.setSubject("[bds] 비밀번호 재설정 인증번호 안내");
+            message.setText("안녕하세요.\n\n" +
+                "비밀번호 재설정 인증번호 6자리는 다음과 같습니다.\n" +
+                "▶ 인증번호: " + code + "\n\n" +
+                "3분 이내에 입력해 주세요. 본인이 요청하지 않았다면 이 메일을 무시해 주세요.");
+
+            mailSender.send(message);
+
+        } catch (MailException e) {
+        }
+    }
 }

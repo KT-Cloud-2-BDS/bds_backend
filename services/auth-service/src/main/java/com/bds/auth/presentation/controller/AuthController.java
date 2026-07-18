@@ -7,6 +7,8 @@ import com.bds.auth.presentation.dto.AuthLoginResponseDto;
 import com.bds.auth.presentation.dto.AuthLogoutResponseDto;
 import com.bds.auth.presentation.dto.AuthRoleResponseDto;
 import com.bds.auth.presentation.dto.EmailRequestDto;
+import com.bds.auth.presentation.dto.PasswordChangeRequestDto;
+import com.bds.auth.presentation.dto.PasswordResetRequestDto;
 import com.bds.auth.presentation.dto.TokenRefreshRequestDto;
 import com.bds.auth.presentation.dto.VerifyCodeRequestDto;
 import com.bds.common.annotation.LoginUser;
@@ -43,6 +45,24 @@ public class AuthController {
 
     }
 
+    @PostMapping("/password/mail")
+    public ResponseEntity<Void> sendPasswordResetVerificationCode(@RequestBody EmailRequestDto emailRequestDto) {
+        authService.sendPasswordResetVerificationCode(emailRequestDto.email());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/password/mailCheck")
+    public ResponseEntity<String> checkPasswordResetVerificationCode(@RequestBody VerifyCodeRequestDto requestDto) {
+        authService.verifyPasswordResetCode(requestDto.email(), requestDto.verificationCode());
+        return ResponseEntity.ok("인증이 성공적으로 완료되었습니다.");
+    }
+
+    @PatchMapping("/password")
+    public ResponseEntity<Void> resetPassword(@RequestBody PasswordResetRequestDto requestDto) {
+        authService.resetPassword(requestDto.email(), requestDto.newPassword());
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthLoginResponseDto> login(@RequestBody AuthLoginRequestDto requestDto) {
         AuthLoginResponseDto response = authService.login(requestDto.email(), requestDto.password());
@@ -63,6 +83,15 @@ public class AuthController {
         String accessToken = authorizationHeader.replaceFirst("^Bearer ", "");
         authService.logout(user.id(), accessToken);
         return ResponseEntity.ok(new AuthLogoutResponseDto("로그아웃이 완료되었습니다."));
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> changePassword(
+        @LoginUser CurrentUser user,
+        @RequestBody PasswordChangeRequestDto requestDto
+    ) {
+        authService.changePassword(user.id(), requestDto.currentPassword(), requestDto.newPassword());
+        return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/role")

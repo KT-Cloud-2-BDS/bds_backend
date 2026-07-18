@@ -149,6 +149,70 @@ public class AuthServiceUnitTest {
     }
 
     @Nested
+    @DisplayName("비밀번호 재설정 인증 코드 발송")
+    public class SendPasswordResetVerificationCode {
+        @Test
+        @DisplayName("ACTIVE 계정이 존재하면 랜덤 인증 코드를 생성하여 Redis에 저장하고 메일을 발송한다")
+        public void 비밀번호재설정_인증코드발송_성공() {
+            String email = "yeojin@email.com";
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
+
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
+
+            authService.sendPasswordResetVerificationCode(email);
+
+            verify(tokenCacheRepository, times(1)).put(eq("pw-reset:" + email), anyString(), eq(3L));
+            verify(emailService, times(1)).sendPasswordResetVerificationEmail(eq(email), anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("비밀번호 재설정 인증 코드 검증")
+    public class VerifyPasswordResetCode {
+        @Test
+        @DisplayName("Redis에 저장된 코드와 일치하면 기존 코드를 지우고 변경 권한 티켓을 발급한다")
+        public void 비밀번호재설정_인증코드검증_성공() {
+            String email = "yeojin@email.com";
+            String code = "123456";
+
+            given(tokenCacheRepository.get("pw-reset:" + email)).willReturn(code);
+
+            authService.verifyPasswordResetCode(email, code);
+
+            verify(tokenCacheRepository, times(1)).delete("pw-reset:" + email);
+            verify(tokenCacheRepository, times(1)).put("pw-reset-verified:" + email, "true", 3L);
+        }
+    }
+
+    @Nested
+    @DisplayName("비밀번호 재설정 기능")
+    public class ResetPassword {
+        @Test
+        @DisplayName("변경 권한 티켓이 유효하면 새 비밀번호로 암호화하여 반영하고 티켓을 삭제한다")
+        public void 비밀번호재설정_성공() {
+            String email = "yeojin@email.com";
+            String newPassword = "newPassword123!";
+
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getId()).willReturn(1L);
+
+            AuthLocal authLocal = AuthLocal.of(1L, "oldEncodedPassword", 1L);
+
+            given(tokenCacheRepository.get("pw-reset-verified:" + email)).willReturn("true");
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(mockAuth));
+            given(authLocalRepository.findByAuthId(1L)).willReturn(Optional.of(authLocal));
+            given(passwordEncoder.encode(newPassword)).willReturn("newEncodedPassword");
+
+            authService.resetPassword(email, newPassword);
+
+            assertEquals("newEncodedPassword", authLocal.getPassword());
+            verify(authLocalRepository, times(1)).save(authLocal);
+            verify(tokenCacheRepository, times(1)).delete("pw-reset-verified:" + email);
+        }
+    }
+
+    @Nested
     @DisplayName("로그인 기능")
     public class Login {
         @Test
@@ -294,6 +358,32 @@ public class AuthServiceUnitTest {
 
             // then
             assertEquals(false, result);
+        }
+    }
+
+    @Nested
+    @DisplayName("로그인 상태 비밀번호 변경 기능")
+    public class ChangePassword {
+        @Test
+        @DisplayName("현재 비밀번호가 일치하면 새 비밀번호로 암호화하여 반영한다")
+        public void 비밀번호변경_성공() {
+            // given
+            Long authId = 1L;
+            String currentPassword = "oldPassword123!";
+            String newPassword = "newPassword123!";
+
+            AuthLocal authLocal = AuthLocal.of(1L, "oldEncodedPassword", authId);
+
+            given(authLocalRepository.findByAuthId(authId)).willReturn(Optional.of(authLocal));
+            given(passwordEncoder.matches(currentPassword, "oldEncodedPassword")).willReturn(true);
+            given(passwordEncoder.encode(newPassword)).willReturn("newEncodedPassword");
+
+            // when
+            authService.changePassword(authId, currentPassword, newPassword);
+
+            // then
+            assertEquals("newEncodedPassword", authLocal.getPassword());
+            verify(authLocalRepository, times(1)).save(authLocal);
         }
     }
 
