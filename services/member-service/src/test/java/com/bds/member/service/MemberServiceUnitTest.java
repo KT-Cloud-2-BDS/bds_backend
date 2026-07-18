@@ -6,6 +6,7 @@ import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
+import com.bds.member.presentation.dto.MemberResponseDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -102,6 +103,26 @@ public class MemberServiceUnitTest {
         verify(memberRepository, times(1)).save(mockMember);
 
         verify(memberRepository, never()).existsByNickname(anyString());
+    }
+
+    @Nested
+    @DisplayName("정보 조회 기능")
+    public class GetInfo {
+        @Test
+        @DisplayName("가입된 회원이면 닉네임이 담긴 정보를 반환한다")
+        public void 정보조회_성공() {
+            // given
+            Long authId = 24L;
+            Member mockMember = Member.create(authId, "BBandiz");
+
+            given(memberRepository.findByAuthId(authId)).willReturn(Optional.of(mockMember));
+
+            // when
+            MemberResponseDto response = memberService.getInfo(authId);
+
+            // then
+            assertEquals("BBandiz", response.nickname());
+        }
     }
 
     @Nested

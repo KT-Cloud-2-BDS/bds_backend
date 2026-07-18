@@ -138,11 +138,10 @@ public class AuthService {
 
     @Transactional
     public void deleteAuth(Long authId) {
-        Auth auth = authRepository.findById(authId)
+        authRepository.findById(authId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        auth.changeStatus(Status.DELETED);
-        authRepository.save(auth);
+        authRepository.softDelete(authId);
 
         authLocalRepository.deleteByAuthId(authId);
         tokenCacheRepository.delete("refresh:" + authId);

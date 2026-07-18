@@ -167,6 +167,25 @@ public class MemberServiceUnitExceptionTest {
     }
 
     @Nested
+    @DisplayName("정보 조회 예외 핸들링")
+    public class GetInfoException {
+
+        @Test
+        @DisplayName("가입된 회원이 존재하지 않으면 MEMBER_NOT_FOUND 예외가 터진다")
+        public void 회원_정보없음_예외() {
+            // given
+            Long authId = 999L;
+            given(memberRepository.findByAuthId(authId)).willReturn(Optional.empty());
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                memberService.getInfo(authId);
+            });
+            assertEquals(ErrorCode.MEMBER_NOT_FOUND, exception.getErrorCode());
+        }
+    }
+
+    @Nested
     @DisplayName("회원 탈퇴 예외 핸들링")
     public class DeleteMemberException {
 

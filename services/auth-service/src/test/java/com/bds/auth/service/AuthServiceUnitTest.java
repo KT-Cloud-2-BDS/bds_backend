@@ -236,8 +236,7 @@ public class AuthServiceUnitTest {
 
             authService.deleteAuth(authId);
 
-            verify(mockAuth, times(1)).changeStatus(Status.DELETED);
-            verify(authRepository, times(1)).save(mockAuth);
+            verify(authRepository, times(1)).softDelete(authId);
             verify(authLocalRepository, times(1)).deleteByAuthId(authId);
             verify(tokenCacheRepository, times(1)).delete("refresh:" + authId);
         }

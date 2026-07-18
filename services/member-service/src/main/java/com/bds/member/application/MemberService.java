@@ -8,6 +8,7 @@ import com.bds.member.global.exception.ErrorCode;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
+import com.bds.member.presentation.dto.MemberResponseDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,5 +85,13 @@ public class MemberService {
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new BusinessException(ErrorCode.AUTH_SERVICE_ERROR);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public MemberResponseDto getInfo(Long authId) {
+        Member member = memberRepository.findByAuthId(authId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        return new MemberResponseDto(member.getNickname());
     }
 }
