@@ -10,6 +10,9 @@ import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.bds.auth.global.exception.BusinessException;
 import com.bds.auth.global.exception.ErrorCode;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -214,6 +217,80 @@ public class AuthServiceUnitExceptionTest {
                 authService.login(email, password);
             });
             assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("리프레시 토큰 재발급 예외")
+    public class ReissueTokenException {
+
+        @Test
+        @DisplayName("서명이 유효하지 않거나 형식이 손상된 refresh token이면 INVALID_REFRESH_TOKEN 예외가 터진다")
+        public void 토큰_파싱실패_예외() {
+            // given
+            String malformedToken = "malformed.token.value";
+            given(jwtTokenUtil.parseClaims(malformedToken)).willThrow(new MalformedJwtException("잘못된 토큰"));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.reissueToken(malformedToken);
+            });
+            assertEquals(ErrorCode.INVALID_REFRESH_TOKEN, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Redis에 저장된 refresh token이 없으면(만료/로그아웃) INVALID_REFRESH_TOKEN 예외가 터진다")
+        public void 토큰_레디스없음_예외() {
+            // given
+            Long authId = 1L;
+            String refreshToken = "refreshToken";
+            Claims claims = Jwts.claims().subject(String.valueOf(authId)).build();
+
+            given(jwtTokenUtil.parseClaims(refreshToken)).willReturn(claims);
+            given(tokenCacheRepository.get("refresh:" + authId)).willReturn(null);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.reissueToken(refreshToken);
+            });
+            assertEquals(ErrorCode.INVALID_REFRESH_TOKEN, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Redis에 저장된 값과 요청받은 refresh token이 일치하지 않으면 INVALID_REFRESH_TOKEN 예외가 터진다")
+        public void 토큰_불일치_예외() {
+            // given
+            Long authId = 1L;
+            String requestedToken = "requestedToken";
+            Claims claims = Jwts.claims().subject(String.valueOf(authId)).build();
+
+            given(jwtTokenUtil.parseClaims(requestedToken)).willReturn(claims);
+            given(tokenCacheRepository.get("refresh:" + authId)).willReturn("differentStoredToken");
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.reissueToken(requestedToken);
+            });
+            assertEquals(ErrorCode.INVALID_REFRESH_TOKEN, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("토큰은 유효하나 계정이 존재하지 않으면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        public void 토큰_계정없음_예외() {
+            // given
+            Long authId = 999L;
+            String refreshToken = "refreshToken";
+            Claims claims = Jwts.claims().subject(String.valueOf(authId)).build();
+
+            given(jwtTokenUtil.parseClaims(refreshToken)).willReturn(claims);
+            given(tokenCacheRepository.get("refresh:" + authId)).willReturn(refreshToken);
+            given(authRepository.findById(authId)).willReturn(Optional.empty());
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.reissueToken(refreshToken);
+            });
+            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
         }
     }
 

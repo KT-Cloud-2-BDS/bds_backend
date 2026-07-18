@@ -11,6 +11,8 @@ import com.bds.auth.global.exception.BusinessException;
 import com.bds.auth.global.exception.ErrorCode;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import java.security.SecureRandom;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -123,6 +125,36 @@ public class AuthService {
         tokenCacheRepository.save(redisKey, refreshToken, 7, TimeUnit.DAYS);
 
         return new AuthLoginResponseDto(accessToken, refreshToken);
+    }
+
+    @Transactional
+    public AuthLoginResponseDto reissueToken(String refreshToken) {
+        Long authId;
+        try {
+            Claims claims = jwtTokenUtil.parseClaims(refreshToken);
+            authId = Long.valueOf(claims.getSubject());
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String redisKey = "refresh:" + authId;
+        String storedRefreshToken = tokenCacheRepository.get(redisKey);
+
+        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        Auth auth = authRepository.findById(authId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        tokenCacheRepository.delete(redisKey);
+
+        String newAccessToken = jwtTokenUtil.createAccessToken(auth.getId(), auth.getEmail(), auth.getRole());
+        String newRefreshToken = jwtTokenUtil.createRefreshToken(auth.getId());
+
+        tokenCacheRepository.save("refresh:" + auth.getId(), newRefreshToken, 7, TimeUnit.DAYS);
+
+        return new AuthLoginResponseDto(newAccessToken, newRefreshToken);
     }
 
     @Transactional

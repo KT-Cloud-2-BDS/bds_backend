@@ -6,6 +6,7 @@ import com.bds.auth.presentation.dto.AuthLoginRequestDto;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
 import com.bds.auth.presentation.dto.AuthRoleResponseDto;
 import com.bds.auth.presentation.dto.EmailRequestDto;
+import com.bds.auth.presentation.dto.TokenRefreshRequestDto;
 import com.bds.auth.presentation.dto.VerifyCodeRequestDto;
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
@@ -42,6 +43,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthLoginResponseDto> login(@RequestBody AuthLoginRequestDto requestDto) {
         AuthLoginResponseDto response = authService.login(requestDto.email(), requestDto.password());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/token/refresh")
+    public ResponseEntity<AuthLoginResponseDto> reissueToken(@RequestBody TokenRefreshRequestDto requestDto) {
+        AuthLoginResponseDto response = authService.reissueToken(requestDto.refreshToken());
         return ResponseEntity.ok(response);
     }
 

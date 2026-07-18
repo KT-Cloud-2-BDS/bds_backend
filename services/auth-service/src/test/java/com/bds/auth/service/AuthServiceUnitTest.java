@@ -23,6 +23,8 @@ import com.bds.auth.domain.repository.AuthLocalRepository;
 import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
@@ -175,6 +177,41 @@ public class AuthServiceUnitTest {
             assertEquals("accessToken", response.accessToken());
             assertEquals("refreshToken", response.refreshToken());
             verify(tokenCacheRepository, times(1)).save(eq("refresh:1"), eq("refreshToken"), eq(7L), eq(TimeUnit.DAYS));
+        }
+    }
+
+    @Nested
+    @DisplayName("리프레시 토큰 재발급 기능")
+    public class ReissueToken {
+        @Test
+        @DisplayName("유효한 refresh token이 Redis에 저장된 값과 일치하면 기존 토큰을 삭제하고 새 토큰 세트를 발급한다")
+        public void 토큰재발급_성공() {
+            // given
+            Long authId = 1L;
+            String oldRefreshToken = "oldRefreshToken";
+            String redisKey = "refresh:" + authId;
+
+            Claims claims = Jwts.claims().subject(String.valueOf(authId)).build();
+            given(jwtTokenUtil.parseClaims(oldRefreshToken)).willReturn(claims);
+            given(tokenCacheRepository.get(redisKey)).willReturn(oldRefreshToken);
+
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getId()).willReturn(authId);
+            given(mockAuth.getEmail()).willReturn("yeojin@email.com");
+            given(mockAuth.getRole()).willReturn(Role.SUPPORTER);
+            given(authRepository.findById(authId)).willReturn(Optional.of(mockAuth));
+
+            given(jwtTokenUtil.createAccessToken(authId, "yeojin@email.com", Role.SUPPORTER)).willReturn("newAccessToken");
+            given(jwtTokenUtil.createRefreshToken(authId)).willReturn("newRefreshToken");
+
+            // when
+            AuthLoginResponseDto response = authService.reissueToken(oldRefreshToken);
+
+            // then
+            assertEquals("newAccessToken", response.accessToken());
+            assertEquals("newRefreshToken", response.refreshToken());
+            verify(tokenCacheRepository, times(1)).delete(redisKey);
+            verify(tokenCacheRepository, times(1)).save(eq(redisKey), eq("newRefreshToken"), eq(7L), eq(TimeUnit.DAYS));
         }
     }
 
