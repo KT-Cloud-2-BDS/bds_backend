@@ -148,7 +148,7 @@ public class OrderService {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FUNDING_NOT_FOUND));
 
-        if (!funding.isFuningPeriod(LocalDateTime.now())) {
+        if (!funding.isFundingPeriod(LocalDateTime.now())) {
             throw new BusinessException(ErrorCode.FUNDING_NOT_AVAILABLE);
         }
 

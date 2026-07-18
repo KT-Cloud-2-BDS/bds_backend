@@ -39,7 +39,7 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
     Optional<OrderDetailProjection> findOrderWithFunding(@Param("memberId") Long memberId, @Param("orderId") Long orderId);
 
     @Query("SELECT DISTINCT o FROM OrderJpaEntity o " +
-            "JOIN o.orderRewards orw " +
+            "JOIN FETCH o.orderRewards orw " +
             "JOIN orw.reward r " +
             "WHERE r.funding.id = :fundingId AND o.status = :status")
     List<OrderJpaEntity> findByFundingIdAndStatus(@Param("fundingId") Long fundingId, @Param("status") OrderStatus status);

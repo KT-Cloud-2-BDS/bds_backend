@@ -42,8 +42,8 @@ public class Funding {
         );
     }
 
-    public boolean isFuningPeriod(LocalDateTime now) {
-        return now.isAfter(startAt) && now.isBefore(holdTo);
+    public boolean isFundingPeriod(LocalDateTime now) {
+        return !now.isBefore(startAt) && now.isBefore(holdTo);
     }
 
     public void markSuccess() {

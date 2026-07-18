@@ -22,19 +22,19 @@ class FundingUnitTest {
         @Test
         void 현재가_펀딩시작_이전이면_false_반환() {
             Funding funding = Funding.of(null, null, null, null, NOW.plusDays(1), NOW.plusDays(30), null, 0, null, null, null, null, null);
-            assertThat(funding.isFuningPeriod(NOW)).isFalse();
+            assertThat(funding.isFundingPeriod(NOW)).isFalse();
         }
 
         @Test
         void 현재가_펀딩종료_이후이면_false_반환() {
             Funding funding = Funding.of(null, null, null, null, NOW.minusDays(30), NOW.minusDays(1), null, 0, null, null, null, null, null);
-            assertThat(funding.isFuningPeriod(NOW)).isFalse();
+            assertThat(funding.isFundingPeriod(NOW)).isFalse();
         }
 
         @Test
         void 현재가_펀딩기간_내이면_true_반환() {
             Funding funding = Funding.of(null, null, null, null, NOW.minusDays(10), NOW.plusDays(10), null, 0, null, null, null, null, null);
-            assertThat(funding.isFuningPeriod(NOW)).isTrue();
+            assertThat(funding.isFundingPeriod(NOW)).isTrue();
         }
     }
 
