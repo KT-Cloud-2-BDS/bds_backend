@@ -79,7 +79,14 @@ public class FundingPersistenceAdaptor implements FundingRepository {
 
     @Override
     public void save(Funding funding) {
-        fundingJpaRepository.save(fundingMapper.toJpaEntity(funding));
+        if (funding.getId() != null) {
+            FundingJpaEntity existing = fundingJpaRepository.findById(funding.getId())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "[FundingPersistenceAdaptor] Funding not found: fundingId=" + funding.getId()));
+            existing.updateFrom(funding);
+        } else {
+            fundingJpaRepository.save(fundingMapper.toJpaEntity(funding));
+        }
     }
 
     @Override

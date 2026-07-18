@@ -1,5 +1,6 @@
 package com.bds.order.infrastructure.funding;
 
+import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.infrastructure.common.BaseEntity;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
@@ -58,5 +59,10 @@ public class FundingJpaEntity extends BaseEntity {
 
     public void addRewards(List<RewardJpaEntity> rewardEntities) {
         this.rewards.addAll(rewardEntities);
+    }
+
+    public void updateFrom(Funding domain) {
+        this.status = domain.getStatus();
+        this.isSuccess = domain.getIsSuccess();
     }
 }
