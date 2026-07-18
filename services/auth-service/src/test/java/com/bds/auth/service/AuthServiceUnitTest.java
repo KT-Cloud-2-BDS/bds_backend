@@ -25,6 +25,7 @@ import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
@@ -212,6 +213,87 @@ public class AuthServiceUnitTest {
             assertEquals("newRefreshToken", response.refreshToken());
             verify(tokenCacheRepository, times(1)).delete(redisKey);
             verify(tokenCacheRepository, times(1)).save(eq(redisKey), eq("newRefreshToken"), eq(7L), eq(TimeUnit.DAYS));
+        }
+    }
+
+    @Nested
+    @DisplayName("로그아웃 기능")
+    public class Logout {
+        @Test
+        @DisplayName("로그아웃하면 refresh token을 삭제하고 access token 잔여 만료시간만큼 블랙리스트에 등록한다")
+        public void 로그아웃_성공() {
+            // given
+            Long authId = 1L;
+            String accessToken = "accessToken";
+            long remainingMillis = 60_000L;
+            Claims claims = Jwts.claims()
+                .subject(String.valueOf(authId))
+                .expiration(new Date(System.currentTimeMillis() + remainingMillis))
+                .build();
+
+            given(jwtTokenUtil.parseClaims(accessToken)).willReturn(claims);
+
+            // when
+            authService.logout(authId, accessToken);
+
+            // then
+            verify(tokenCacheRepository, times(1)).delete("refresh:" + authId);
+            verify(tokenCacheRepository, times(1))
+                .save(eq("blacklist:" + accessToken), eq("true"), anyLong(), eq(TimeUnit.MILLISECONDS));
+        }
+
+        @Test
+        @DisplayName("access token이 이미 만료된 상태라면 블랙리스트에 등록하지 않는다")
+        public void 로그아웃_이미만료된토큰_블랙리스트미등록() {
+            // given
+            Long authId = 1L;
+            String accessToken = "expiredAccessToken";
+            Claims claims = Jwts.claims()
+                .subject(String.valueOf(authId))
+                .expiration(new Date(System.currentTimeMillis() - 1_000L))
+                .build();
+
+            given(jwtTokenUtil.parseClaims(accessToken)).willReturn(claims);
+
+            // when
+            authService.logout(authId, accessToken);
+
+            // then
+            verify(tokenCacheRepository, times(1)).delete("refresh:" + authId);
+            verify(tokenCacheRepository, times(0))
+                .save(anyString(), anyString(), anyLong(), eq(TimeUnit.MILLISECONDS));
+        }
+    }
+
+    @Nested
+    @DisplayName("블랙리스트 조회 기능")
+    public class IsBlacklisted {
+        @Test
+        @DisplayName("Redis에 블랙리스트 키가 존재하면 true를 반환한다")
+        public void 블랙리스트조회_등록된토큰_true() {
+            // given
+            String accessToken = "blacklistedAccessToken";
+            given(tokenCacheRepository.get("blacklist:" + accessToken)).willReturn("true");
+
+            // when
+            boolean result = authService.isBlacklisted(accessToken);
+
+            // then
+            assertEquals(true, result);
+        }
+
+        @Test
+        @DisplayName("Redis에 블랙리스트 키가 없으면 false를 반환한다")
+        public void 블랙리스트조회_미등록토큰_false() {
+            // given
+            String accessToken = "normalAccessToken";
+            given(tokenCacheRepository.get("blacklist:" + accessToken)).willReturn(null);
+
+            // when
+            boolean result = authService.isBlacklisted(accessToken);
+
+            // then
+            assertEquals(false, result);
         }
     }
 

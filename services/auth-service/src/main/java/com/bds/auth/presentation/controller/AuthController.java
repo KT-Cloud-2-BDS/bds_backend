@@ -4,6 +4,7 @@ import com.bds.auth.application.AuthService;
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.presentation.dto.AuthLoginRequestDto;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
+import com.bds.auth.presentation.dto.AuthLogoutResponseDto;
 import com.bds.auth.presentation.dto.AuthRoleResponseDto;
 import com.bds.auth.presentation.dto.EmailRequestDto;
 import com.bds.auth.presentation.dto.TokenRefreshRequestDto;
@@ -11,12 +12,14 @@ import com.bds.auth.presentation.dto.VerifyCodeRequestDto;
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -50,6 +53,16 @@ public class AuthController {
     public ResponseEntity<AuthLoginResponseDto> reissueToken(@RequestBody TokenRefreshRequestDto requestDto) {
         AuthLoginResponseDto response = authService.reissueToken(requestDto.refreshToken());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<AuthLogoutResponseDto> logout(
+        @LoginUser CurrentUser user,
+        @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
+    ) {
+        String accessToken = authorizationHeader.replaceFirst("^Bearer ", "");
+        authService.logout(user.id(), accessToken);
+        return ResponseEntity.ok(new AuthLogoutResponseDto("로그아웃이 완료되었습니다."));
     }
 
     @PatchMapping("/role")

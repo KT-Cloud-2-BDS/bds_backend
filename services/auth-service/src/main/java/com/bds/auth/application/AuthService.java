@@ -158,6 +158,22 @@ public class AuthService {
     }
 
     @Transactional
+    public void logout(Long authId, String accessToken) {
+        tokenCacheRepository.delete("refresh:" + authId);
+
+        Claims claims = jwtTokenUtil.parseClaims(accessToken);
+        long remainingMillis = claims.getExpiration().getTime() - System.currentTimeMillis();
+
+        if (remainingMillis > 0) {
+            tokenCacheRepository.save("blacklist:" + accessToken, "true", remainingMillis, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    public boolean isBlacklisted(String accessToken) {
+        return tokenCacheRepository.get("blacklist:" + accessToken) != null;
+    }
+
+    @Transactional
     public Role switchRole(Long authId) {
         Auth auth = authRepository.findById(authId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));

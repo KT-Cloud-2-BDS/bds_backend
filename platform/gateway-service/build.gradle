@@ -24,6 +24,9 @@ dependencies {
     // 리액티브 테스트 라이브러리
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
+
+    // AuthBlacklistClient(WebClient) HTTP 상호작용 테스트용 가짜 서버
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 }
 
 ext {
