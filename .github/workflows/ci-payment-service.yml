@@ -31,12 +31,29 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      rabbitmq:
+        image: rabbitmq:4
+        env:
+          RABBITMQ_DEFAULT_USER: payment-service
+          RABBITMQ_DEFAULT_PASS: payment1234
+          RABBITMQ_DEFAULT_VHOST: msa
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 30s
+
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
             services/payment-service
             modules/common
+            modules/messaging
+            libs/bds-events
             build.gradle
             settings.gradle
             gradlew
@@ -52,6 +69,11 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and Test
+        env:
+          RABBITMQ_HOST: localhost
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USER: payment-service
+          RABBITMQ_PASSWORD: payment1234
         run: ./gradlew :services:payment-service:clean :services:payment-service:build :services:payment-service:jacocoTestReport --stacktrace
       
       - name: Upload Coverage Report
@@ -60,7 +82,6 @@ jobs:
         with:
           name: jacoco-report
           path: services/payment-service/build/reports/jacoco/test/html/
-        
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
