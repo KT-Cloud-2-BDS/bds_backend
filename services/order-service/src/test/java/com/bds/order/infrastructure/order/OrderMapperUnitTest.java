@@ -5,7 +5,6 @@ import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.domain.orderReward.OrderReward;
 import com.bds.order.fixture.OrderFixture;
-import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import com.bds.order.infrastructure.orderReward.OrderRewardMapper;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import com.bds.order.infrastructure.reward.RewardJpaRepository;
@@ -43,10 +42,6 @@ class OrderMapperUnitTest {
 
         @Test
         void 정상적으로_도메인_객체로_변환한다() {
-            LocalDateTime now = LocalDateTime.now();
-            OrderRewardJpaEntity orderRewardJpaEntity = new OrderRewardJpaEntity(
-                    1L, null, null, 2, 20000L, 3000L
-            );
             OrderJpaEntity entity = OrderJpaEntity.builder()
                     .id(1L)
                     .orderNo("ORD-ABC123")

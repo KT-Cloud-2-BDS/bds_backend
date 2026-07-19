@@ -51,12 +51,22 @@ class OrderUnitExceptionTest {
         @CsvSource({
                 "PENDING, PAID",
                 "PENDING, CANCELLED",
+                "PENDING, CONFIRMED",
                 "PAYING, REFUNDED",
                 "PAID, PAYING",
-                "PENDING, PENDING",
                 "PAID, RESERVED",
+                "PAID, REFUNDED",
+                "CONFIRMED, PAID",
+                "CONFIRMED, PAYING",
+                "CONFIRMED, REFUNDED",
                 "CANCELLED, PAYING",
-                "REFUNDED, PAYING"
+                "CANCELLED, PAID",
+                "CANCELLED, CONFIRMED",
+                "REFUNDED, PAYING",
+                "REFUNDED, PAID",
+                "REFUNDED, CANCELLED",
+                "REFUNDED, CONFIRMED",
+                "PENDING, PENDING",
         })
         void 허용되지_않은_상태_전이는_예외를_던진다(OrderStatus from, OrderStatus to) {
             Order order = OrderFixture.createOrder(from);
