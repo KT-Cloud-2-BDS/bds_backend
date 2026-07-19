@@ -21,17 +21,33 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
-  # RabbitMQ Consumer 자동 시작 비활성화 (테스트 시 큐 없어도 되도록)
+  # RabbitMQ 설정 (CI에서 컨테이너로 제공)
   rabbitmq:
-    listener:
-      simple:
-        auto-startup: false
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${RABBITMQ_USER:payment-service}
+    password: ${RABBITMQ_PASSWORD:payment1234}
+    publisher-confirm-type: correlated
+    publisher-returns: true
 
-  # Modulith 이벤트 발행 비활성화 (테스트 시 실제 발행 안 함)
+  # Modulith Outbox 활성화 (실제 발행 테스트)
   modulith:
     events:
       externalization:
-        enabled: false
+        enabled: true
+      republish-outstanding-events-on-restart: false
+      staleness:
+        published: 1m
+        processing: 5m
+        resubmitted: 2m
+
+bds:
+  messaging:
+    events:
+      republish-delay: 30s
+      republish-min-age: 1m
+      retention: 7d
 
 bank:
   api:
