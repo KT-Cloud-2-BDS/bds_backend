@@ -2,7 +2,10 @@ package com.bds.payment.payment.application.funding;
 
 import com.bds.payment.payment.application.payment.PaymentHistoryCommand;
 import com.bds.payment.payment.application.wallet.WalletService;
-import com.bds.payment.payment.domain.common.*;
+import com.bds.payment.payment.domain.common.PaymentHistoryStatus;
+import com.bds.payment.payment.domain.common.PaymentType;
+import com.bds.payment.payment.domain.common.TransactionReason;
+import com.bds.payment.payment.domain.common.TransactionType;
 import com.bds.payment.payment.domain.fundingPayment.FundingPayment;
 import com.bds.payment.payment.domain.fundingPayment.FundingPaymentRepository;
 import com.bds.payment.payment.domain.paymentHistory.PaymentHistory;
@@ -27,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ public class FundingService {
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final WalletService walletService;
     private final FundingSettlementProcessor processor;
+    private final FundingEventPublisher eventPublisher;
 
     @Transactional
     public FundingPaymentResponseDto funding(FundingPaymentRequestDto dto) {
@@ -64,18 +67,27 @@ public class FundingService {
                     PaymentHistoryStatus.SUCCESS
             );
             paymentHistoryRepository.save(PaymentHistory.create(command));
+
+            // INSTANT 결제 성공 이벤트 발행
+            eventPublisher.publishOrderPaid(dto.orderId());
         }
 
         return FundingPaymentResponseDto.from(savedFunding, dto.memberId());
     }
 
+    @Transactional
     public void refund(RefundRequestDto dto) {
         processor.processRefundItem(dto.orderId(), dto.memberId(), dto.cancelReason());
+
+        // 환불 완료 이벤트 발행
+        eventPublisher.publishOrderProcessRefunded(List.of(dto.orderId()));
     }
 
+    @Transactional
     public SettlementResultResponseDto confirmSettlement(SettlementBatchRequestDto dto) {
         List<SettlementResultItem> successItems = new ArrayList<>();
         List<SettlementResultItem> failedItems = new ArrayList<>();
+        List<Long> confirmedOrderIds = new ArrayList<>();
 
         for (SettlementItem item : dto.items()) {
             try {
@@ -85,10 +97,14 @@ public class FundingService {
                     successItems.add(new SettlementResultItem(item.orderId(), true, "ALREADY_CONFIRMED"));
                 } else {
                     successItems.add(new SettlementResultItem(item.orderId(), true, null));
+                    confirmedOrderIds.add(item.orderId());
                 }
             } catch (Exception e) {
                 log.error("Settlement failed. orderId={}", item.orderId(), e);
                 failedItems.add(new SettlementResultItem(item.orderId(), false, e.getMessage()));
+
+                // 실패 이벤트 발행
+                eventPublisher.publishOrderCancelled(item.orderId(), e.getMessage());
             }
         }
 
@@ -99,12 +115,19 @@ public class FundingService {
             throw e;
         }
 
+        // 정산 확정 이벤트 발행 (성공 건들)
+        if (!confirmedOrderIds.isEmpty()) {
+            eventPublisher.publishOrderProcessConfirmed(confirmedOrderIds);
+        }
+
         return new SettlementResultResponseDto(dto.batchId(), successItems, failedItems);
     }
 
+    @Transactional
     public SettlementResultResponseDto confirmReservedFunding(SettlementBatchRequestDto dto) {
         List<SettlementResultItem> successItems = new ArrayList<>();
         List<SettlementResultItem> failedItems = new ArrayList<>();
+        List<Long> confirmedOrderIds = new ArrayList<>();
 
         for (SettlementItem item : dto.items()) {
             try {
@@ -114,10 +137,14 @@ public class FundingService {
                     successItems.add(new SettlementResultItem(item.orderId(), true, "ALREADY_CONFIRMED"));
                 } else {
                     successItems.add(new SettlementResultItem(item.orderId(), true, null));
+                    confirmedOrderIds.add(item.orderId());
                 }
             } catch (Exception e) {
                 log.error("Settlement failed. orderId={}", item.orderId(), e);
                 failedItems.add(new SettlementResultItem(item.orderId(), false, e.getMessage()));
+
+                // 실패 이벤트 발행
+                eventPublisher.publishOrderCancelled(item.orderId(), e.getMessage());
             }
         }
 
@@ -128,17 +155,25 @@ public class FundingService {
             throw e;
         }
 
+        // 정산 확정 이벤트 발행 (성공 건들)
+        if (!confirmedOrderIds.isEmpty()) {
+            eventPublisher.publishOrderProcessConfirmed(confirmedOrderIds);
+        }
+
         return new SettlementResultResponseDto(dto.batchId(), successItems, failedItems);
     }
 
+    @Transactional
     public SettlementResultResponseDto refundFailedFunding(SettlementBatchRequestDto dto) {
         List<SettlementResultItem> successItems = new ArrayList<>();
         List<SettlementResultItem> failedItems = new ArrayList<>();
+        List<Long> refundedOrderIds = new ArrayList<>();
 
         for (SettlementItem item : dto.items()) {
             try {
                 processor.processRefundItem(item.orderId(), item.memberId(), "FUNDING_FAILED");
                 successItems.add(new SettlementResultItem(item.orderId(), true, null));
+                refundedOrderIds.add(item.orderId());
 
             } catch (Exception e) {
                 if (e instanceof BusinessException be && be.getErrorCode() == ErrorCode.FUNDING_ALREADY_REFUNDED) {
@@ -147,6 +182,11 @@ public class FundingService {
                 }
                 failedItems.add(new SettlementResultItem(item.orderId(), false, e.getMessage()));
             }
+        }
+
+        // 환불 완료 이벤트 발행 (성공 건들)
+        if (!refundedOrderIds.isEmpty()) {
+            eventPublisher.publishOrderProcessRefunded(refundedOrderIds);
         }
 
         return new SettlementResultResponseDto(dto.batchId(), successItems, failedItems);

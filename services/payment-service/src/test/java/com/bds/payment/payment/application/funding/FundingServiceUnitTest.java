@@ -39,6 +39,7 @@ class FundingServiceUnitTest {
     @Mock private PaymentHistoryRepository paymentHistoryRepository;
     @Mock private WalletService walletService;
     @Mock private FundingSettlementProcessor processor;
+    @Mock private FundingEventPublisher eventPublisher;
 
     @InjectMocks private FundingService fundingService;
 
@@ -72,6 +73,7 @@ class FundingServiceUnitTest {
             verify(walletService).decrease(dto.memberId(), dto.amount());
             verify(fundingPaymentRepository).save(any(FundingPayment.class));
             verify(paymentHistoryRepository).save(any());
+            verify(eventPublisher).publishOrderPaid(dto.orderId());
         }
 
         @Test
@@ -94,6 +96,7 @@ class FundingServiceUnitTest {
             verify(walletService, never()).decrease(any(), any());
             verify(paymentHistoryRepository, never()).save(any());
             verify(fundingPaymentRepository).save(any(FundingPayment.class));
+            verifyNoInteractions(eventPublisher);
         }
     }
 
@@ -117,6 +120,7 @@ class FundingServiceUnitTest {
 
             // then
             verify(processor).processRefundItem(dto.orderId(), dto.memberId(), dto.cancelReason());
+            verify(eventPublisher).publishOrderProcessRefunded(List.of(dto.orderId()));
         }
     }
 
@@ -138,6 +142,8 @@ class FundingServiceUnitTest {
             assertEquals(0, result.failedItems().size());
             verify(processor, times(3)).processSettlementItem(any());
             verify(processor).creditCreatorForBatch(eq(dto.creatorMemberId()), eq(dto.productId()), anyString());
+            verify(eventPublisher).publishOrderProcessConfirmed(anyList());
+            verify(eventPublisher, never()).publishOrderCancelled(any(), any());
         }
 
         @Test
@@ -154,6 +160,7 @@ class FundingServiceUnitTest {
             assertTrue(result.successItems().stream()
                     .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message())));
             verify(processor).creditCreatorForBatch(any(), any(), anyString());
+            verify(eventPublisher, never()).publishOrderProcessConfirmed(anyList());
         }
 
         @Test
@@ -172,6 +179,8 @@ class FundingServiceUnitTest {
             assertEquals(2, result.successItems().size());
             assertEquals(1, result.failedItems().size());
             verify(processor).creditCreatorForBatch(any(), any(), anyString());
+            verify(eventPublisher, times(1)).publishOrderCancelled(any(), anyString());
+            verify(eventPublisher, times(1)).publishOrderProcessConfirmed(anyList());
         }
 
         @Test
@@ -218,6 +227,8 @@ class FundingServiceUnitTest {
             assertEquals(3, result.successItems().size());
             verify(processor, times(3)).processReservedFundingItem(any(), eq(dto.productId()));
             verify(processor).creditCreatorForBatch(eq(dto.creatorMemberId()), eq(dto.productId()), anyString());
+            verify(eventPublisher).publishOrderProcessConfirmed(anyList());
+            verify(eventPublisher, never()).publishOrderCancelled(any(), any());
         }
 
         @Test
@@ -236,6 +247,8 @@ class FundingServiceUnitTest {
             assertEquals(2, result.successItems().size());
             assertEquals(1, result.failedItems().size());
             verify(processor).creditCreatorForBatch(any(), any(), anyString());
+            verify(eventPublisher, times(1)).publishOrderCancelled(any(), anyString());
+            verify(eventPublisher, times(1)).publishOrderProcessConfirmed(anyList());
         }
 
         @Test
@@ -251,6 +264,7 @@ class FundingServiceUnitTest {
             assertThat(result.successItems()).hasSize(2);
             assertThat(result.successItems())
                     .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
+            verify(eventPublisher, never()).publishOrderProcessConfirmed(anyList());
         }
 
         private SettlementBatchRequestDto createBatchDto(int itemCount) {
@@ -284,6 +298,7 @@ class FundingServiceUnitTest {
             assertEquals(3, result.successItems().size());
             assertEquals(0, result.failedItems().size());
             verify(processor, times(3)).processRefundItem(any(), any(), eq("FUNDING_FAILED"));
+            verify(eventPublisher).publishOrderProcessRefunded(anyList());
         }
 
         @Test
@@ -301,6 +316,7 @@ class FundingServiceUnitTest {
             assertEquals(0, result.failedItems().size());
             assertTrue(result.successItems().stream()
                     .allMatch(item -> "ALREADY_REFUNDED".equals(item.message())));
+            verify(eventPublisher, never()).publishOrderProcessRefunded(anyList());
         }
 
         @Test
@@ -316,6 +332,7 @@ class FundingServiceUnitTest {
             // then
             assertEquals(0, result.successItems().size());
             assertEquals(2, result.failedItems().size());
+            verify(eventPublisher, never()).publishOrderProcessRefunded(anyList());
         }
 
         private SettlementBatchRequestDto createBatchDto(int itemCount) {

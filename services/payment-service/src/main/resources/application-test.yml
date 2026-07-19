@@ -21,6 +21,18 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+  # RabbitMQ Consumer 자동 시작 비활성화 (테스트 시 큐 없어도 되도록)
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+  # Modulith 이벤트 발행 비활성화 (테스트 시 실제 발행 안 함)
+  modulith:
+    events:
+      externalization:
+        enabled: false
+
 bank:
   api:
     base-url: http://localhost:8085
