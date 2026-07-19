@@ -8,6 +8,7 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "M_003", "이미 가입된 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST,"M_004", "이미 사용중인 닉네임입니다."),
     UNAUTHORIZED_MEMBER(HttpStatus.UNAUTHORIZED, "M_005", "인증 정보가 없거나 유효하지 않습니다."),
+    ALREADY_REGISTERED_MEMBER(HttpStatus.BAD_REQUEST, "M_006", "이미 회원 정보가 등록되어 있습니다."),
 
 
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "G_001", "서버 내부 오류가 발생했습니다."),

@@ -15,11 +15,13 @@ import com.bds.auth.application.AuthService;
 import com.bds.auth.application.EmailService;
 import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
+import com.bds.auth.domain.entity.AuthSocial;
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.domain.entity.enums.Status;
 
 import com.bds.auth.domain.repository.AuthRepository;
 import com.bds.auth.domain.repository.AuthLocalRepository;
+import com.bds.auth.domain.repository.AuthSocialRepository;
 import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
@@ -49,6 +51,9 @@ public class AuthServiceUnitTest {
 
     @Mock
     public AuthLocalRepository authLocalRepository;
+
+    @Mock
+    public AuthSocialRepository authSocialRepository;
 
     @Mock
     public TokenCacheRepository tokenCacheRepository;
@@ -242,6 +247,103 @@ public class AuthServiceUnitTest {
             assertEquals("accessToken", response.accessToken());
             assertEquals("refreshToken", response.refreshToken());
             verify(tokenCacheRepository, times(1)).save(eq("refresh:1"), eq("refreshToken"), eq(7L), eq(TimeUnit.DAYS));
+        }
+    }
+
+    @Nested
+    @DisplayName("소셜 로그인 기능")
+    public class SocialLogin {
+        @Test
+        @DisplayName("연동된 소셜 계정이 없으면 새 Auth+AuthSocial 계정을 생성하고 토큰을 발급한다")
+        public void 소셜로그인_신규계정_성공() {
+            // given
+            String provider = "naver";
+            String providerId = "naver-12345";
+            String email = "social@email.com";
+
+            given(authSocialRepository.findByProviderAndProviderId(provider, providerId)).willReturn(Optional.empty());
+
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getId()).willReturn(1L);
+            given(mockAuth.getEmail()).willReturn(email);
+            given(mockAuth.getRole()).willReturn(Role.SUPPORTER);
+            given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
+
+            given(authRepository.save(any(Auth.class))).willReturn(mockAuth);
+            given(jwtTokenUtil.createAccessToken(1L, email, Role.SUPPORTER)).willReturn("accessToken");
+            given(jwtTokenUtil.createRefreshToken(1L)).willReturn("refreshToken");
+
+            // when
+            AuthLoginResponseDto response = authService.processSocialLogin(provider, providerId, email);
+
+            // then
+            assertEquals("accessToken", response.accessToken());
+            assertEquals("refreshToken", response.refreshToken());
+            verify(authRepository, times(1)).save(any(Auth.class));
+            verify(authSocialRepository, times(1)).save(any(AuthSocial.class));
+            verify(tokenCacheRepository, times(1)).save(eq("refresh:1"), eq("refreshToken"), eq(7L), eq(TimeUnit.DAYS));
+        }
+
+        @Test
+        @DisplayName("이미 연동된 소셜 계정이면 기존 Auth로 로그인 처리하고 토큰을 발급한다")
+        public void 소셜로그인_기존계정_성공() {
+            // given
+            String provider = "naver";
+            String providerId = "naver-12345";
+            String email = "social@email.com";
+            Long authId = 5L;
+
+            AuthSocial existingSocial = AuthSocial.of(1L, providerId, provider, email, authId);
+            given(authSocialRepository.findByProviderAndProviderId(provider, providerId)).willReturn(Optional.of(existingSocial));
+
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getId()).willReturn(authId);
+            given(mockAuth.getEmail()).willReturn(email);
+            given(mockAuth.getRole()).willReturn(Role.SUPPORTER);
+            given(mockAuth.getStatus()).willReturn(Status.ACTIVE);
+
+            given(authRepository.findById(authId)).willReturn(Optional.of(mockAuth));
+            given(jwtTokenUtil.createAccessToken(authId, email, Role.SUPPORTER)).willReturn("accessToken");
+            given(jwtTokenUtil.createRefreshToken(authId)).willReturn("refreshToken");
+
+            // when
+            AuthLoginResponseDto response = authService.processSocialLogin(provider, providerId, email);
+
+            // then
+            assertEquals("accessToken", response.accessToken());
+            verify(authRepository, times(0)).save(any(Auth.class));
+            verify(authSocialRepository, times(0)).save(any(AuthSocial.class));
+        }
+
+        @Test
+        @DisplayName("연동된 계정이 탈퇴(DELETED) 상태였다면 ACTIVE로 복구하고 토큰을 발급한다")
+        public void 소셜로그인_탈퇴계정_복구_성공() {
+            // given
+            String provider = "naver";
+            String providerId = "naver-12345";
+            String email = "social@email.com";
+            Long authId = 5L;
+
+            AuthSocial existingSocial = AuthSocial.of(1L, providerId, provider, email, authId);
+            given(authSocialRepository.findByProviderAndProviderId(provider, providerId)).willReturn(Optional.of(existingSocial));
+
+            Auth mockAuth = mock(Auth.class);
+            given(mockAuth.getId()).willReturn(authId);
+            given(mockAuth.getEmail()).willReturn(email);
+            given(mockAuth.getRole()).willReturn(Role.SUPPORTER);
+            given(mockAuth.getStatus()).willReturn(Status.DELETED);
+
+            given(authRepository.findById(authId)).willReturn(Optional.of(mockAuth));
+            given(authRepository.save(mockAuth)).willReturn(mockAuth);
+            given(jwtTokenUtil.createAccessToken(authId, email, Role.SUPPORTER)).willReturn("accessToken");
+            given(jwtTokenUtil.createRefreshToken(authId)).willReturn("refreshToken");
+
+            // when
+            authService.processSocialLogin(provider, providerId, email);
+
+            // then
+            verify(mockAuth, times(1)).changeStatus(Status.ACTIVE);
+            verify(authRepository, times(1)).save(mockAuth);
         }
     }
 

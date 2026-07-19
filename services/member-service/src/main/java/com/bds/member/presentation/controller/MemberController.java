@@ -29,6 +29,15 @@ public class MemberController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @PostMapping("/social/signup")
+    public ResponseEntity<Void> completeSocialSignup(
+        @LoginUser CurrentUser user,
+        @RequestBody MemberInfoRequestDto requestDto
+    ) {
+        memberService.completeSocialSignup(user.id(), requestDto.nickname());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
     @PatchMapping("/info")
     public ResponseEntity<Void> updateNickname(
         @LoginUser CurrentUser user,

@@ -58,6 +58,27 @@ public class MemberServiceUnitTest {
     }
 
     @Nested
+    @DisplayName("소셜 로그인 프로필 완성 기능")
+    public class CompleteSocialSignup {
+        @Test
+        @DisplayName("아직 Member 로우가 없고 닉네임 중복이 없으면 새 Member가 생성된다")
+        public void 소셜프로필완성_성공() {
+            // given
+            Long authId = 100L;
+            String nickname = "여진닉네임";
+
+            given(memberRepository.existsByAuthId(authId)).willReturn(false);
+            given(memberRepository.existsByNickname(nickname)).willReturn(false);
+
+            // when
+            memberService.completeSocialSignup(authId, nickname);
+
+            // then
+            verify(memberRepository, times(1)).save(any(Member.class));
+        }
+    }
+
+    @Nested
     @DisplayName("닉네임 수정 기능")
     public class UpdateNickname {
         @Test

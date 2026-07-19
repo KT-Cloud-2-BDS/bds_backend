@@ -56,6 +56,22 @@ public class MemberService {
     }
 
     @Transactional
+    public void completeSocialSignup(Long authId, String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (memberRepository.existsByAuthId(authId)) {
+            throw new BusinessException(ErrorCode.ALREADY_REGISTERED_MEMBER);
+        }
+        if (memberRepository.existsByNickname(nickname)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+
+        Member newMember = Member.create(authId, nickname);
+        memberRepository.save(newMember);
+    }
+
+    @Transactional
     public void updateNickname(Long authId, MemberInfoRequestDto requestDto) {
         if (requestDto.nickname() == null || requestDto.nickname().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);

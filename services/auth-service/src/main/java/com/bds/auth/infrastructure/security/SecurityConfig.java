@@ -28,11 +28,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+        HttpSecurity http,
+        CustomOAuth2UserService customOAuth2UserService,
+        OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
+        OAuth2LoginFailureHandler oAuth2LoginFailureHandler
+    ) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                .successHandler(oAuth2LoginSuccessHandler)
+                .failureHandler(oAuth2LoginFailureHandler)
             );
         return http.build();
     }

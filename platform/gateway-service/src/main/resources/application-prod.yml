@@ -9,6 +9,11 @@ spring:
               predicates:
                 - Path=/api/auths/**
 
+            - id: auth-service-oauth2
+              uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+              predicates:
+                - Path=/oauth2/**,/login/oauth2/**
+
             - id: member-service
               uri: http://${MEMBER_SERVICE_HOST}:${MEMBER_SERVICE_PORT}
               predicates:

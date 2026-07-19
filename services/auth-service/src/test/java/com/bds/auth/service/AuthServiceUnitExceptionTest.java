@@ -3,9 +3,11 @@ package com.bds.auth.service;
 import com.bds.auth.application.AuthService;
 import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
+import com.bds.auth.domain.entity.AuthSocial;
 import com.bds.auth.domain.entity.enums.Status;
 import com.bds.auth.domain.repository.AuthRepository;
 import com.bds.auth.domain.repository.AuthLocalRepository;
+import com.bds.auth.domain.repository.AuthSocialRepository;
 import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.bds.auth.global.exception.BusinessException;
 import com.bds.auth.global.exception.ErrorCode;
@@ -39,6 +41,9 @@ public class AuthServiceUnitExceptionTest {
 
     @Mock
     public AuthLocalRepository authLocalRepository;
+
+    @Mock
+    public AuthSocialRepository authSocialRepository;
 
     @Mock
     public TokenCacheRepository tokenCacheRepository;
@@ -316,6 +321,30 @@ public class AuthServiceUnitExceptionTest {
                 authService.login(email, password);
             });
             assertEquals(ErrorCode.INVALID_LOGIN_CREDENTIALS, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("소셜 로그인 예외")
+    public class ProcessSocialLoginException {
+        @Test
+        @DisplayName("연동 정보는 있으나 Auth 계정이 존재하지 않으면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        public void 연동정보만있고_계정없음_예외() {
+            // given
+            String provider = "naver";
+            String providerId = "naver-99999";
+            String email = "ghost@email.com";
+            Long authId = 999L;
+
+            AuthSocial existingSocial = AuthSocial.of(1L, providerId, provider, email, authId);
+            given(authSocialRepository.findByProviderAndProviderId(provider, providerId)).willReturn(Optional.of(existingSocial));
+            given(authRepository.findById(authId)).willReturn(Optional.empty());
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authService.processSocialLogin(provider, providerId, email);
+            });
+            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
         }
     }
 

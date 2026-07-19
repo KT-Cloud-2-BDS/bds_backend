@@ -2,10 +2,12 @@ package com.bds.auth.application;
 
 import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
+import com.bds.auth.domain.entity.AuthSocial;
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.domain.entity.enums.Status;
 import com.bds.auth.domain.repository.AuthRepository;
 import com.bds.auth.domain.repository.AuthLocalRepository;
+import com.bds.auth.domain.repository.AuthSocialRepository;
 import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.bds.auth.global.exception.BusinessException;
 import com.bds.auth.global.exception.ErrorCode;
@@ -29,6 +31,7 @@ public class AuthService {
 
     private final AuthRepository authRepository;
     private final AuthLocalRepository authLocalRepository;
+    private final AuthSocialRepository authSocialRepository;
     private final TokenCacheRepository tokenCacheRepository;
 
     private final EmailService emailService;
@@ -187,6 +190,36 @@ public class AuthService {
         tokenCacheRepository.save(redisKey, refreshToken, 7, TimeUnit.DAYS);
 
         return new AuthLoginResponseDto(accessToken, refreshToken);
+    }
+
+    @Transactional
+    public AuthLoginResponseDto processSocialLogin(String provider, String providerId, String email) {
+        Auth auth = authSocialRepository.findByProviderAndProviderId(provider, providerId)
+            .map(existingSocial -> authRepository.findById(existingSocial.getAuthId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND)))
+            .orElseGet(() -> registerNewSocialAccount(provider, providerId, email));
+
+        if (auth.getStatus() != Status.ACTIVE) {
+            auth.changeStatus(Status.ACTIVE);
+            auth = authRepository.save(auth);
+        }
+
+        String accessToken = jwtTokenUtil.createAccessToken(auth.getId(), auth.getEmail(), auth.getRole());
+        String refreshToken = jwtTokenUtil.createRefreshToken(auth.getId());
+
+        tokenCacheRepository.save("refresh:" + auth.getId(), refreshToken, 7, TimeUnit.DAYS);
+
+        return new AuthLoginResponseDto(accessToken, refreshToken);
+    }
+
+    private Auth registerNewSocialAccount(String provider, String providerId, String email) {
+        Auth newAuth = Auth.create(email, Status.ACTIVE, Role.SUPPORTER);
+        Auth savedAuth = authRepository.save(newAuth);
+
+        AuthSocial newAuthSocial = AuthSocial.create(providerId, provider, email, savedAuth.getId());
+        authSocialRepository.save(newAuthSocial);
+
+        return savedAuth;
     }
 
     @Transactional

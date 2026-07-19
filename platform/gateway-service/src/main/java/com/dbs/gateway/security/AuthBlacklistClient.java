@@ -24,11 +24,10 @@ public class AuthBlacklistClient {
     private final String internalGatewaySecret;
 
     public AuthBlacklistClient(
-        WebClient.Builder webClientBuilder,
         @Value("${auth-service.internal-uri}") String authServiceInternalUri,
         @Value("${internal.gateway-secret}") String internalGatewaySecret
     ) {
-        this.webClient = webClientBuilder.baseUrl(authServiceInternalUri).build();
+        this.webClient = WebClient.builder().baseUrl(authServiceInternalUri).build();
         this.internalGatewaySecret = internalGatewaySecret;
     }
 
