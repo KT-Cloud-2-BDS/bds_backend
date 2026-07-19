@@ -4,6 +4,8 @@ import com.bds.common.events.payment.PaymentRequestEvent;
 import com.bds.messaging.idempotency.ProcessedEventStore;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.domain.common.PaymentType;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.config.PaymentQueues;
 import com.bds.payment.payment.presentation.request.FundingPaymentRequestDto;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +36,17 @@ public class PaymentRequestListener {
                 event.memberId(),
                 event.productId(),
                 event.amount(),
-                PaymentType.valueOf(event.paymentType())  // "INSTANT"
+                PaymentType.valueOf(event.paymentType())
         );
 
-        fundingService.funding(dto);
+        try {
+            fundingService.funding(dto);
+        } catch (BusinessException e) {
+            if (e.getErrorCode() == ErrorCode.FUNDING_DUPLICATED) {
+                log.info("이미 처리된 결제 요청 스킵: orderId={}", event.orderId());
+                return;
+            }
+            throw e;
+        }
     }
 }

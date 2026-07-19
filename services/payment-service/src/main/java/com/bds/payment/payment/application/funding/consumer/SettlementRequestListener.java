@@ -48,7 +48,6 @@ public class SettlementRequestListener {
             case "SETTLEMENT_CONFIRMED" -> fundingService.confirmSettlement(dto);
             case "RESERVED_FUNDING_CONFIRMED" -> fundingService.confirmReservedFunding(dto);
             case "FUNDING_FAILED_REFUND" -> fundingService.refundFailedFunding(dto);
-            default -> log.error("Unknown settlement type: {}", event.type());
         }
     }
 }
