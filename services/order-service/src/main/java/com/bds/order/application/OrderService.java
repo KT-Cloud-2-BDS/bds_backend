@@ -1,5 +1,8 @@
 package com.bds.order.application;
 
+import com.bds.common.events.order.PaymentProcessPayEvent;
+import com.bds.common.events.order.PaymentProcessRefundEvent;
+import com.bds.common.events.order.PaymentProcessSettlementEvent;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.order.CancelReason;
@@ -12,6 +15,7 @@ import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
+import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
@@ -38,6 +42,7 @@ public class OrderService {
     private final FundingRepository fundingRepository;
     private final RewardRepository rewardRepository;
     private final OrderRewardRepository orderRewardRepository;
+    private final PaymentEventPublisher paymentEventPublisher;
 
     public List<OrderResponseDto> getAllOrders(Long memberId, Pageable pageable) {
         List<OrderListProjection> orderList = orderRepository.findOrderListWithFunding(memberId, pageable);
@@ -114,8 +119,8 @@ public class OrderService {
             }
         });
 
+        paymentEventPublisher.publishPay(PaymentProcessPayEvent.of(order.getId(), order.getMemberId(), order.getTotalAmount()));
 
-        // TODO: Calling Payment API 결제 시작
         orderRepository.save(order);
         return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), order.getStatus(), LocalDateTime.now());
     }
@@ -139,7 +144,9 @@ public class OrderService {
             rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty());
         });
 
-        // TODO: Calling Refund API
+        paymentEventPublisher.publishRefund(
+                PaymentProcessRefundEvent.of(order.getId(), order.getMemberId(), order.getTotalAmount(), CancelReason.USER_CANCEL.name()));
+
         orderRepository.save(order);
         return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
     }
@@ -211,49 +218,62 @@ public class OrderService {
     }
 
     @Transactional
-    public void publishSettlement(Long orderId) {
-        // 상태 변경 없음, 발행만
-        // TODO: Outbox에 정산 요청 메시지 저장 (type: SETTLEMENT)
+    public Optional<PaymentProcessSettlementEvent.SettlementItem> processFundingConfirmed(Long orderId) {
+        Optional<Order> orderOpt = findOrderForUpdate(orderId);
+        if (orderOpt.isEmpty()) return Optional.empty();
+
+        Order order = orderOpt.get();
+        return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(
+                order.getId(), order.getMemberId(), order.getTotalAmount()));
     }
 
     @Transactional
-    public void processPayingAndPublishSettlement(Long orderId) {
-        findOrderForUpdate(orderId).ifPresent(order -> {
-            try {
-                order.updateStatus(OrderStatus.PAYING);
-                orderRepository.save(order);
+    public Optional<PaymentProcessSettlementEvent.SettlementItem> processReservedFundingConfirmed(Long orderId) {
+        Optional<Order> orderOpt = findOrderForUpdate(orderId);
+        if (orderOpt.isEmpty()) return Optional.empty();
 
-                // TODO: Outbox에 결제 요청 메시지 저장 (PAY 측 스펙 확정 후)
-                // outboxRepository.save(OutboxMessage.create(...))
-            } catch (IllegalStateException e) {
-                log.warn("[OrderService] processPayingAndPublishSettlement failed - invalid state: orderId={}, reason={}",
-                        orderId, e.getMessage());
-            } catch (Exception e) {
-                log.error("[OrderService] processPayingAndPublishSettlement failed - unexpected: orderId={}, exceptionType={}, reason={}",
-                        orderId, e.getClass().getSimpleName(), e.getMessage());
-            }
-        });
+        Order order = orderOpt.get();
+        try {
+            order.updateStatus(OrderStatus.PAYING);
+            orderRepository.save(order);
+
+            return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(
+                    order.getId(), order.getMemberId(), order.getTotalAmount()));
+        } catch (IllegalStateException e) {
+            log.warn("[OrderService] processReservedFundingConfirmed failed - invalid state: orderId={}, reason={}",
+                    orderId, e.getMessage());
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("[OrderService] processReservedFundingConfirmed failed - unexpected: orderId={}, exceptionType={}, reason={}",
+                    orderId, e.getClass().getSimpleName(), e.getMessage());
+            return Optional.empty();
+        }
     }
 
     @Transactional
-    public void processCancelAndPublishRefund(Long orderId) {
-        findOrderForUpdate(orderId).ifPresent(order -> {
-            try {
-                order.cancelOrder(CancelReason.FUNDING_FAILED.name());
-                order.getOrderRewards().forEach(orw ->
-                        rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
-                );
-                orderRepository.save(order);
+    public Optional<PaymentProcessSettlementEvent.SettlementItem> processFundingFailedRefund(Long orderId) {
+        Optional<Order> orderOpt = findOrderForUpdate(orderId);
+        if (orderOpt.isEmpty()) return Optional.empty();
 
-                // TODO: Outbox에 환불 요청 메시지 저장 (PAY 측 스펙 확정 후)
-            } catch (IllegalStateException e) {
-                log.warn("[OrderService] processCancelAndPublishRefund failed - invalid state: orderId={}, reason={}",
-                        orderId, e.getMessage());
-            } catch (Exception e) {
-                log.error("[OrderService] processCancelAndPublishRefund failed - unexpected: orderId={}, exceptionType={}, reason={}",
-                        orderId, e.getClass().getSimpleName(), e.getMessage());
-            }
-        });
+        Order order = orderOpt.get();
+        try {
+            order.cancelOrder(CancelReason.FUNDING_FAILED.name());
+            order.getOrderRewards().forEach(orw ->
+                    rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
+            );
+            orderRepository.save(order);
+
+            return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(
+                    order.getId(), order.getMemberId(), order.getTotalAmount()));
+        } catch (IllegalStateException e) {
+            log.warn("[OrderService] processFundingFailedRefund failed - invalid state: orderId={}, reason={}",
+                    orderId, e.getMessage());
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("[OrderService] processFundingFailedRefund failed - unexpected: orderId={}, exceptionType={}, reason={}",
+                    orderId, e.getClass().getSimpleName(), e.getMessage());
+            return Optional.empty();
+        }
     }
 
     private Optional<Order> findOrderForUpdate(Long orderId) {

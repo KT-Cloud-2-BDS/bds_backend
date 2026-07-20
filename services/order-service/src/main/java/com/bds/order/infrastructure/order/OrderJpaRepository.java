@@ -48,7 +48,7 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
     List<Long> findOrderIdsByFundingIdAndStatus(@Param("fundingId") Long fundingId, @Param("status") OrderStatus status, @Param("lastOrderId") Long lastOrderId, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "0"))
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("SELECT o FROM OrderJpaEntity o JOIN FETCH o.orderRewards WHERE o.id = :orderId")
     Optional<OrderJpaEntity> findByIdForUpdate(@Param("orderId") Long orderId);
 }

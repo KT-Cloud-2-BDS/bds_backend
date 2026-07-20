@@ -13,12 +13,14 @@ public class FundingJudgmentOrchestrator {
     private final FundingStatusUpdater fundingStatusUpdater;
 
     public void execute(Long fundingId) {
-        boolean isSuccess = fundingStatusUpdater.judgeFunding(fundingId);
+        JudgmentOutcome outcome = fundingStatusUpdater.judgeFunding(fundingId);
 
-        if (isSuccess) {
-            fundingStatusUpdater.handleFundingSuccess(fundingId);
-        } else {
-            fundingStatusUpdater.handleFundingFailure(fundingId);
+        switch (outcome.type()) {
+            case INSTANT_SUCCESS -> fundingStatusUpdater.handleFundingSuccess(fundingId, outcome.creatorMemberId());
+            case INSTANT_FAILURE -> fundingStatusUpdater.handleFundingFailure(fundingId, outcome.creatorMemberId());
+            case RESERVED_SUCCESS ->
+                    fundingStatusUpdater.handleReservedFundingSuccess(fundingId, outcome.creatorMemberId());
+            case RESERVED_FAILURE -> fundingStatusUpdater.handleReservedFundingFailure(fundingId);
         }
     }
 }
