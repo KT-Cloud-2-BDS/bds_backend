@@ -97,8 +97,8 @@ public class FundingService {
                     successItems.add(new SettlementResultItem(item.orderId(), true, "ALREADY_CONFIRMED"));
                 } else {
                     successItems.add(new SettlementResultItem(item.orderId(), true, null));
-                    confirmedOrderIds.add(item.orderId());
                 }
+                confirmedOrderIds.add(item.orderId());
             } catch (Exception e) {
                 log.error("Settlement failed. orderId={}", item.orderId(), e);
                 failedItems.add(new SettlementResultItem(item.orderId(), false, e.getMessage()));
@@ -137,8 +137,8 @@ public class FundingService {
                     successItems.add(new SettlementResultItem(item.orderId(), true, "ALREADY_CONFIRMED"));
                 } else {
                     successItems.add(new SettlementResultItem(item.orderId(), true, null));
-                    confirmedOrderIds.add(item.orderId());
                 }
+                confirmedOrderIds.add(item.orderId());
             } catch (Exception e) {
                 log.error("Settlement failed. orderId={}", item.orderId(), e);
                 failedItems.add(new SettlementResultItem(item.orderId(), false, e.getMessage()));

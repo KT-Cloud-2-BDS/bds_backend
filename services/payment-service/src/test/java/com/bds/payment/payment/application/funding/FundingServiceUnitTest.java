@@ -160,7 +160,7 @@ class FundingServiceUnitTest {
             assertTrue(result.successItems().stream()
                     .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message())));
             verify(processor).creditCreatorForBatch(any(), any(), anyString());
-            verify(eventPublisher, never()).publishOrderProcessConfirmed(anyList());
+            verify(eventPublisher).publishOrderProcessConfirmed(anyList());
         }
 
         @Test
@@ -252,7 +252,7 @@ class FundingServiceUnitTest {
         }
 
         @Test
-        void 멱등성_스킵된_항목은_ALREADY_CONFIRMED로_표시한다() {
+        void 멱등성_스킵된_항목도_이벤트는_발행한다() {
             // given
             SettlementBatchRequestDto dto = createBatchDto(2);
             given(processor.processReservedFundingItem(any(), any())).willReturn(0L);
@@ -264,7 +264,7 @@ class FundingServiceUnitTest {
             assertThat(result.successItems()).hasSize(2);
             assertThat(result.successItems())
                     .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
-            verify(eventPublisher, never()).publishOrderProcessConfirmed(anyList());
+            verify(eventPublisher).publishOrderProcessConfirmed(anyList());
         }
 
         private SettlementBatchRequestDto createBatchDto(int itemCount) {
