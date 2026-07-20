@@ -44,10 +44,10 @@ public class SettlementRequestListener {
                 items
         );
 
-        switch (event.type()) {
-            case "SETTLEMENT_CONFIRMED" -> fundingService.confirmSettlement(dto);
-            case "RESERVED_FUNDING_CONFIRMED" -> fundingService.confirmReservedFunding(dto);
-            case "FUNDING_FAILED_REFUND" -> fundingService.refundFailedFunding(dto);
+        switch (dto.type()) {
+            case SettlementType.SETTLEMENT_CONFIRMED -> fundingService.confirmSettlement(dto);
+            case SettlementType.RESERVED_FUNDING_CONFIRMED -> fundingService.confirmReservedFunding(dto);
+            case SettlementType.FUNDING_FAILED_REFUND -> fundingService.refundFailedFunding(dto);
         }
     }
 }
