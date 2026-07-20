@@ -74,7 +74,12 @@ public class FundingStatusUpdater {
 
             List<PaymentProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
             for (Long orderId : paidOrderIds) {
-                orderService.processFundingConfirmed(orderId).ifPresent(items::add);
+                try {
+                    orderService.processFundingConfirmed(orderId).ifPresent(items::add);
+                } catch (Exception e) {
+                    log.error("[FundingStatusUpdater] handleFundingSuccess failed: orderId={}, exceptionType={}, reason={}",
+                            orderId, e.getClass().getSimpleName(), e.getMessage());
+                }
             }
 
             if (!items.isEmpty()) {
@@ -97,7 +102,12 @@ public class FundingStatusUpdater {
 
             List<PaymentProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
             for (Long orderId : reservedOrderIds) {
-                orderService.processReservedFundingConfirmed(orderId).ifPresent(items::add);
+                try {
+                    orderService.processReservedFundingConfirmed(orderId).ifPresent(items::add);
+                } catch (Exception e) {
+                    log.error("[FundingStatusUpdater] handleReservedFundingSuccess failed: orderId={}, exceptionType={}, reason={}",
+                            orderId, e.getClass().getSimpleName(), e.getMessage());
+                }
             }
 
             if (!items.isEmpty()) {
@@ -120,7 +130,12 @@ public class FundingStatusUpdater {
 
             List<PaymentProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
             for (Long orderId : paidOrderIds) {
-                orderService.processFundingFailedRefund(orderId).ifPresent(items::add);
+                try {
+                    orderService.processFundingFailedRefund(orderId).ifPresent(items::add);
+                } catch (Exception e) {
+                    log.error("[FundingStatusUpdater] handleFundingFailure failed: orderId={}, exceptionType={}, reason={}",
+                            orderId, e.getClass().getSimpleName(), e.getMessage());
+                }
             }
 
             if (!items.isEmpty()) {
@@ -142,7 +157,12 @@ public class FundingStatusUpdater {
             if (reservedOrderIds.isEmpty()) break;
 
             for (Long orderId : reservedOrderIds) {
-                orderService.processCancelledUpdate(orderId, CancelReason.FUNDING_FAILED.name());
+                try {
+                    orderService.processCancelledUpdate(orderId, CancelReason.FUNDING_FAILED.name());
+                } catch (Exception e) {
+                    log.error("[FundingStatusUpdater] handleReservedFundingFailure failed: orderId={}, exceptionType={}, reason={}",
+                            orderId, e.getClass().getSimpleName(), e.getMessage());
+                }
             }
 
             lastOrderId = reservedOrderIds.get(reservedOrderIds.size() - 1);
