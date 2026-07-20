@@ -51,4 +51,12 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("SELECT o FROM OrderJpaEntity o JOIN FETCH o.orderRewards WHERE o.id = :orderId")
     Optional<OrderJpaEntity> findByIdForUpdate(@Param("orderId") Long orderId);
+
+    @Query("SELECT DISTINCT f.title " +
+            "FROM OrderJpaEntity o " +
+            "JOIN o.orderRewards orw " +
+            "JOIN orw.reward r " +
+            "JOIN r.funding f " +
+            "WHERE o.id = :orderId")
+    Optional<String> findFundingTitleByOrderId(@Param("orderId") Long orderId);
 }
