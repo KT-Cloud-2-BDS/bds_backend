@@ -1,7 +1,9 @@
 package com.bds.chat.infrastructure.config;
 
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import java.time.Duration;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -87,7 +89,14 @@ public class DualBrokerConfig {
         SimpleRabbitListenerContainerFactory f = new SimpleRabbitListenerContainerFactory();
         f.setConnectionFactory(cf);
         f.setMessageConverter(converter);
-        f.setDefaultRequeueRejected(true);
+        f.setDefaultRequeueRejected(false);
+        f.setAdviceChain(RetryInterceptorBuilder.stateless()
+                .maxRetries(3)
+                .configureRetryPolicy(b -> b
+                        .delay(Duration.ofSeconds(1))
+                        .multiplier(2.0)
+                        .maxDelay(Duration.ofSeconds(10)))
+                .build());
         f.setPrefetchCount(10);
         return f;
     }

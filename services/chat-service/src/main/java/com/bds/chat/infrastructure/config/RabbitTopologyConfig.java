@@ -12,7 +12,7 @@ public class RabbitTopologyConfig {
 
     @Bean
     public TopicExchange chatExchange(@Qualifier("msaRabbitAdmin") RabbitAdmin msaAdmin) {
-        TopicExchange ex = ExchangeBuilder.topicExchange("notification.exchange").durable(true).build();
+        TopicExchange ex = ExchangeBuilder.topicExchange("chat.exchange").durable(true).build();
         ex.setAdminsThatShouldDeclare(msaAdmin);
         return ex;
     }
