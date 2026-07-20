@@ -19,6 +19,15 @@ public class FundingFixture {
         );
     }
 
+    public static Funding createReservedFunding(Long id, FundingStatus status, Long currentAmount, Long goalAmount, LocalDateTime startAt, LocalDateTime holdTo) {
+        return Funding.of(
+                id, "테스트 펀딩", 100L, status, FundingType.RESERVED,
+                startAt, holdTo, holdTo.plusDays(1),
+                0, goalAmount, currentAmount, null,
+                NOW, NOW
+        );
+    }
+
     public static Funding createActiveFunding(Long id, Long currentAmount, Long goalAmount) {
         return createFunding(id, FundingStatus.ACTIVE, currentAmount, goalAmount,
                 NOW.minusDays(10), NOW.plusDays(30));

@@ -16,7 +16,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class FundingPersistenceAdaptor implements FundingRepository {
+public class FundingPersistenceAdapter implements FundingRepository {
 
     private final FundingJpaRepository fundingJpaRepository;
     private final RewardJpaRepository rewardJpaRepository;
@@ -82,7 +82,7 @@ public class FundingPersistenceAdaptor implements FundingRepository {
         if (funding.getId() != null) {
             FundingJpaEntity existing = fundingJpaRepository.findById(funding.getId())
                     .orElseThrow(() -> new IllegalStateException(
-                            "[FundingPersistenceAdaptor] Funding not found: fundingId=" + funding.getId()));
+                            "[FundingPersistenceAdapter] Funding not found: fundingId=" + funding.getId()));
             existing.updateFrom(funding);
         } else {
             fundingJpaRepository.save(fundingMapper.toJpaEntity(funding));

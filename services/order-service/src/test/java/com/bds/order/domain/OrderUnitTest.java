@@ -58,10 +58,12 @@ class OrderUnitTest {
                 "RESERVED, PAYING",
                 "PAYING, PAID",
                 "PAYING, CANCELLED",
+                "PAYING, CONFIRMED",
                 "RESERVED, CANCELLED",
                 "PAID, CANCELLED",
+                "PAID, CONFIRMED",
                 "CANCELLED, REFUNDED",
-                "RESERVED, REFUNDED"
+                "RESERVED, REFUNDED",
         })
         void 허용된_상태_전이는_성공한다(OrderStatus from, OrderStatus to) {
             Order order = OrderFixture.createOrder(from);

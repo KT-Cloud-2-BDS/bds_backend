@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class RewardPersistenceAdaptor implements RewardRepository {
+public class RewardPersistenceAdapter implements RewardRepository {
 
     private final RewardJpaRepository rewardJpaRepository;
     private final RewardMapper rewardMapper;

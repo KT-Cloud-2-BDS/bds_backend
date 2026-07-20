@@ -1,5 +1,6 @@
 package com.bds.order.application;
 
+import com.bds.common.events.order.PaymentProcessSettlementEvent;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
@@ -409,28 +410,83 @@ class OrderServiceUnitTest {
         }
     }
 
+
     @Nested
-    @DisplayName("processReservedFundingConfirmed")
-    class ProcessPayingAndPublishSettlementTest {
+    @DisplayName("processFundingConfirmed")
+    class ProcessFundingConfirmedTest {
 
         @Test
-        void RESERVED_주문을_PAYING으로_변경하고_저장한다() {
+        void 주문번호가_DB에_없으면_empty를_반환한다() {
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.empty());
+
+            assertThat(orderService.processFundingConfirmed(1L)).isEmpty();
+        }
+
+        @Test
+        void PAID_주문의_정산_항목을_반환한다() {
+            Order order = OrderFixture.createOrder(OrderStatus.PAID);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processFundingConfirmed(1L);
+
+            assertThat(result).isPresent();
+            assertThat(result.get().orderId()).isEqualTo(order.getId());
+            assertThat(result.get().memberId()).isEqualTo(order.getMemberId());
+            assertThat(result.get().amount()).isEqualTo(order.getTotalAmount());
+        }
+    }
+
+    @Nested
+    @DisplayName("processReservedFundingConfirmed")
+    class ProcessReservedFundingConfirmedTest {
+
+        @Test
+        void 주문번호가_DB에_없으면_empty를_반환한다() {
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.empty());
+
+            assertThat(orderService.processReservedFundingConfirmed(1L)).isEmpty();
+        }
+
+        @Test
+        void RESERVED_주문을_PAYING으로_변경하고_정산_항목을_반환한다() {
             Order order = OrderFixture.createOrder(OrderStatus.RESERVED);
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            orderService.processReservedFundingConfirmed(1L);
+            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processReservedFundingConfirmed(1L);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);
             verify(orderRepository).save(order);
+            assertThat(result).isPresent();
+            assertThat(result.get().orderId()).isEqualTo(order.getId());
+            assertThat(result.get().memberId()).isEqualTo(order.getMemberId());
+            assertThat(result.get().amount()).isEqualTo(order.getTotalAmount());
+        }
+
+        @Test
+        void 상태_전이_실패시_empty를_반환한다() {
+            Order order = OrderFixture.createOrder(OrderStatus.CANCELLED);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processReservedFundingConfirmed(1L);
+
+            assertThat(result).isEmpty();
+            verify(orderRepository, never()).save(any());
         }
     }
 
     @Nested
     @DisplayName("processFundingFailedRefund")
-    class processFundingFailedRefundTest {
+    class ProcessFundingFailedRefundTest {
 
         @Test
-        void PAID_주문을_CANCELLED로_변경하고_재고를_복구한다() {
+        void 주문번호가_DB에_없으면_empty를_반환한다() {
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.empty());
+
+            assertThat(orderService.processFundingFailedRefund(1L)).isEmpty();
+        }
+
+        @Test
+        void PAID_주문을_CANCELLED로_변경하고_재고를_복구하고_정산_항목을_반환한다() {
             OrderReward orw = OrderReward.reconstitute(1L, 1L, 10L, 2, 3000L, 20000L);
             Order order = Order.reconstitute(
                     1L, "ORD-001", 1L, OrderStatus.PAID,
@@ -439,12 +495,27 @@ class OrderServiceUnitTest {
             );
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            orderService.processFundingFailedRefund(1L);
+            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processFundingFailedRefund(1L);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(order.getCancelReason()).isEqualTo("FUNDING_FAILED");
             verify(rewardRepository).increaseRemainQty(10L, 2);
             verify(orderRepository).save(order);
+            assertThat(result).isPresent();
+            assertThat(result.get().orderId()).isEqualTo(1L);
+            assertThat(result.get().memberId()).isEqualTo(1L);
+            assertThat(result.get().amount()).isEqualTo(23000L);
+        }
+
+        @Test
+        void 상태_전이_실패시_empty를_반환한다() {
+            Order order = OrderFixture.createOrder(OrderStatus.CANCELLED);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
+
+            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processFundingFailedRefund(1L);
+
+            assertThat(result).isEmpty();
+            verify(orderRepository, never()).save(any());
         }
     }
 

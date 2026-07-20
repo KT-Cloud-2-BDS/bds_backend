@@ -18,7 +18,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class RewardPersistenceAdaptorUnitTest {
+class RewardPersistenceAdapterUnitTest {
 
     private static final LocalDateTime NOW = LocalDateTime.now();
     @Mock
@@ -26,7 +26,7 @@ class RewardPersistenceAdaptorUnitTest {
     @Mock
     private RewardMapper rewardMapper;
     @InjectMocks
-    private RewardPersistenceAdaptor rewardPersistenceAdaptor;
+    private RewardPersistenceAdapter rewardPersistenceAdapter;
 
     @Nested
     @DisplayName("펀딩ID와 리워드ID 목록으로 조회")
@@ -48,7 +48,7 @@ class RewardPersistenceAdaptorUnitTest {
                     .willReturn(List.of(entity));
             given(rewardMapper.toDomain(entity)).willReturn(reward);
 
-            List<Reward> result = rewardPersistenceAdaptor.findAllByIdAndFundingId(ids, fundingId);
+            List<Reward> result = rewardPersistenceAdapter.findAllByIdAndFundingId(ids, fundingId);
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getName()).isEqualTo("리워드A");
@@ -71,7 +71,7 @@ class RewardPersistenceAdaptorUnitTest {
             given(rewardJpaRepository.findByFundingId(1L)).willReturn(List.of(entity));
             given(rewardMapper.toDomain(entity)).willReturn(reward);
 
-            List<Reward> result = rewardPersistenceAdaptor.findByFundingId(1L);
+            List<Reward> result = rewardPersistenceAdapter.findByFundingId(1L);
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getFundingId()).isEqualTo(1L);
@@ -81,7 +81,7 @@ class RewardPersistenceAdaptorUnitTest {
         void 리워드가_없으면_빈_목록을_반환한다() {
             given(rewardJpaRepository.findByFundingId(999L)).willReturn(List.of());
 
-            List<Reward> result = rewardPersistenceAdaptor.findByFundingId(999L);
+            List<Reward> result = rewardPersistenceAdapter.findByFundingId(999L);
 
             assertThat(result).isEmpty();
         }
@@ -93,7 +93,7 @@ class RewardPersistenceAdaptorUnitTest {
 
         @Test
         void 재고_증가_메서드를_호출한다() {
-            rewardPersistenceAdaptor.increaseRemainQty(1L, 3);
+            rewardPersistenceAdapter.increaseRemainQty(1L, 3);
 
             verify(rewardJpaRepository).increaseRemainQty(1L, 3);
         }
@@ -107,7 +107,7 @@ class RewardPersistenceAdaptorUnitTest {
         void 재고_차감_성공_시_1을_반환한다() {
             given(rewardJpaRepository.decreaseStock(1L, 2)).willReturn(1);
 
-            int result = rewardPersistenceAdaptor.decreaseStock(1L, 2);
+            int result = rewardPersistenceAdapter.decreaseStock(1L, 2);
 
             assertThat(result).isEqualTo(1);
         }
@@ -116,7 +116,7 @@ class RewardPersistenceAdaptorUnitTest {
         void 재고_부족_시_0을_반환한다() {
             given(rewardJpaRepository.decreaseStock(1L, 100)).willReturn(0);
 
-            int result = rewardPersistenceAdaptor.decreaseStock(1L, 100);
+            int result = rewardPersistenceAdapter.decreaseStock(1L, 100);
 
             assertThat(result).isEqualTo(0);
         }

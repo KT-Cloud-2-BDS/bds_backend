@@ -23,7 +23,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class FundingPersistenceAdaptorUnitTest {
+class FundingPersistenceAdapterUnitTest {
 
     private static final LocalDateTime NOW = LocalDateTime.now();
 
@@ -37,7 +37,7 @@ class FundingPersistenceAdaptorUnitTest {
     private FundingMapper fundingMapper;
 
     @InjectMocks
-    private FundingPersistenceAdaptor fundingPersistenceAdaptor;
+    private FundingPersistenceAdapter fundingPersistenceAdapter;
 
     private FundingJpaEntity createEntity(Long id, FundingStatus status) {
         return new FundingJpaEntity(
@@ -65,7 +65,7 @@ class FundingPersistenceAdaptorUnitTest {
             given(fundingJpaRepository.findById(1L)).willReturn(Optional.of(entity));
             given(fundingMapper.toDomain(entity)).willReturn(funding);
 
-            Optional<Funding> result = fundingPersistenceAdaptor.findById(1L);
+            Optional<Funding> result = fundingPersistenceAdapter.findById(1L);
 
             assertThat(result).isPresent();
             assertThat(result.get().getId()).isEqualTo(1L);
@@ -75,7 +75,7 @@ class FundingPersistenceAdaptorUnitTest {
         void 존재하지_않는_펀딩을_조회하면_빈값을_반환한다() {
             given(fundingJpaRepository.findById(999L)).willReturn(Optional.empty());
 
-            Optional<Funding> result = fundingPersistenceAdaptor.findById(999L);
+            Optional<Funding> result = fundingPersistenceAdapter.findById(999L);
 
             assertThat(result).isEmpty();
         }
@@ -96,7 +96,7 @@ class FundingPersistenceAdaptorUnitTest {
             given(fundingMapper.toDomain(entity1)).willReturn(funding1);
             given(fundingMapper.toDomain(entity2)).willReturn(funding2);
 
-            List<Funding> result = fundingPersistenceAdaptor.findAll();
+            List<Funding> result = fundingPersistenceAdapter.findAll();
 
             assertThat(result).hasSize(2);
         }
@@ -114,7 +114,7 @@ class FundingPersistenceAdaptorUnitTest {
             given(fundingJpaRepository.findByStatus(FundingStatus.ACTIVE)).willReturn(List.of(entity));
             given(fundingMapper.toDomain(entity)).willReturn(funding);
 
-            List<Funding> result = fundingPersistenceAdaptor.findByStatus(FundingStatus.ACTIVE);
+            List<Funding> result = fundingPersistenceAdapter.findByStatus(FundingStatus.ACTIVE);
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getStatus()).isEqualTo(FundingStatus.ACTIVE);
@@ -133,7 +133,7 @@ class FundingPersistenceAdaptorUnitTest {
             given(fundingJpaRepository.findFundingsReadyForJudgment(NOW)).willReturn(List.of(entity));
             given(fundingMapper.toDomain(entity)).willReturn(funding);
 
-            List<Funding> result = fundingPersistenceAdaptor.findFundingsReadyForJudgment(NOW);
+            List<Funding> result = fundingPersistenceAdapter.findFundingsReadyForJudgment(NOW);
 
             assertThat(result).hasSize(1);
         }
@@ -152,7 +152,7 @@ class FundingPersistenceAdaptorUnitTest {
                     .willReturn(List.of(entity));
             given(fundingMapper.toDomain(entity)).willReturn(funding);
 
-            List<Funding> result = fundingPersistenceAdaptor.findByStatusAndStartAtBeforeOrEqual(FundingStatus.SCHEDULED, NOW);
+            List<Funding> result = fundingPersistenceAdapter.findByStatusAndStartAtBeforeOrEqual(FundingStatus.SCHEDULED, NOW);
 
             assertThat(result).hasSize(1);
         }
@@ -171,7 +171,7 @@ class FundingPersistenceAdaptorUnitTest {
                     .willReturn(List.of(entity));
             given(fundingMapper.toDomain(entity)).willReturn(funding);
 
-            List<Funding> result = fundingPersistenceAdaptor.findByStatusAndStartAtAfter(FundingStatus.SCHEDULED, NOW);
+            List<Funding> result = fundingPersistenceAdapter.findByStatusAndStartAtAfter(FundingStatus.SCHEDULED, NOW);
 
             assertThat(result).hasSize(1);
         }
@@ -190,7 +190,7 @@ class FundingPersistenceAdaptorUnitTest {
                     .willReturn(List.of(entity));
             given(fundingMapper.toDomain(entity)).willReturn(funding);
 
-            List<Funding> result = fundingPersistenceAdaptor.findByStatusAndHoldToAfter(FundingStatus.ACTIVE, NOW);
+            List<Funding> result = fundingPersistenceAdapter.findByStatusAndHoldToAfter(FundingStatus.ACTIVE, NOW);
 
             assertThat(result).hasSize(1);
         }
@@ -208,7 +208,7 @@ class FundingPersistenceAdaptorUnitTest {
             given(fundingJpaRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
             given(fundingMapper.toDomain(entity)).willReturn(funding);
 
-            Optional<Funding> result = fundingPersistenceAdaptor.findByIdForUpdate(1L);
+            Optional<Funding> result = fundingPersistenceAdapter.findByIdForUpdate(1L);
 
             assertThat(result).isPresent();
         }
@@ -217,7 +217,7 @@ class FundingPersistenceAdaptorUnitTest {
         void 존재하지_않으면_빈값을_반환한다() {
             given(fundingJpaRepository.findByIdForUpdate(999L)).willReturn(Optional.empty());
 
-            Optional<Funding> result = fundingPersistenceAdaptor.findByIdForUpdate(999L);
+            Optional<Funding> result = fundingPersistenceAdapter.findByIdForUpdate(999L);
 
             assertThat(result).isEmpty();
         }
@@ -234,7 +234,7 @@ class FundingPersistenceAdaptorUnitTest {
 
             given(fundingMapper.toJpaEntity(funding)).willReturn(entity);
 
-            fundingPersistenceAdaptor.save(funding);
+            fundingPersistenceAdapter.save(funding);
 
             verify(fundingJpaRepository).save(entity);
         }
@@ -247,7 +247,7 @@ class FundingPersistenceAdaptorUnitTest {
             Funding funding = Funding.of(1L, "Title", 100L, FundingStatus.SUCCESS, FundingType.INSTANT,
                     NOW.minusDays(10), NOW.plusDays(30), NOW.plusDays(60),
                     0, 1000000L, 500000L, true, NOW, NOW);
-            fundingPersistenceAdaptor.save(funding);
+            fundingPersistenceAdapter.save(funding);
 
             assertThat(entity.getStatus()).isEqualTo(FundingStatus.SUCCESS);
             assertThat(entity.getIsSuccess()).isTrue();
@@ -274,7 +274,7 @@ class FundingPersistenceAdaptorUnitTest {
             given(fundingJpaRepository.save(entity)).willReturn(savedEntity);
             given(fundingMapper.toDomain(savedEntity)).willReturn(savedFunding);
 
-            Funding result = fundingPersistenceAdaptor.saveWithRewards(funding, rewards);
+            Funding result = fundingPersistenceAdapter.saveWithRewards(funding, rewards);
 
             assertThat(result.getId()).isEqualTo(1L);
             verify(fundingJpaRepository).save(entity);
@@ -296,7 +296,7 @@ class FundingPersistenceAdaptorUnitTest {
             given(fundingJpaRepository.save(entity)).willReturn(savedEntity);
             given(fundingMapper.toDomain(savedEntity)).willReturn(savedFunding);
 
-            Funding result = fundingPersistenceAdaptor.saveWithRewards(funding, rewards);
+            Funding result = fundingPersistenceAdapter.saveWithRewards(funding, rewards);
 
             assertThat(result.getId()).isEqualTo(1L);
         }
