@@ -2,6 +2,7 @@ package com.bds.order.infrastructure.funding;
 
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.infrastructure.common.BaseEntity;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import jakarta.persistence.*;
@@ -32,6 +33,10 @@ public class FundingJpaEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private FundingStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private FundingType type;
 
     @Column(nullable = false)
     private LocalDateTime startAt;

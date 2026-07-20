@@ -1,6 +1,7 @@
 package com.bds.order.application;
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import com.bds.order.infrastructure.funding.FundingJpaRepository;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
@@ -38,7 +39,7 @@ class FundingServiceIntegrationTest extends AbstractIntegrationTest {
         LocalDateTime now = LocalDateTime.now();
 
         activeFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "활성 펀딩", 100L, FundingStatus.ACTIVE,
+                null, "활성 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(10), now.plusDays(30), now.plusDays(60),
                 5, 1000000L, 500000L, false, new ArrayList<>()
         ));
@@ -54,7 +55,7 @@ class FundingServiceIntegrationTest extends AbstractIntegrationTest {
         ));
 
         scheduledFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "예정 펀딩", 101L, FundingStatus.SCHEDULED,
+                null, "예정 펀딩", 101L, FundingStatus.SCHEDULED, FundingType.INSTANT,
                 now.plusDays(1), now.plusDays(30), now.plusDays(60),
                 0, 2000000L, 0L, false, new ArrayList<>()
         ));
@@ -122,13 +123,14 @@ class FundingServiceIntegrationTest extends AbstractIntegrationTest {
                                     "리워드X", "설명X", 200, "EARLY_BIRD", 15000L, now.plusDays(60), 4000L),
                             new FundingCreateRequestDto.RewardCreateDto(
                                     "리워드Y", "설명Y", 100, null, 30000L, now.plusDays(60), 5000L)
-                    )
+                    ), null
             );
 
             FundingCreateResponseDto result = fundingService.createFunding(200L, "MAKER", request);
 
             assertThat(result.fundingId()).isNotNull();
             assertThat(result.title()).isEqualTo("새 펀딩");
+            assertThat(result.type()).isEqualTo("INSTANT");
             assertThat(result.status()).isEqualTo("SCHEDULED");
 
             FundingDetailResponseDto detail = fundingService.getFundingDetail(result.fundingId());
@@ -137,6 +139,23 @@ class FundingServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(detail.rewards().get(0).badgeType()).isEqualTo("EARLY_BIRD");
             assertThat(detail.rewards().get(0).limitQty()).isEqualTo(200);
             assertThat(detail.rewards().get(0).remainQty()).isEqualTo(200);
+        }
+
+        @Test
+        void 예약펀딩을_생성한다() {
+            LocalDateTime now = LocalDateTime.now();
+            FundingCreateRequestDto request = new FundingCreateRequestDto(
+                    "새 펀딩", 3000000L, now.plusDays(1), now.plusDays(30), now.plusDays(31),
+                    List.of(
+                            new FundingCreateRequestDto.RewardCreateDto(
+                                    "리워드X", "설명X", 200, "EARLY_BIRD", 15000L, now.plusDays(60), 4000L)
+                    ), FundingType.RESERVED
+            );
+
+            FundingCreateResponseDto result = fundingService.createFunding(200L, "MAKER", request);
+
+            assertThat(result.fundingId()).isNotNull();
+            assertThat(result.type()).isEqualTo("RESERVED");
         }
     }
 }

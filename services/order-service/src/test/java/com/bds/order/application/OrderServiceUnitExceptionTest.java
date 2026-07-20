@@ -4,6 +4,7 @@ package com.bds.order.application;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
@@ -90,7 +91,7 @@ class OrderServiceUnitExceptionTest {
                     new RewardQuantityDto(1L, 1)
             ));
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(30), now.minusDays(1), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -108,7 +109,7 @@ class OrderServiceUnitExceptionTest {
                     new RewardQuantityDto(2L, 1)
             ));
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -131,7 +132,7 @@ class OrderServiceUnitExceptionTest {
             ));
 
             LocalDateTime now = LocalDateTime.now();
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -148,7 +149,7 @@ class OrderServiceUnitExceptionTest {
                     new RewardQuantityDto(1L, 100)
             ));
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -206,7 +207,7 @@ class OrderServiceUnitExceptionTest {
             LocalDateTime now = LocalDateTime.now();
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(999L, 1L, true);
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -222,7 +223,7 @@ class OrderServiceUnitExceptionTest {
             LocalDateTime now = LocalDateTime.now();
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -240,7 +241,7 @@ class OrderServiceUnitExceptionTest {
             LocalDateTime now = LocalDateTime.now();
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -258,7 +259,7 @@ class OrderServiceUnitExceptionTest {
             LocalDateTime now = LocalDateTime.now();
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -355,14 +356,14 @@ class OrderServiceUnitExceptionTest {
     }
 
     @Nested
-    @DisplayName("processPayingAndPublishSettlement 예외 테스트")
+    @DisplayName("processReservedFundingConfirmed 예외 테스트")
     class ProcessPayingAndPublishSettlementExceptionTest {
 
         @Test
         void 존재하지_않는_주문이면_warn_로그를_남긴다(CapturedOutput output) {
             when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
-            orderService.processPayingAndPublishSettlement(999L);
+            orderService.processReservedFundingConfirmed(999L);
 
             assertThat(output.getOut()).contains("Order not found: orderId=999");
         }
@@ -374,9 +375,9 @@ class OrderServiceUnitExceptionTest {
             doThrow(new IllegalStateException("주문 상태를 CANCELLED에서 PAYING로 변경할 수 없습니다"))
                     .when(mockOrder).updateStatus(OrderStatus.PAYING);
 
-            orderService.processPayingAndPublishSettlement(1L);
+            orderService.processReservedFundingConfirmed(1L);
 
-            assertThat(output.getOut()).contains("[OrderService] processPayingAndPublishSettlement failed - invalid state: orderId=1");
+            assertThat(output.getOut()).contains("[OrderService] processReservedFundingConfirmed failed - invalid state: orderId=1");
         }
 
         @Test
@@ -386,22 +387,22 @@ class OrderServiceUnitExceptionTest {
             doThrow(new RuntimeException("DB connection failed"))
                     .when(mockOrder).updateStatus(OrderStatus.PAYING);
 
-            orderService.processPayingAndPublishSettlement(1L);
+            orderService.processReservedFundingConfirmed(1L);
 
-            assertThat(output.getOut()).contains("[OrderService] processPayingAndPublishSettlement failed - unexpected: orderId=1");
+            assertThat(output.getOut()).contains("[OrderService] processReservedFundingConfirmed failed - unexpected: orderId=1");
             assertThat(output.getOut()).contains("RuntimeException");
         }
     }
 
     @Nested
-    @DisplayName("processCancelAndPublishRefund 예외 테스트")
-    class ProcessCancelAndPublishRefundExceptionTest {
+    @DisplayName("processFundingFailedRefund 예외 테스트")
+    class processFundingFailedRefundExceptionTest {
 
         @Test
         void 존재하지_않는_주문이면_warn_로그를_남긴다(CapturedOutput output) {
             when(orderRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
-            orderService.processCancelAndPublishRefund(999L);
+            orderService.processFundingFailedRefund(999L);
 
             assertThat(output.getOut()).contains("Order not found: orderId=999");
         }
@@ -413,9 +414,9 @@ class OrderServiceUnitExceptionTest {
             doThrow(new IllegalStateException("주문 상태를 CANCELLED에서 CANCELLED로 변경할 수 없습니다"))
                     .when(mockOrder).cancelOrder(CancelReason.FUNDING_FAILED.name());
 
-            orderService.processCancelAndPublishRefund(1L);
+            orderService.processFundingFailedRefund(1L);
 
-            assertThat(output.getOut()).contains("[OrderService] processCancelAndPublishRefund failed - invalid state: orderId=1");
+            assertThat(output.getOut()).contains("[OrderService] processFundingFailedRefund failed - invalid state: orderId=1");
         }
 
         @Test
@@ -425,9 +426,9 @@ class OrderServiceUnitExceptionTest {
             doThrow(new RuntimeException("DB connection failed"))
                     .when(mockOrder).cancelOrder(CancelReason.FUNDING_FAILED.name());
 
-            orderService.processCancelAndPublishRefund(1L);
+            orderService.processFundingFailedRefund(1L);
 
-            assertThat(output.getOut()).contains("[OrderService] processCancelAndPublishRefund failed - unexpected: orderId=1");
+            assertThat(output.getOut()).contains("[OrderService] processFundingFailedRefund failed - unexpected: orderId=1");
             assertThat(output.getOut()).contains("RuntimeException");
         }
     }

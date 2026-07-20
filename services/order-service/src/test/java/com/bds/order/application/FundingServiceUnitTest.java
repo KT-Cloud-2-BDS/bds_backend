@@ -3,6 +3,7 @@ package com.bds.order.application;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
@@ -116,10 +117,11 @@ class FundingServiceUnitTest {
             FundingCreateRequestDto request = new FundingCreateRequestDto(
                     "새 펀딩", 1000000L, now.plusDays(1), now.plusDays(30), now.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
-                            "리워드A", "설명", 100, null, 10000L, now.plusDays(60), 3000L))
+                            "리워드A", "설명", 100, null, 10000L, now.plusDays(60), 3000L)),
+                    null
             );
 
-            Funding savedFunding = Funding.of(1L, "새 펀딩", 100L, FundingStatus.SCHEDULED,
+            Funding savedFunding = Funding.of(1L, "새 펀딩", 100L, FundingStatus.SCHEDULED, FundingType.INSTANT,
                     now, now.plusDays(30), now.plusDays(31),
                     0, 1000000L, 0L, false, now, now);
 

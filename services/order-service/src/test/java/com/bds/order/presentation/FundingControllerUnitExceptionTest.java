@@ -71,6 +71,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     "새 펀딩", 1000000L, NOW, NOW.plusDays(30), NOW.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, NOW.plusDays(60), 3000L))
+                    , null
             );
 
             given(fundingService.createFunding(eq(1L), eq("USER"), any()))
@@ -90,6 +91,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     "", 1000000L, NOW, NOW.plusDays(30), NOW.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, NOW.plusDays(60), 3000L))
+                    , null
             );
 
             mockMvc.perform(post("/api/fundings")
@@ -106,6 +108,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     "새 펀딩", 0L, NOW, NOW.plusDays(30), NOW.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, NOW.plusDays(60), 3000L))
+                    , null
             );
 
             mockMvc.perform(post("/api/fundings")
@@ -122,6 +125,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     "새 펀딩", 1000000L, null, NOW.plusDays(30), NOW.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, NOW.plusDays(60), 3000L))
+                    , null
             );
 
             mockMvc.perform(post("/api/fundings")
@@ -138,6 +142,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     "새 펀딩", 1000000L, NOW, NOW.plusDays(30), NOW.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             null, "설명", 100, null, 10000L, NOW.plusDays(60), 3000L))
+                    , null
             );
 
             mockMvc.perform(post("/api/fundings")
@@ -154,6 +159,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     "새 펀딩", 1000000L, NOW, NOW.plusDays(30), NOW.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, -1L, NOW.plusDays(60), 3000L))
+                    , null
             );
 
             mockMvc.perform(post("/api/fundings")

@@ -8,6 +8,7 @@ public record FundingCreateResponseDto(
         Long fundingId,
         String title,
         String status,
+        String type,
         LocalDateTime startAt,
         LocalDateTime holdTo,
         LocalDateTime createdAt
@@ -16,7 +17,7 @@ public record FundingCreateResponseDto(
     public static FundingCreateResponseDto from(Funding funding) {
         return new FundingCreateResponseDto(
                 funding.getId(), funding.getTitle(),
-                funding.getStatus().name(), funding.getStartAt(),
+                funding.getStatus().name(), funding.getType().name(), funding.getStartAt(),
                 funding.getHoldTo(), funding.getCreatedAt()
         );
     }

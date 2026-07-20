@@ -1,5 +1,6 @@
 package com.bds.order.presentation.dto;
 
+import com.bds.order.domain.funding.FundingType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -15,7 +16,8 @@ public record FundingCreateRequestDto(
         @NotNull LocalDateTime startAt,
         @NotNull LocalDateTime holdTo,
         @NotNull LocalDateTime payAt,
-        @Valid @NotNull List<RewardCreateDto> rewards
+        @Valid @NotNull List<RewardCreateDto> rewards,
+        FundingType type
 ) {
     public record RewardCreateDto(
             @NotBlank String name,

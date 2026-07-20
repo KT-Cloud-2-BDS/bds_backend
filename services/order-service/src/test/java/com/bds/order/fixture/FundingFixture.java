@@ -2,6 +2,7 @@ package com.bds.order.fixture;
 
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 
 import java.time.LocalDateTime;
 
@@ -11,7 +12,7 @@ public class FundingFixture {
 
     public static Funding createFunding(Long id, FundingStatus status, Long currentAmount, Long goalAmount, LocalDateTime startAt, LocalDateTime holdTo) {
         return Funding.of(
-                id, "테스트 펀딩", 100L, status,
+                id, "테스트 펀딩", 100L, status, FundingType.INSTANT,
                 startAt, holdTo, holdTo.plusDays(1),
                 0, goalAmount, currentAmount, null,
                 NOW, NOW

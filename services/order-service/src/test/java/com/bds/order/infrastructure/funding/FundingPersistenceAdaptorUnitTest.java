@@ -2,6 +2,7 @@ package com.bds.order.infrastructure.funding;
 
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.infrastructure.reward.RewardJpaRepository;
 import com.bds.order.presentation.dto.FundingCreateRequestDto;
 import org.junit.jupiter.api.DisplayName;
@@ -40,14 +41,14 @@ class FundingPersistenceAdaptorUnitTest {
 
     private FundingJpaEntity createEntity(Long id, FundingStatus status) {
         return new FundingJpaEntity(
-                id, "Title", 100L, status,
+                id, "Title", 100L, status, FundingType.INSTANT,
                 NOW.minusDays(10), NOW.plusDays(30), NOW.plusDays(60),
                 0, 1000000L, 500000L, false, new ArrayList<>()
         );
     }
 
     private Funding createDomain(Long id, FundingStatus status) {
-        return Funding.of(id, "Title", 100L, status,
+        return Funding.of(id, "Title", 100L, status, FundingType.INSTANT,
                 NOW.minusDays(10), NOW.plusDays(30), NOW.plusDays(60),
                 0, 1000000L, 500000L, false, NOW, NOW);
     }
@@ -243,7 +244,7 @@ class FundingPersistenceAdaptorUnitTest {
             FundingJpaEntity entity = createEntity(1L, FundingStatus.ACTIVE);
             given(fundingJpaRepository.findById(1L)).willReturn(Optional.of(entity));
 
-            Funding funding = Funding.of(1L, "Title", 100L, FundingStatus.SUCCESS,
+            Funding funding = Funding.of(1L, "Title", 100L, FundingStatus.SUCCESS, FundingType.INSTANT,
                     NOW.minusDays(10), NOW.plusDays(30), NOW.plusDays(60),
                     0, 1000000L, 500000L, true, NOW, NOW);
             fundingPersistenceAdaptor.save(funding);

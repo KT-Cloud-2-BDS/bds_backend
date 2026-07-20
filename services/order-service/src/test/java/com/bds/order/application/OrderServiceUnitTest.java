@@ -3,6 +3,7 @@ package com.bds.order.application;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
@@ -12,6 +13,7 @@ import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.fixture.OrderFixture;
+import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
@@ -53,6 +55,9 @@ class OrderServiceUnitTest {
 
     @Mock
     private OrderRewardRepository orderRewardRepository;
+
+    @Mock
+    private PaymentEventPublisher paymentEventPublisher;
 
     @InjectMocks
     private OrderService orderService;
@@ -150,7 +155,7 @@ class OrderServiceUnitTest {
                     new RewardQuantityDto(1L, 2)
             ));
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -191,7 +196,7 @@ class OrderServiceUnitTest {
                     new RewardQuantityDto(2L, 1)
             ));
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -232,7 +237,7 @@ class OrderServiceUnitTest {
                     new RewardQuantityDto(1L, 2)
             ));
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -299,7 +304,7 @@ class OrderServiceUnitTest {
 
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
 
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 500000L, false, now, now);
 
@@ -405,7 +410,7 @@ class OrderServiceUnitTest {
     }
 
     @Nested
-    @DisplayName("processPayingAndPublishSettlement")
+    @DisplayName("processReservedFundingConfirmed")
     class ProcessPayingAndPublishSettlementTest {
 
         @Test
@@ -413,7 +418,7 @@ class OrderServiceUnitTest {
             Order order = OrderFixture.createOrder(OrderStatus.RESERVED);
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            orderService.processPayingAndPublishSettlement(1L);
+            orderService.processReservedFundingConfirmed(1L);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);
             verify(orderRepository).save(order);
@@ -421,8 +426,8 @@ class OrderServiceUnitTest {
     }
 
     @Nested
-    @DisplayName("processCancelAndPublishRefund")
-    class ProcessCancelAndPublishRefundTest {
+    @DisplayName("processFundingFailedRefund")
+    class processFundingFailedRefundTest {
 
         @Test
         void PAID_주문을_CANCELLED로_변경하고_재고를_복구한다() {
@@ -434,7 +439,7 @@ class OrderServiceUnitTest {
             );
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            orderService.processCancelAndPublishRefund(1L);
+            orderService.processFundingFailedRefund(1L);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(order.getCancelReason()).isEqualTo("FUNDING_FAILED");

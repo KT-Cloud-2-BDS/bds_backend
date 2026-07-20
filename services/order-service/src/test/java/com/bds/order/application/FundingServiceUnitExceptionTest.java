@@ -76,6 +76,7 @@ class FundingServiceUnitExceptionTest {
                     "새 펀딩", 1000000L, now.plusDays(1), now.plusDays(30), now.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, now.plusDays(60), 3000L))
+                    , null
             );
 
             assertThatThrownBy(() -> fundingService.createFunding(100L, "", request))
@@ -90,6 +91,7 @@ class FundingServiceUnitExceptionTest {
                     "새 펀딩", 1000000L, now.minusDays(1), now.plusDays(30), now.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, now.plusDays(60), 3000L))
+                    , null
             );
 
             assertThatThrownBy(() -> fundingService.createFunding(100L, "MAKER", request))
@@ -104,6 +106,7 @@ class FundingServiceUnitExceptionTest {
                     "새 펀딩", 1000000L, now.plusDays(30), now.plusDays(30), now.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, now.plusDays(60), 3000L))
+                    , null
             );
 
             assertThatThrownBy(() -> fundingService.createFunding(100L, "MAKER", request))
@@ -118,6 +121,7 @@ class FundingServiceUnitExceptionTest {
                     "새 펀딩", 1000000L, now.plusDays(31), now.plusDays(30), now.plusDays(32),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, now.plusDays(60), 3000L))
+                    , null
             );
 
             assertThatThrownBy(() -> fundingService.createFunding(100L, "MAKER", request))
@@ -132,6 +136,7 @@ class FundingServiceUnitExceptionTest {
                     "새 펀딩", 1000000L, now.plusDays(1), now.plusDays(30), now.plusDays(29),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, now.plusDays(60), 3000L))
+                    , null
             );
 
             assertThatThrownBy(() -> fundingService.createFunding(100L, "MAKER", request))

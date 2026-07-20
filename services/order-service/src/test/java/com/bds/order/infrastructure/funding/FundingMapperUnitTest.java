@@ -2,6 +2,7 @@ package com.bds.order.infrastructure.funding;
 
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ class FundingMapperUnitTest {
         void 정상적으로_도메인_객체로_변환한다() {
             LocalDateTime now = LocalDateTime.now();
             FundingJpaEntity entity = new FundingJpaEntity(
-                    1L, "Title", 100L, FundingStatus.ACTIVE,
+                    1L, "Title", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     5, 1000000L, 500000L, false, new ArrayList<>()
             );
@@ -48,7 +49,7 @@ class FundingMapperUnitTest {
         @Test
         void 정상적으로_JpaEntity로_변환한다() {
             LocalDateTime now = LocalDateTime.now();
-            Funding funding = Funding.of(1L, "Title", 100L, FundingStatus.ACTIVE,
+            Funding funding = Funding.of(1L, "Title", 100L, FundingStatus.ACTIVE, null,
                     now.minusDays(10), now.plusDays(30), now.plusDays(60),
                     5, 1000000L, 500000L, false, now, now);
 
@@ -67,7 +68,7 @@ class FundingMapperUnitTest {
         @Test
         void id가_null이면_JpaEntity_id도_null이다() {
             Funding funding = Funding.create("Title", 100L, 1000000L,
-                    LocalDateTime.now(), LocalDateTime.now().plusDays(30), LocalDateTime.now().plusDays(31));
+                    LocalDateTime.now(), LocalDateTime.now().plusDays(30), LocalDateTime.now().plusDays(31), null);
 
             FundingJpaEntity entity = fundingMapper.toJpaEntity(funding);
 

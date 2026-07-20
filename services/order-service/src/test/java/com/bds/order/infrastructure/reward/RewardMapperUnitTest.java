@@ -1,6 +1,7 @@
 package com.bds.order.infrastructure.reward;
 
 
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
@@ -25,7 +26,7 @@ class RewardMapperUnitTest {
         void 정상적으로_도메인_객체로_변환한다() {
             LocalDateTime now = LocalDateTime.now();
             FundingJpaEntity funding = new FundingJpaEntity(
-                    1L, "펀딩", 100L, null,
+                    1L, "펀딩", 100L, null, FundingType.INSTANT,
                     now, now.plusDays(30), now.plusDays(60),
                     0, 1000000L, 0L, false, new ArrayList<>()
             );

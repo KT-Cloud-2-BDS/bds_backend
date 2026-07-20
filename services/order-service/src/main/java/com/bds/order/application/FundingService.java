@@ -73,7 +73,8 @@ public class FundingService {
 
         Funding funding = Funding.create(
                 request.title(), creatorId, request.goalAmount(),
-                request.startAt(), request.holdTo(), request.payAt()
+                request.startAt(), request.holdTo(), request.payAt(),
+                request.type()
         );
 
         Funding savedFunding = fundingRepository.saveWithRewards(funding, request.rewards());

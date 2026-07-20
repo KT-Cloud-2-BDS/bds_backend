@@ -2,6 +2,7 @@ package com.bds.order.application;
 
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
@@ -57,13 +58,13 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         LocalDateTime now = LocalDateTime.now();
 
         savedFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE,
+                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(10), now.plusDays(30), now.plusDays(60),
                 0, 1000000L, 500000L, false, new ArrayList<>()
         ));
 
         expiredFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "종료된 펀딩", 101L, FundingStatus.ACTIVE,
+                null, "종료된 펀딩", 101L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(30), now.minusDays(1), now.plusDays(30),
                 0, 1000000L, 500000L, false, new ArrayList<>()
         ));
@@ -340,12 +341,12 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
     }
 
     @Nested
-    @DisplayName("processPayingAndPublishSettlement 예외 통합테스트")
+    @DisplayName("processReservedFundingConfirmed 예외 통합테스트")
     class ProcessPayingAndPublishSettlementExceptionIntegrationTest {
 
         @Test
         void 존재하지_않는_주문이면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
-            orderService.processPayingAndPublishSettlement(9999L);
+            orderService.processReservedFundingConfirmed(9999L);
 
             assertThat(output.getOut()).contains("Order not found: orderId=9999");
         }
@@ -355,19 +356,19 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         void 상태_전이_불가능하면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
             Long orderId = createCancelOrderAndGetOrderId();
 
-            orderService.processPayingAndPublishSettlement(orderId);
+            orderService.processReservedFundingConfirmed(orderId);
 
-            assertThat(output.getOut()).contains("[OrderService] processPayingAndPublishSettlement failed - invalid state: orderId=" + orderId);
+            assertThat(output.getOut()).contains("[OrderService] processReservedFundingConfirmed failed - invalid state: orderId=" + orderId);
         }
     }
 
     @Nested
-    @DisplayName("processCancelAndPublishRefund 예외 통합테스트")
-    class ProcessCancelAndPublishRefundExceptionIntegrationTest {
+    @DisplayName("processFundingFailedRefund 예외 통합테스트")
+    class processFundingFailedRefundExceptionIntegrationTest {
 
         @Test
         void 존재하지_않는_주문이면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
-            orderService.processCancelAndPublishRefund(9999L);
+            orderService.processFundingFailedRefund(9999L);
 
             assertThat(output.getOut()).contains("Order not found: orderId=9999");
         }
@@ -377,9 +378,9 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         void 상태_전이_불가능하면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {
             Long orderId = createCancelOrderAndGetOrderId();
 
-            orderService.processCancelAndPublishRefund(orderId);
+            orderService.processFundingFailedRefund(orderId);
 
-            assertThat(output.getOut()).contains("[OrderService] processCancelAndPublishRefund failed - invalid state: orderId=" + orderId);
+            assertThat(output.getOut()).contains("[OrderService] processFundingFailedRefund failed - invalid state: orderId=" + orderId);
         }
     }
 

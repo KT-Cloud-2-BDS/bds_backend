@@ -1,6 +1,7 @@
 package com.bds.order.application;
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
@@ -31,7 +32,7 @@ class FundingServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         LocalDateTime now = LocalDateTime.now();
 
         fundingJpaRepository.save(new FundingJpaEntity(
-                null, "활성 펀딩", 100L, FundingStatus.ACTIVE,
+                null, "활성 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(10), now.plusDays(30), now.plusDays(60),
                 5, 1000000L, 500000L, false, new ArrayList<>()
         ));

@@ -2,6 +2,7 @@ package com.bds.order.application;
 
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
@@ -70,7 +71,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         LocalDateTime now = LocalDateTime.now();
 
         savedFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE,
+                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(10), now.plusDays(30), now.plusDays(60),
                 0, 1000000L, 500000L, false, new ArrayList<>()
         ));
@@ -688,7 +689,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Nested
-    @DisplayName("processPayingAndPublishSettlement 통합테스트")
+    @DisplayName("processReservedFundingConfirmed 통합테스트")
     class ProcessPayingAndPublishSettlementIntegrationTest {
 
         // RESERVED 주문 → PAYING 상태 변경 → DB 반영 확인
@@ -697,7 +698,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         void RESERVED_주문을_PAYING으로_변경하면_DB에_반영된다() {
             Order order = createOrderWithStatus(OrderStatus.RESERVED);
 
-            orderService.processPayingAndPublishSettlement(order.getId());
+            orderService.processReservedFundingConfirmed(order.getId());
 
             Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
             assertThat(updated.getStatus()).isEqualTo(OrderStatus.PAYING);
@@ -705,8 +706,8 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Nested
-    @DisplayName("processCancelAndPublishRefund 통합테스트")
-    class ProcessCancelAndPublishRefundIntegrationTest {
+    @DisplayName("processFundingFailedRefund 통합테스트")
+    class processFundingFailedRefundIntegrationTest {
 
         // PAID 주문 → CANCELLED + FUNDING_FAILED reason 저장 확인
         @Transactional
@@ -714,7 +715,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         void PAID_주문을_CANCELLED로_변경하고_FUNDING_FAILED가_저장된다() {
             Order order = createOrderWithStatus(OrderStatus.PAID);
 
-            orderService.processCancelAndPublishRefund(order.getId());
+            orderService.processFundingFailedRefund(order.getId());
 
             Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
             assertThat(updated.getStatus()).isEqualTo(OrderStatus.CANCELLED);
@@ -728,7 +729,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             int initialRemainQty = savedReward.getRemainQty();
             Order order = createOrderWithStatus(OrderStatus.PAID);
 
-            orderService.processCancelAndPublishRefund(order.getId());
+            orderService.processFundingFailedRefund(order.getId());
 
             entityManager.flush();
             entityManager.clear();

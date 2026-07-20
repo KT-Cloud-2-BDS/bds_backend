@@ -1,6 +1,7 @@
 package com.bds.order.infrastructure.scheduler;
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import com.bds.order.infrastructure.funding.FundingJpaRepository;
 import com.bds.support.AbstractIntegrationTest;
@@ -33,7 +34,7 @@ class FundingScheduleInitializerIntegrationTest extends AbstractIntegrationTest 
 
         LocalDateTime now = LocalDateTime.now();
         FundingJpaEntity funding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.SCHEDULED,
+                null, "테스트 펀딩", 100L, FundingStatus.SCHEDULED, FundingType.INSTANT,
                 now.minusDays(5), now.plusDays(30), now.plusDays(31),
                 0, 1000000L, 0L, null, new ArrayList<>()
         ));
@@ -52,7 +53,7 @@ class FundingScheduleInitializerIntegrationTest extends AbstractIntegrationTest 
 
         LocalDateTime now = LocalDateTime.now();
         FundingJpaEntity funding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE,
+                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(30), now.minusDays(1), now.plusDays(1),
                 0, 500000L, 1000000L, null, new ArrayList<>()
         ));
@@ -72,7 +73,7 @@ class FundingScheduleInitializerIntegrationTest extends AbstractIntegrationTest 
 
         LocalDateTime now = LocalDateTime.now();
         FundingJpaEntity funding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE,
+                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(30), now.minusDays(1), now.plusDays(1),
                 0, 1000000L, 100000L, null, new ArrayList<>()
         ));
@@ -92,7 +93,7 @@ class FundingScheduleInitializerIntegrationTest extends AbstractIntegrationTest 
 
         LocalDateTime now = LocalDateTime.now();
         FundingJpaEntity funding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.SCHEDULED,
+                null, "테스트 펀딩", 100L, FundingStatus.SCHEDULED, FundingType.INSTANT,
                 now.plusDays(5), now.plusDays(30), now.plusDays(31),
                 0, 1000000L, 0L, null, new ArrayList<>()
         ));
@@ -111,7 +112,7 @@ class FundingScheduleInitializerIntegrationTest extends AbstractIntegrationTest 
 
         LocalDateTime now = LocalDateTime.now();
         FundingJpaEntity funding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE,
+                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(10), now.plusDays(30), now.plusDays(31),
                 0, 1000000L, 500000L, null, new ArrayList<>()
         ));
@@ -130,7 +131,7 @@ class FundingScheduleInitializerIntegrationTest extends AbstractIntegrationTest 
 
         LocalDateTime now = LocalDateTime.now();
         FundingJpaEntity funding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.SUCCESS,
+                null, "테스트 펀딩", 100L, FundingStatus.SUCCESS, FundingType.INSTANT,
                 now.minusDays(30), now.minusDays(1), now.plusDays(1),
                 0, 500000L, 1000000L, true, new ArrayList<>()
         ));

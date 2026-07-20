@@ -112,10 +112,11 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
                     "새 펀딩", 1000000L, NOW, NOW.plusDays(30), NOW.plusDays(31),
                     List.of(new FundingCreateRequestDto.RewardCreateDto(
                             "리워드A", "설명", 100, null, 10000L, NOW.plusDays(60), 3000L))
+                    , null
             );
 
             FundingCreateResponseDto response = new FundingCreateResponseDto(
-                    1L, "새 펀딩", "SCHEDULED", NOW, NOW.plusDays(30), NOW
+                    1L, "새 펀딩", "SCHEDULED", "INSTANT", NOW, NOW.plusDays(30), NOW
             );
 
             given(fundingService.createFunding(eq(1L), eq("MAKER"), any())).willReturn(response);
@@ -128,6 +129,7 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.fundingId").value(1))
                     .andExpect(jsonPath("$.title").value("새 펀딩"))
+                    .andExpect(jsonPath("$.type").value("INSTANT"))
                     .andExpect(jsonPath("$.status").value("SCHEDULED"));
         }
 
