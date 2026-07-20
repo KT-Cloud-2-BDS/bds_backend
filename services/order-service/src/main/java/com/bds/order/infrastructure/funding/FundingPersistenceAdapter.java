@@ -107,4 +107,12 @@ public class FundingPersistenceAdapter implements FundingRepository {
 
         return fundingMapper.toDomain(saved);
     }
+
+    @Override
+    public List<Funding> findByStatusAndUpdatedAfter(FundingStatus status, LocalDateTime after) {
+        return fundingJpaRepository.findByStatusAndUpdatedAfter(status, after)
+                .stream()
+                .map(fundingMapper::toDomain)
+                .toList();
+    }
 }

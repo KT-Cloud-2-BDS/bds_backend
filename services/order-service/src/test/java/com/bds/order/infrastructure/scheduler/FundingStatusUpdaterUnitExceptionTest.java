@@ -93,15 +93,15 @@ class FundingStatusUpdaterUnitExceptionTest {
         void orderService_실패해도_다른_주문은_계속_처리한다() {
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
                     .thenReturn(List.of(1L, 2L));
-            when(orderService.processFundingConfirmed(1L))
+            when(orderService.createSettlementItem(1L))
                     .thenReturn(Optional.empty());
-            when(orderService.processFundingConfirmed(2L))
+            when(orderService.createSettlementItem(2L))
                     .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
 
             fundingStatusUpdater.handleFundingSuccess(1L, 100L);
 
-            verify(orderService).processFundingConfirmed(1L);
-            verify(orderService).processFundingConfirmed(2L);
+            verify(orderService).createSettlementItem(1L);
+            verify(orderService).createSettlementItem(2L);
             verify(paymentEventPublisher).publishSettlement(argThat(event ->
                     event.items().size() == 1 && event.items().get(0).orderId().equals(2L)));
         }

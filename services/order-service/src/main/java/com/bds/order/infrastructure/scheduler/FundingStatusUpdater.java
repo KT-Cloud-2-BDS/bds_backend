@@ -75,7 +75,7 @@ public class FundingStatusUpdater {
             List<PaymentProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
             for (Long orderId : paidOrderIds) {
                 try {
-                    orderService.processFundingConfirmed(orderId).ifPresent(items::add);
+                    orderService.createSettlementItem(orderId).ifPresent(items::add);
                 } catch (Exception e) {
                     log.error("[FundingStatusUpdater] handleFundingSuccess failed: orderId={}, exceptionType={}, reason={}",
                             orderId, e.getClass().getSimpleName(), e.getMessage());

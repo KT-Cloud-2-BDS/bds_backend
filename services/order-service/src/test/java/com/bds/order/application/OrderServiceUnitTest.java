@@ -412,14 +412,14 @@ class OrderServiceUnitTest {
 
 
     @Nested
-    @DisplayName("processFundingConfirmed")
-    class ProcessFundingConfirmedTest {
+    @DisplayName("createSettlementItem")
+    class createSettlementItemTest {
 
         @Test
         void 주문번호가_DB에_없으면_empty를_반환한다() {
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.empty());
 
-            assertThat(orderService.processFundingConfirmed(1L)).isEmpty();
+            assertThat(orderService.createSettlementItem(1L)).isEmpty();
         }
 
         @Test
@@ -427,7 +427,7 @@ class OrderServiceUnitTest {
             Order order = OrderFixture.createOrder(OrderStatus.PAID);
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processFundingConfirmed(1L);
+            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.createSettlementItem(1L);
 
             assertThat(result).isPresent();
             assertThat(result.get().orderId()).isEqualTo(order.getId());

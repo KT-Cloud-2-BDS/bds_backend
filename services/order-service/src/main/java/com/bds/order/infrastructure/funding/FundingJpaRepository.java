@@ -41,4 +41,7 @@ public interface FundingJpaRepository extends JpaRepository<FundingJpaEntity, Lo
     Optional<FundingJpaEntity> findByIdForUpdate(@Param("fundingId") Long fundingId);
 
     List<FundingJpaEntity> findByStatus(FundingStatus status);
+
+    @Query("SELECT f FROM FundingJpaEntity f WHERE f.status = :status AND f.updatedAt > :after")
+    List<FundingJpaEntity> findByStatusAndUpdatedAfter(@Param("status") FundingStatus status, @Param("after") LocalDateTime after);
 }

@@ -120,12 +120,12 @@ class FundingStatusUpdaterUnitTest {
         void PAID_주문에_정산을_요청한다() {
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
                     .thenReturn(List.of(1L));
-            when(orderService.processFundingConfirmed(1L))
+            when(orderService.createSettlementItem(1L))
                     .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(1L, 10L, 30000L)));
 
             fundingStatusUpdater.handleFundingSuccess(1L, 100L);
 
-            verify(orderService).processFundingConfirmed(1L);
+            verify(orderService).createSettlementItem(1L);
             verify(paymentEventPublisher).publishSettlement(argThat(event ->
                     event.type().equals("SETTLEMENT_CONFIRMED") &&
                             event.creatorMemberId().equals(100L) &&
@@ -147,12 +147,12 @@ class FundingStatusUpdaterUnitTest {
         void orderService가_빈값을_반환하면_publish하지_않는다() {
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
                     .thenReturn(List.of(1L));
-            when(orderService.processFundingConfirmed(1L))
+            when(orderService.createSettlementItem(1L))
                     .thenReturn(Optional.empty());
 
             fundingStatusUpdater.handleFundingSuccess(1L, 100L);
 
-            verify(orderService).processFundingConfirmed(1L);
+            verify(orderService).createSettlementItem(1L);
             verifyNoInteractions(paymentEventPublisher);
         }
 
@@ -165,7 +165,7 @@ class FundingStatusUpdaterUnitTest {
                     .thenReturn(firstChunk);
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(500L), eq(500)))
                     .thenReturn(secondChunk);
-            when(orderService.processFundingConfirmed(anyLong()))
+            when(orderService.createSettlementItem(anyLong()))
                     .thenAnswer(invocation -> {
                         Long orderId = invocation.getArgument(0);
                         return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(orderId, 10L, 30000L));
@@ -175,7 +175,7 @@ class FundingStatusUpdaterUnitTest {
 
             verify(orderRepository).findOrderIdsByFundingIdAndStatus(1L, OrderStatus.PAID, 0L, 500);
             verify(orderRepository).findOrderIdsByFundingIdAndStatus(1L, OrderStatus.PAID, 500L, 500);
-            verify(orderService, times(501)).processFundingConfirmed(anyLong());
+            verify(orderService, times(501)).createSettlementItem(anyLong());
             verify(paymentEventPublisher, times(2)).publishSettlement(any());
         }
 

@@ -26,4 +26,6 @@ public interface FundingRepository {
     void save(Funding funding);
 
     Funding saveWithRewards(Funding funding, List<FundingCreateRequestDto.RewardCreateDto> rewards);
+
+    List<Funding> findByStatusAndUpdatedAfter(FundingStatus status, LocalDateTime after);
 }

@@ -202,10 +202,10 @@ public class OrderService {
     public void processCancelledUpdate(Long orderId, String cancelReason) {
         findOrderForUpdate(orderId).ifPresent(order -> {
             try {
-                order.cancelOrder(cancelReason);
                 order.getOrderRewards().forEach(orw ->
                         rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
                 );
+                order.cancelOrder(cancelReason);
                 orderRepository.save(order);
             } catch (IllegalStateException e) {
                 log.warn("[OrderService] processCancelledUpdate failed - invalid state: orderId={}, reason={}",
@@ -218,7 +218,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Optional<PaymentProcessSettlementEvent.SettlementItem> processFundingConfirmed(Long orderId) {
+    public Optional<PaymentProcessSettlementEvent.SettlementItem> createSettlementItem(Long orderId) {
         Optional<Order> orderOpt = findOrderForUpdate(orderId);
         if (orderOpt.isEmpty()) return Optional.empty();
 
@@ -257,10 +257,10 @@ public class OrderService {
 
         Order order = orderOpt.get();
         try {
-            order.cancelOrder(CancelReason.FUNDING_FAILED.name());
             order.getOrderRewards().forEach(orw ->
                     rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
             );
+            order.cancelOrder(CancelReason.FUNDING_FAILED.name());
             orderRepository.save(order);
 
             return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(
