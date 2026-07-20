@@ -27,6 +27,7 @@ import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -452,6 +453,42 @@ public class AuthServiceUnitTest {
                 .build();
 
             given(jwtTokenUtil.parseClaims(accessToken)).willReturn(claims);
+
+            // when
+            authService.logout(authId, accessToken);
+
+            // then
+            verify(tokenCacheRepository, times(1)).delete("refresh:" + authId);
+            verify(tokenCacheRepository, times(0))
+                .save(anyString(), anyString(), anyLong(), eq(TimeUnit.MILLISECONDS));
+        }
+
+        @Test
+        @DisplayName("access token 파싱 중 JwtException이 터져도 로그아웃 자체는 정상 처리된다")
+        public void 로그아웃_토큰파싱예외_로그아웃은성공() {
+            // given
+            Long authId = 1L;
+            String accessToken = "malformedAccessToken";
+
+            given(jwtTokenUtil.parseClaims(accessToken)).willThrow(new MalformedJwtException("잘못된 토큰"));
+
+            // when
+            authService.logout(authId, accessToken);
+
+            // then
+            verify(tokenCacheRepository, times(1)).delete("refresh:" + authId);
+            verify(tokenCacheRepository, times(0))
+                .save(anyString(), anyString(), anyLong(), eq(TimeUnit.MILLISECONDS));
+        }
+
+        @Test
+        @DisplayName("access token 파싱 중 IllegalArgumentException이 터져도 로그아웃 자체는 정상 처리된다")
+        public void 로그아웃_토큰빈값예외_로그아웃은성공() {
+            // given
+            Long authId = 1L;
+            String accessToken = "";
+
+            given(jwtTokenUtil.parseClaims(accessToken)).willThrow(new IllegalArgumentException("토큰이 비어있습니다"));
 
             // when
             authService.logout(authId, accessToken);

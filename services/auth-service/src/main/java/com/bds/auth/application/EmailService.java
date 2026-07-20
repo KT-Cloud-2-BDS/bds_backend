@@ -9,6 +9,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -33,6 +34,7 @@ public class EmailService {
             mailSender.send(message);
 
         } catch (MailException e) {
+            log.error("회원가입 인증 메일 발송에 실패했습니다. toEmail={}", toEmail, e);
         }
     }
 
@@ -51,6 +53,7 @@ public class EmailService {
             mailSender.send(message);
 
         } catch (MailException e) {
+            log.error("비밀번호 재설정 인증 메일 발송에 실패했습니다. toEmail={}", toEmail, e);
         }
     }
 }

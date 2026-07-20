@@ -18,8 +18,8 @@ public class AuthSocialAdapter implements AuthSocialRepository {
     @Override
     public AuthSocial save(AuthSocial authSocial) {
         AuthSocialJpaEntity jpaEntity = AuthSocialMapper.toJpaEntity(authSocial);
-        authSocialJpaRepo.save(jpaEntity);
-        return authSocial;
+        AuthSocialJpaEntity savedEntity = authSocialJpaRepo.save(jpaEntity);
+        return AuthSocialMapper.toDomain(savedEntity);
     }
 
     @Override

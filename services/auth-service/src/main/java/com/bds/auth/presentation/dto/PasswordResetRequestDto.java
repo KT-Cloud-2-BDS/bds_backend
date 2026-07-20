@@ -1,8 +1,11 @@
 package com.bds.auth.presentation.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 public record PasswordResetRequestDto(
-    String email,
-    String newPassword
+    @NotBlank @Email String email,
+    @NotBlank String newPassword
 ) {
 
 }

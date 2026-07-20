@@ -19,10 +19,12 @@ import java.security.SecureRandom;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -256,11 +258,15 @@ public class AuthService {
     public void logout(Long authId, String accessToken) {
         tokenCacheRepository.delete("refresh:" + authId);
 
-        Claims claims = jwtTokenUtil.parseClaims(accessToken);
-        long remainingMillis = claims.getExpiration().getTime() - System.currentTimeMillis();
+        try {
+            Claims claims = jwtTokenUtil.parseClaims(accessToken);
+            long remainingMillis = claims.getExpiration().getTime() - System.currentTimeMillis();
 
-        if (remainingMillis > 0) {
-            tokenCacheRepository.save("blacklist:" + accessToken, "true", remainingMillis, TimeUnit.MILLISECONDS);
+            if (remainingMillis > 0) {
+                tokenCacheRepository.save("blacklist:" + accessToken, "true", remainingMillis, TimeUnit.MILLISECONDS);
+            }
+        } catch (JwtException | IllegalArgumentException e) {
+            log.debug("로그아웃 처리 중 access token 파싱 실패로 블랙리스트 등록을 생략합니다. authId={}", authId, e);
         }
     }
 

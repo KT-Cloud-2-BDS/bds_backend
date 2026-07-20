@@ -13,6 +13,7 @@ import com.bds.auth.presentation.dto.TokenRefreshRequestDto;
 import com.bds.auth.presentation.dto.VerifyCodeRequestDto;
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -58,7 +59,7 @@ public class AuthController {
     }
 
     @PatchMapping("/password")
-    public ResponseEntity<Void> resetPassword(@RequestBody PasswordResetRequestDto requestDto) {
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody PasswordResetRequestDto requestDto) {
         authService.resetPassword(requestDto.email(), requestDto.newPassword());
         return ResponseEntity.ok().build();
     }
