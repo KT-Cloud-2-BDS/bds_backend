@@ -1,10 +1,10 @@
 package com.bds.common.events.order;
 
-import com.bds.common.events.PublishTo;
+import org.springframework.modulith.events.Externalized;
 
 import java.util.UUID;
 
-@PublishTo(exchange = "payment.exchange", routingKey = "payment.process.pay")
+@Externalized("payment.exchange::payment.process.pay")
 public record PaymentProcessPayEvent(
         String requestId,
         Long orderId,

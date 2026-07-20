@@ -36,7 +36,7 @@ dependencies {
 //    implementation 'org.springframework.modulith:spring-modulith-starter-core'
     implementation 'org.springframework.modulith:spring-modulith-events-api'
     implementation 'org.springframework.modulith:spring-modulith-events-amqp'
-    implementation 'org.springframework.modulith:spring-modulith-events-jpa'
+    implementation 'org.springframework.modulith:spring-modulith-events-jdbc'
     implementation 'org.springframework.modulith:spring-modulith-events-jackson'
 }
 

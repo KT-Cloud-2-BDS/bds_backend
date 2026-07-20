@@ -1,11 +1,11 @@
 package com.bds.common.events.order;
 
-import com.bds.common.events.PublishTo;
+import org.springframework.modulith.events.Externalized;
 
 import java.util.List;
 import java.util.UUID;
 
-@PublishTo(exchange = "payment.exchange", routingKey = "payment.process.settlement")
+@Externalized("payment.exchange::payment.process.settlement")
 public record PaymentProcessSettlementEvent(
         String batchId,
         String type,
