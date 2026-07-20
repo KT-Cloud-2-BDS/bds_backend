@@ -23,6 +23,8 @@ dependencies {
 
     implementation project(':libs:bds-events')
     implementation project(':modules:messaging')
+
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 }
 
 tasks.named('test') {
