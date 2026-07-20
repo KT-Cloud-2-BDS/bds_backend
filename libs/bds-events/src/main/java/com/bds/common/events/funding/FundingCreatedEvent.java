@@ -4,13 +4,16 @@ import org.springframework.modulith.events.Externalized;
 
 import java.util.UUID;
 
-@Externalized("funding.exchange::funding.created")
+@Externalized("funding.exchange::funding.status")
 public record FundingCreatedEvent(
         UUID eventId,
-        Long creatorId,
-        Long productId
+        FundingType type,
+        String targetType,
+        Long targetId,
+        Long creatorId
 ) {
-    public static FundingCreatedEvent of(Long creatorId, Long productId) {
-        return new FundingCreatedEvent(UUID.randomUUID(), creatorId, productId);
+    public static FundingCreatedEvent of(FundingType type, String targetType, Long targetId, Long creatorId) {
+        return new FundingCreatedEvent(UUID.randomUUID(), type, targetType, targetId, creatorId);
     }
 }
+

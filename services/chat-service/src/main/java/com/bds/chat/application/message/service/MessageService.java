@@ -3,6 +3,8 @@ package com.bds.chat.application.message.service;
 import com.bds.chat.application.message.dto.*;
 import com.bds.chat.common.BusinessException;
 import com.bds.chat.common.ErrorCode;
+import com.bds.chat.infrastructure.messaging.DirectEventPublisher;
+import com.bds.common.events.chat.ChatSendEvent;
 import lombok.extern.slf4j.Slf4j;
 import com.bds.chat.domain.blackList.FundingChatBlacklistRepository;
 import com.bds.chat.domain.chatRoom.ChatRoom;
@@ -36,6 +38,7 @@ public class MessageService {
     private final ChatRoomRepository chatRoomRepository;
     private final InquiryChatMemberRepository memberRepository;
     private final FundingChatBlacklistRepository blacklistRepository;
+    private final DirectEventPublisher  directEventPublisher;
     private final Clock clock;
 
     @Transactional
@@ -143,7 +146,7 @@ public class MessageService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "roomId=" + request.roomId()));
 
         MessageType type = parseType(request.type());
-        guardSendPermission(room, senderId);
+        Optional<InquiryChatMember> recipient = guardSendPermission(room, senderId);
 
         ChatMessage message = ChatMessage.create(
                 ChatRoomId.of(request.roomId()),
@@ -153,18 +156,34 @@ public class MessageService {
                 request.clientId(),
                 LocalDateTime.now(clock)
         );
-        return MessageResponseDto.from(chatMessageRepository.save(message));
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        recipient.ifPresent(r -> {
+            try {
+                directEventPublisher.publish(ChatSendEvent.of(savedMessage.getRoomId().value(), r.getMemberId().value(), savedMessage.getContent()));
+            } catch (Exception e) {
+                log.warn("알림 이벤트 발행 실패 (메시지 저장은 유지): roomId={}, recipientId={}", savedMessage.getRoomId().value(), r.getMemberId().value(), e);
+            }
+        });
+        return MessageResponseDto.from(savedMessage);
     }
 
-    private void guardSendPermission(ChatRoom room, Long senderId) {
+    private Optional<InquiryChatMember> guardSendPermission(ChatRoom room, Long senderId) {
         if (room.getType() == ChatRoomType.INQUIRY) {
-            memberRepository.findActiveMember(room.getId().value(), senderId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN, "Cannot send message to this room"));
-        } else if (room.getType() == ChatRoomType.FUNDING) {
+            List<InquiryChatMember> members = memberRepository.findActiveMembers(room.getId().value());
+            boolean isMember = members.stream().anyMatch(m -> m.is(MemberId.of(senderId)));
+            if (!isMember) {
+                throw new BusinessException(ErrorCode.FORBIDDEN, "Cannot send message to this room");
+            }
+            return members.stream()
+                    .filter(m -> !m.is(MemberId.of(senderId)))
+                    .findFirst();
+        }
+        if (room.getType() == ChatRoomType.FUNDING) {
             if (blacklistRepository.isBlacklisted(room.getId().value(), senderId)) {
                 throw new BusinessException(ErrorCode.FORBIDDEN, "Banned user cannot send messages");
             }
         }
+        return Optional.empty();
     }
 
     private ChatRoom findActiveRoomByType(Long roomId, ChatRoomType expectedType) {
