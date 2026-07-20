@@ -33,7 +33,7 @@ public class NotificationEntity {
   private NotificationType type;
 
   @Column(nullable = false)
-  private Long targetId;
+  private String targetId;
 
   @Column(nullable = false)
   private String title;
@@ -62,7 +62,7 @@ public class NotificationEntity {
 
   @Builder
   public NotificationEntity(Long notificationId, Long memberId, NotificationType type,
-      Long targetId, String title, String body, NotificationChannel channel, Boolean sendStatus,
+      String targetId, String title, String body, NotificationChannel channel, Boolean sendStatus,
       Boolean isRead, LocalDateTime createdAt, LocalDateTime readAt, LocalDateTime clickedAt) {
     this.notificationId = notificationId;
     this.memberId = memberId;
