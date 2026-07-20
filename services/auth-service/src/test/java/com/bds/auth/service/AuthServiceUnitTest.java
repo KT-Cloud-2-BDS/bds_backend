@@ -262,6 +262,7 @@ public class AuthServiceUnitTest {
             String email = "social@email.com";
 
             given(authSocialRepository.findByProviderAndProviderId(provider, providerId)).willReturn(Optional.empty());
+            given(authRepository.findByEmail(email)).willReturn(Optional.empty());
 
             Auth mockAuth = mock(Auth.class);
             given(mockAuth.getId()).willReturn(1L);
@@ -282,6 +283,37 @@ public class AuthServiceUnitTest {
             verify(authRepository, times(1)).save(any(Auth.class));
             verify(authSocialRepository, times(1)).save(any(AuthSocial.class));
             verify(tokenCacheRepository, times(1)).save(eq("refresh:1"), eq("refreshToken"), eq(7L), eq(TimeUnit.DAYS));
+        }
+
+        @Test
+        @DisplayName("연동된 소셜 계정은 없지만 동일 이메일의 기존 Auth가 있으면 새로 만들지 않고 그 계정에 연동한다")
+        public void 소셜로그인_이메일이미존재_기존계정연동_성공() {
+            // given
+            String provider = "naver";
+            String providerId = "naver-12345";
+            String email = "existing@email.com";
+            Long existingAuthId = 7L;
+
+            given(authSocialRepository.findByProviderAndProviderId(provider, providerId)).willReturn(Optional.empty());
+
+            Auth existingAuth = mock(Auth.class);
+            given(existingAuth.getId()).willReturn(existingAuthId);
+            given(existingAuth.getEmail()).willReturn(email);
+            given(existingAuth.getRole()).willReturn(Role.SUPPORTER);
+            given(existingAuth.getStatus()).willReturn(Status.ACTIVE);
+
+            given(authRepository.findByEmail(email)).willReturn(Optional.of(existingAuth));
+            given(jwtTokenUtil.createAccessToken(existingAuthId, email, Role.SUPPORTER)).willReturn("accessToken");
+            given(jwtTokenUtil.createRefreshToken(existingAuthId)).willReturn("refreshToken");
+
+            // when
+            AuthLoginResponseDto response = authService.processSocialLogin(provider, providerId, email);
+
+            // then
+            assertEquals("accessToken", response.accessToken());
+            verify(authRepository, times(0)).save(any(Auth.class));
+            verify(authSocialRepository, times(1)).save(any(AuthSocial.class));
+            verify(tokenCacheRepository, times(1)).save(eq("refresh:" + existingAuthId), eq("refreshToken"), eq(7L), eq(TimeUnit.DAYS));
         }
 
         @Test

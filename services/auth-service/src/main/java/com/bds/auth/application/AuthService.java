@@ -213,8 +213,8 @@ public class AuthService {
     }
 
     private Auth registerNewSocialAccount(String provider, String providerId, String email) {
-        Auth newAuth = Auth.create(email, Status.ACTIVE, Role.SUPPORTER);
-        Auth savedAuth = authRepository.save(newAuth);
+        Auth savedAuth = authRepository.findByEmail(email)
+            .orElseGet(() -> authRepository.save(Auth.create(email, Status.ACTIVE, Role.SUPPORTER)));
 
         AuthSocial newAuthSocial = AuthSocial.create(providerId, provider, email, savedAuth.getId());
         authSocialRepository.save(newAuthSocial);
