@@ -12,10 +12,7 @@ import com.bds.order.infrastructure.funding.FundingJpaRepository;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaRepository;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import com.bds.order.infrastructure.reward.RewardJpaRepository;
-import com.bds.order.presentation.dto.BillingRequestDto;
-import com.bds.order.presentation.dto.BillingResponseDto;
-import com.bds.order.presentation.dto.OrderCreateRequestDto;
-import com.bds.order.presentation.dto.RewardQuantityDto;
+import com.bds.order.presentation.dto.*;
 import com.bds.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -261,7 +258,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         void 본인의_주문이_아니면_취소할_수_없다() {
             Long orderId = createAndStartOrder(1L);
 
-            assertThatThrownBy(() -> orderService.cancelOrder(999L, orderId))
+            assertThatThrownBy(() -> orderService.cancelOrder(999L, orderId, new OrderCancelRequestDto(1L)))
                     .isInstanceOf(BusinessException.class);
         }
 
@@ -273,7 +270,7 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             ));
             BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
 
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, billing.orderId()))
+            assertThatThrownBy(() -> orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L)))
                     .isInstanceOf(BusinessException.class);
         }
 
@@ -281,9 +278,9 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         @Test
         void 이미_취소된_주문은_다시_취소할_수_없다() {
             Long orderId = createAndStartOrder(1L);
-            orderService.cancelOrder(1L, orderId);
+            orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(1L));
 
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, orderId))
+            assertThatThrownBy(() -> orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(1L)))
                     .isInstanceOf(BusinessException.class);
         }
 

@@ -9,14 +9,16 @@ public record PaymentProcessPayEvent(
         String requestId,
         Long orderId,
         Long memberId,
+        Long fundingId,
         Long amount,
         String paymentType
 ) {
-    public static PaymentProcessPayEvent of(Long orderId, Long memberId, Long amount) {
+    public static PaymentProcessPayEvent of(Long orderId, Long memberId, Long fundingId, Long amount) {
         return new PaymentProcessPayEvent(
                 UUID.randomUUID().toString(),
                 orderId,
                 memberId,
+                fundingId,
                 amount,
                 "INSTANT"
         );

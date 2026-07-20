@@ -1,5 +1,6 @@
 package com.bds.order.infrastructure.scheduler;
 
+import com.bds.common.events.funding.FundingStatusChangedEvent;
 import com.bds.common.events.order.PaymentProcessSettlementEvent;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
@@ -10,6 +11,7 @@ import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.fixture.FundingFixture;
 import com.bds.order.infrastructure.funding.JudgmentOutcome;
 import com.bds.order.infrastructure.funding.JudgmentType;
+import com.bds.order.infrastructure.messaging.publisher.NotificationEventPublisher;
 import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,6 +36,8 @@ class FundingStatusUpdaterUnitTest {
 
     @Mock
     private PaymentEventPublisher paymentEventPublisher;
+    @Mock
+    private NotificationEventPublisher notificationEventPublisher;
     @InjectMocks
     private FundingStatusUpdater fundingStatusUpdater;
     @Mock
@@ -63,6 +67,7 @@ class FundingStatusUpdaterUnitTest {
             assertThat(funding.getStatus()).isEqualTo(FundingStatus.SUCCESS);
             assertThat(funding.getIsSuccess()).isTrue();
             verify(fundingRepository).save(funding);
+            verify(notificationEventPublisher).publishFundingStatusChanged(FundingStatusChangedEvent.of("FUNDING_SUCCESS", 1L, funding.getCreatorId()));
         }
 
         @ParameterizedTest(name = "{0} 상태에서 판정 진행")
@@ -79,6 +84,7 @@ class FundingStatusUpdaterUnitTest {
             assertThat(funding.getStatus()).isEqualTo(FundingStatus.FAILED);
             assertThat(funding.getIsSuccess()).isFalse();
             verify(fundingRepository).save(funding);
+            verify(notificationEventPublisher).publishFundingStatusChanged(FundingStatusChangedEvent.of("FUNDING_FAIL", 1L, funding.getCreatorId()));
         }
 
         @Test
@@ -378,6 +384,7 @@ class FundingStatusUpdaterUnitTest {
 
             assertThat(funding.getStatus()).isEqualTo(FundingStatus.ACTIVE);
             verify(fundingRepository).save(funding);
+            verify(notificationEventPublisher).publishFundingStatusChanged(FundingStatusChangedEvent.of("FUNDING_START", 1L, funding.getCreatorId()));
         }
     }
 }

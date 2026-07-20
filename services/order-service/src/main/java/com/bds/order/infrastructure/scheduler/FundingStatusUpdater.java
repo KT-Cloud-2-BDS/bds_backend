@@ -1,6 +1,7 @@
 package com.bds.order.infrastructure.scheduler;
 
 
+import com.bds.common.events.funding.FundingStatusChangedEvent;
 import com.bds.common.events.order.PaymentProcessSettlementEvent;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
@@ -12,6 +13,7 @@ import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.infrastructure.funding.JudgmentOutcome;
 import com.bds.order.infrastructure.funding.JudgmentType;
+import com.bds.order.infrastructure.messaging.publisher.NotificationEventPublisher;
 import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ public class FundingStatusUpdater {
     private final OrderRepository orderRepository;
     private final OrderService orderService;
     private final PaymentEventPublisher paymentEventPublisher;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Transactional
     public JudgmentOutcome judgeFunding(Long fundingId) {
@@ -46,10 +49,14 @@ public class FundingStatusUpdater {
         boolean isSuccess = funding.getCurrentAmount() >= funding.getGoalAmount();
 
         if (isSuccess) {
-            // TODO: Funding 성공 Notification Message 발행
+            notificationEventPublisher.publishFundingStatusChanged(
+                    FundingStatusChangedEvent.of("FUNDING_SUCCESS", fundingId, funding.getCreatorId())
+            );
             funding.markSuccess();
         } else {
-            // TODO: Funding 실패 Notification Message 발행
+            notificationEventPublisher.publishFundingStatusChanged(
+                    FundingStatusChangedEvent.of("FUNDING_FAIL", fundingId, funding.getCreatorId())
+            );
             funding.markFailed();
         }
 
@@ -84,7 +91,7 @@ public class FundingStatusUpdater {
 
             if (!items.isEmpty()) {
                 paymentEventPublisher.publishSettlement(
-                        PaymentProcessSettlementEvent.of("SETTLEMENT_CONFIRMED", creatorMemberId, items));
+                        PaymentProcessSettlementEvent.of("SETTLEMENT_CONFIRMED", creatorMemberId, fundingId, items));
             }
 
             lastOrderId = paidOrderIds.get(paidOrderIds.size() - 1);
@@ -112,7 +119,7 @@ public class FundingStatusUpdater {
 
             if (!items.isEmpty()) {
                 paymentEventPublisher.publishSettlement(
-                        PaymentProcessSettlementEvent.of("RESERVED_FUNDING_CONFIRMED", creatorMemberId, items));
+                        PaymentProcessSettlementEvent.of("RESERVED_FUNDING_CONFIRMED", creatorMemberId, fundingId, items));
             }
 
             lastOrderId = reservedOrderIds.get(reservedOrderIds.size() - 1);
@@ -140,7 +147,7 @@ public class FundingStatusUpdater {
 
             if (!items.isEmpty()) {
                 paymentEventPublisher.publishSettlement(
-                        PaymentProcessSettlementEvent.of("FUNDING_FAILED_REFUND", creatorMemberId, items));
+                        PaymentProcessSettlementEvent.of("FUNDING_FAILED_REFUND", creatorMemberId, fundingId, items));
             }
 
             lastOrderId = paidOrderIds.get(paidOrderIds.size() - 1);
@@ -185,6 +192,10 @@ public class FundingStatusUpdater {
 
         funding.activate();
         fundingRepository.save(funding);
+
+        notificationEventPublisher.publishFundingStatusChanged(
+                FundingStatusChangedEvent.of("FUNDING_START", fundingId, funding.getCreatorId())
+        );
         log.info("[FUNDING_ACTIVATE] 펀딩 활성화 - fundingId: {}", fundingId);
     }
 }

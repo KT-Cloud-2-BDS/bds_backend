@@ -118,7 +118,7 @@ class OrderServiceUnitTest {
             OrderDetailProjection orderProjection = new OrderDetailProjection(
                     1L, "ORD-001", OrderStatus.PAID,
                     33000L, 3000L, now,
-                    "테스트 펀딩", 100L, now.plusDays(30), false,
+                    1L, "테스트 펀딩", 100L, now.plusDays(30), false,
                     null, null, now
             );
             OrderRewardDetailProjection rewardProjection = new OrderRewardDetailProjection(
@@ -284,7 +284,7 @@ class OrderServiceUnitTest {
 
             given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.of(order));
 
-            OrderCancelResponseDto result = orderService.cancelOrder(memberId, orderId);
+            OrderCancelResponseDto result = orderService.cancelOrder(memberId, orderId, new OrderCancelRequestDto(1L));
 
             assertThat(result.orderNo()).isEqualTo("ORD-001");
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELLED);

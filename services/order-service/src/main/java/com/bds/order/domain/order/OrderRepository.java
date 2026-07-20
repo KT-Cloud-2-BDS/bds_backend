@@ -19,4 +19,6 @@ public interface OrderRepository {
     Optional<OrderDetailProjection> findOrderDetailWithFunding(Long memberId, Long orderId);
 
     List<Long> findOrderIdsByFundingIdAndStatus(Long fundingId, OrderStatus status, Long lastOrderId, int size);
+
+    Optional<String> findFundingTitleByOrderId(Long orderId);
 }

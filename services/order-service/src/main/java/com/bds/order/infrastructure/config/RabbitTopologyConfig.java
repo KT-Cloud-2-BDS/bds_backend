@@ -1,10 +1,7 @@
 package com.bds.order.infrastructure.config;
 
 import com.bds.messaging.BdsRabbit;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
@@ -18,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitTopologyConfig {
 
     public static final String ORDER_EXCHANGE = "order.exchange";
+    public static final String FUNDING_EXCHANGE = "funding.exchange";
 
     public static final String ORDER_PROCESS_QUEUE = "order.process";
     public static final String ORDER_PROCESS_PAID_QUEUE = "order.process.paid";
@@ -37,7 +35,12 @@ public class RabbitTopologyConfig {
 
     @Bean
     public DirectExchange orderExchange() {
-        return new DirectExchange(ORDER_EXCHANGE, true, false);
+        return ExchangeBuilder.directExchange(ORDER_EXCHANGE).durable(true).build();
+    }
+
+    @Bean
+    public TopicExchange fundingExchange() {
+        return ExchangeBuilder.topicExchange(FUNDING_EXCHANGE).durable(true).build();
     }
 
     @Bean
@@ -75,6 +78,5 @@ public class RabbitTopologyConfig {
                 .to(orderExchange)
                 .with("order.process.cancel");
     }
-
 
 }

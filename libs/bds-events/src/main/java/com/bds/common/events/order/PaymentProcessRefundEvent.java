@@ -9,14 +9,16 @@ public record PaymentProcessRefundEvent(
         String requestId,
         Long orderId,
         Long memberId,
+        Long fundingId,
         Long amount,
         String cancelReason
 ) {
-    public static PaymentProcessRefundEvent of(Long orderId, Long memberId, Long amount, String cancelReason) {
+    public static PaymentProcessRefundEvent of(Long orderId, Long memberId, Long fundingId, Long amount, String cancelReason) {
         return new PaymentProcessRefundEvent(
                 UUID.randomUUID().toString(),
                 orderId,
                 memberId,
+                fundingId,
                 amount,
                 cancelReason
         );

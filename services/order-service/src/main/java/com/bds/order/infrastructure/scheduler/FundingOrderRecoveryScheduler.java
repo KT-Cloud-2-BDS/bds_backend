@@ -103,7 +103,7 @@ public class FundingOrderRecoveryScheduler {
 
             if (!items.isEmpty()) {
                 paymentEventPublisher.publishSettlement(
-                        PaymentProcessSettlementEvent.of(settlementType, creatorMemberId, items));
+                        PaymentProcessSettlementEvent.of(settlementType, creatorMemberId, fundingId, items));
             }
 
             lastOrderId = orderIds.get(orderIds.size() - 1);

@@ -15,6 +15,7 @@ import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.fixture.OrderFixture;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.presentation.dto.BillingRequestDto;
+import com.bds.order.presentation.dto.OrderCancelRequestDto;
 import com.bds.order.presentation.dto.OrderCreateRequestDto;
 import com.bds.order.presentation.dto.RewardQuantityDto;
 import org.junit.jupiter.api.DisplayName;
@@ -173,7 +174,7 @@ class OrderServiceUnitExceptionTest {
         void 존재하지_않는_주문이면_예외를_던진다() {
             given(orderRepository.findByIdForUpdate(999L)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, 999L))
+            assertThatThrownBy(() -> orderService.cancelOrder(1L, 999L, new OrderCancelRequestDto(1L)))
                     .isInstanceOf(BusinessException.class);
         }
 
@@ -183,7 +184,7 @@ class OrderServiceUnitExceptionTest {
 
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
 
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L))
+            assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L, new OrderCancelRequestDto(1L)))
                     .isInstanceOf(BusinessException.class);
         }
 
@@ -193,7 +194,7 @@ class OrderServiceUnitExceptionTest {
 
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
 
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L))
+            assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L, new OrderCancelRequestDto(1L)))
                     .isInstanceOf(BusinessException.class);
         }
     }

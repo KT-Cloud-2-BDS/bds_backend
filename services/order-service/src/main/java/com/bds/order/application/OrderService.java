@@ -1,5 +1,6 @@
 package com.bds.order.application;
 
+import com.bds.common.events.order.OrderStatusChangedEvent;
 import com.bds.common.events.order.PaymentProcessPayEvent;
 import com.bds.common.events.order.PaymentProcessRefundEvent;
 import com.bds.common.events.order.PaymentProcessSettlementEvent;
@@ -15,6 +16,7 @@ import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
+import com.bds.order.infrastructure.messaging.publisher.NotificationEventPublisher;
 import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
@@ -43,6 +45,7 @@ public class OrderService {
     private final RewardRepository rewardRepository;
     private final OrderRewardRepository orderRewardRepository;
     private final PaymentEventPublisher paymentEventPublisher;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     public List<OrderResponseDto> getAllOrders(Long memberId, Pageable pageable) {
         List<OrderListProjection> orderList = orderRepository.findOrderListWithFunding(memberId, pageable);
@@ -119,14 +122,14 @@ public class OrderService {
             }
         });
 
-        paymentEventPublisher.publishPay(PaymentProcessPayEvent.of(order.getId(), order.getMemberId(), order.getTotalAmount()));
+        paymentEventPublisher.publishPay(PaymentProcessPayEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount()));
 
         orderRepository.save(order);
         return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), order.getStatus(), LocalDateTime.now());
     }
 
     @Transactional
-    public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId) {
+    public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId, OrderCancelRequestDto reqDto) {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -145,7 +148,7 @@ public class OrderService {
         });
 
         paymentEventPublisher.publishRefund(
-                PaymentProcessRefundEvent.of(order.getId(), order.getMemberId(), order.getTotalAmount(), CancelReason.USER_CANCEL.name()));
+                PaymentProcessRefundEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount(), CancelReason.USER_CANCEL.name()));
 
         orderRepository.save(order);
         return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
@@ -188,6 +191,13 @@ public class OrderService {
             try {
                 order.updateStatus(targetStatus);
                 orderRepository.save(order);
+
+                String fundingTitle = orderRepository.findFundingTitleByOrderId(orderId)
+                        .orElseThrow(() -> new IllegalStateException(
+                                "[OrderService] FundingInfo not found: orderId=" + orderId));
+
+                notificationEventPublisher.publishStatusChanged(
+                        OrderStatusChangedEvent.of(targetStatus.name(), order.getMemberId(), fundingTitle, order.getOrderNo()));
             } catch (IllegalStateException e) {
                 log.warn("[OrderService] processStatusUpdate failed - invalid state: orderId={}, target={}, reason={}",
                         orderId, targetStatus, e.getMessage());

@@ -245,7 +245,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         void 주문_취소_시_CANCELLED_상태로_변경되고_재고가_복구된다() {
             Long orderId = createAndStartOrder(1L, 3);
 
-            OrderCancelResponseDto result = orderService.cancelOrder(1L, orderId);
+            OrderCancelResponseDto result = orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(1L));
 
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(result.cancelledAt()).isNotNull();
@@ -485,7 +485,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             // 취소 시도
             executor.submit(() -> {
                 try {
-                    orderService.cancelOrder(1L, billing.orderId());
+                    orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L));
                     cancelSuccess.incrementAndGet();
                 } catch (Exception ignored) {
                 } finally {
@@ -590,7 +590,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(afterCreate.getRemainQty()).isEqualTo(8); // 10 - 2
 
             // 3. 주문 취소 (CANCELLED), 재고 복구
-            OrderCancelResponseDto cancelResult = orderService.cancelOrder(1L, billingResult.orderId());
+            OrderCancelResponseDto cancelResult = orderService.cancelOrder(1L, billingResult.orderId(), new OrderCancelRequestDto(1L));
             assertThat(cancelResult.status()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(cancelResult.cancelledAt()).isNotNull();
 
@@ -610,7 +610,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
                     billing.orderId(), savedFunding.getId(), true
             );
             orderService.createOrder(1L, createReqDto);
-            orderService.cancelOrder(1L, billing.orderId());
+            orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L));
 
             // 취소 후 다시 결제 시도
             assertThrows(Exception.class, () ->

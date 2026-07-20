@@ -11,6 +11,7 @@ public record OrderDetailProjection(
         Long totalRewardAmount,
         Long totalShippingCharge,
         LocalDateTime createdAt,
+        Long fundingId,
         String fundingTitle,
         Long hostId,
         LocalDateTime holdTo,

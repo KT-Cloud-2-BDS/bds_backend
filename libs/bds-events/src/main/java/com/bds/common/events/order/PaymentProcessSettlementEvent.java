@@ -10,13 +10,15 @@ public record PaymentProcessSettlementEvent(
         String batchId,
         String type,
         Long creatorMemberId,
+        Long fundingId,
         List<SettlementItem> items
 ) {
-    public static PaymentProcessSettlementEvent of(String type, Long creatorMemberId, List<SettlementItem> items) {
+    public static PaymentProcessSettlementEvent of(String type, Long creatorMemberId, Long fundingId, List<SettlementItem> items) {
         return new PaymentProcessSettlementEvent(
                 UUID.randomUUID().toString(),
                 type,
                 creatorMemberId,
+                fundingId,
                 items
         );
     }
