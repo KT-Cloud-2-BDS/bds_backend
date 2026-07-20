@@ -19,6 +19,14 @@ spring:
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
 
+bds:
+  msa-broker:
+    host: ${MSA_RABBITMQ_HOST:localhost}
+    port: ${MSA_RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${MSA_RABBITMQ_USERNAME:chat-service}
+    password: ${MSA_RABBITMQ_PASSWORD}
+    
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
