@@ -45,10 +45,6 @@ subprojects {
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
     }
-
-    tasks.named('test') {
-        useJUnitPlatform()
-    }
 }
 
 // Spring Boot 플러그인은 실행 가능한 JAR이 필요한 서비스에만 적용
