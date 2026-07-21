@@ -34,9 +34,6 @@ spring:
               predicates:
                 - Path=/api/payments/**
 
-jwt:
-  jwks-uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}/oauth2/jwks
-
 eureka:
   client:
     service-url:
