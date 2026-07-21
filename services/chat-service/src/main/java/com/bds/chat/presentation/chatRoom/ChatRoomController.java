@@ -4,9 +4,12 @@ import com.bds.chat.application.chatRoom.dto.*;
 import com.bds.chat.application.chatRoom.service.ChatRoomService;
 import com.bds.chat.application.member.dto.InquiryMemberLeaveResponseDto;
 import com.bds.chat.application.member.service.InquiryRoomMemberService;
+import com.bds.chat.infrastructure.messaging.DirectEventPublisher;
 import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
+import com.bds.common.events.order.OrderCreatedDirectEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
+@Slf4j
 public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
@@ -73,7 +77,6 @@ public class ChatRoomController {
     public ResponseEntity<ChatRoomResponseDto> getFundingRoom(
             @PathVariable Long productId
     ) {
-        ChatRoomResponseDto response = chatRoomService.getFundingChatRoomById(productId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(chatRoomService.getFundingChatRoomById(productId));
     }
 }

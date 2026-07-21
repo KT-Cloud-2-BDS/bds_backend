@@ -6,13 +6,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.bds.notification.application.dto.FundingNotificationCommandDto;
+import com.bds.notification.application.dto.OrderNotificationMessageDto;
+import com.bds.notification.application.event.NotificationCreatedEvent;
 import com.bds.notification.common.exception.BusinessException;
 import com.bds.notification.common.exception.ErrorCode;
-import com.bds.notification.domain.notification.model.Notification;
+import com.bds.notification.domain.notification.entity.NotificationType;
 import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
+import com.bds.notification.domain.notification.model.Notification;
 import com.bds.notification.domain.notification.model.NotificationSubscription;
 import com.bds.notification.domain.notification.repository.NotificationRepository;
 import com.bds.notification.domain.notification.repository.NotificationSubscriptionRepository;
@@ -30,6 +35,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -48,6 +54,9 @@ public class NotificationServiceTest {
   @Mock
   SseEmitterManager sseEmitterManager;
 
+  @Mock
+  ApplicationEventPublisher eventPublisher;
+
   @InjectMocks
   NotificationService notificationService;
 
@@ -63,7 +72,8 @@ public class NotificationServiceTest {
       Long memberId = 1L;
       SubscriptionTargetType targetType = SubscriptionTargetType.PRODUCT;
       Long targetId = 1L;
-      when(notificationSubscriptionRepository.existsActiveSubscription(memberId, targetType, targetId))
+      when(notificationSubscriptionRepository.existsActiveSubscription(memberId, targetType,
+          targetId))
           .thenReturn(false);
 
       //when
@@ -83,7 +93,8 @@ public class NotificationServiceTest {
       Long memberId = 1L;
       SubscriptionTargetType targetType = SubscriptionTargetType.PRODUCT;
       Long targetId = 1L;
-      when(notificationSubscriptionRepository.existsActiveSubscription(memberId, targetType, targetId))
+      when(notificationSubscriptionRepository.existsActiveSubscription(memberId, targetType,
+          targetId))
           .thenReturn(true);
       //when
       BusinessException exception = assertThrows(BusinessException.class,
@@ -224,6 +235,153 @@ public class NotificationServiceTest {
       //then
       assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SSE_SEND_FAILED);
       verify(sseEmitterManager).remove(memberId);
+    }
+  }
+
+  @Nested
+  @DisplayName("주문 상태 알림 생성 테스트")
+  class CreateOrderNotificationTest {
+
+    @Test
+    @DisplayName("PAID 상태의 주문이 오면 주문 성공 알림이 전송된다.")
+    public void 성공_주문완료_알림_생성() {
+      //given
+      OrderNotificationMessageDto command = new OrderNotificationMessageDto(
+          NotificationType.PAID,
+          1L,
+          "여름 맞이 물총 장난감",
+          "order-1234-1234"
+      );
+
+      //when
+      notificationService.createOrderNotification(command);
+
+      //then
+      verify(notificationRepository).save(any(Notification.class));
+      verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
+    }
+
+    @Test
+    @DisplayName("잘못된 타입 요청 시 INVALID_NOTIFICATION_TYPE 예외가 발생한다.")
+    public void 실패_잘못된_알림타입() {
+      //given
+      OrderNotificationMessageDto command = new OrderNotificationMessageDto(
+          NotificationType.PROMOTION,
+          1L,
+          "여름 맞이 물총 장난감",
+          "order-1234-1234"
+      );
+
+      //when
+      BusinessException exception = assertThrows(BusinessException.class,
+          () -> notificationService.createOrderNotification(command));
+
+      //then
+      assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_NOTIFICATION_TYPE);
+    }
+
+    @Test
+    @DisplayName("REFUNDED 상태의 주문이 오면 환불 알림이 전송된다.")
+    public void 성공_환불_알림_생성() {
+      //given
+      OrderNotificationMessageDto command = new OrderNotificationMessageDto(
+          NotificationType.REFUNDED,
+          1L,
+          "여름 맞이 물총 장난감",
+          "order-1234-1234"
+      );
+
+      //when
+      notificationService.createOrderNotification(command);
+
+      //then
+      verify(notificationRepository).save(any(Notification.class));
+      verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("펀딩 상태 알림")
+  class createFundingNotificationTest {
+
+    @Test
+    @DisplayName("FUNDING_START 타입으로 구독자에게 알림이 전송된다.")
+    public void 성공_펀딩시작_알림_생성() {
+      //given
+      FundingNotificationCommandDto command = new FundingNotificationCommandDto(
+          NotificationType.FUNDING_START, "123", "PRODUCT"
+      );
+      when(
+          notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
+              123L))
+          .thenReturn(List.of(1L, 2L, 3L));
+
+      //when
+      notificationService.createFundingNotification(command);
+
+      //then
+      verify(notificationRepository, times(3)).save(any(Notification.class));
+      verify(eventPublisher, times(3)).publishEvent(any(NotificationCreatedEvent.class));
+
+    }
+
+    @Test
+    @DisplayName("FUNDING_SUCCESS 타입으로 구독자에게 알림이 전송된다.")
+    public void 성공_펀딩성공_알림_생성() {
+      //given
+      FundingNotificationCommandDto command = new FundingNotificationCommandDto(
+          NotificationType.FUNDING_SUCCESS, "123", "PRODUCT"
+      );
+      when(
+          notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
+              123L))
+          .thenReturn(List.of(1L));
+
+      //when
+      notificationService.createFundingNotification(command);
+
+      //then
+      verify(notificationRepository).save(any(Notification.class));
+      verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
+    }
+
+    @Test
+    @DisplayName("FUNDING_FAIL 타입으로 구독자에게 알림이 전송된다.")
+    public void 성공_펀딩실패_알림_생성() {
+      //given
+      FundingNotificationCommandDto command = new FundingNotificationCommandDto(
+          NotificationType.FUNDING_FAIL, "123", "PRODUCT"
+      );
+      when(
+          notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
+              123L))
+          .thenReturn(List.of(1L));
+
+      //when
+      notificationService.createFundingNotification(command);
+
+      //then
+      verify(notificationRepository).save(any(Notification.class));
+      verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
+    }
+
+    @Test
+    @DisplayName("구독자가 없을 경우 알림이 생성되지 않는다.")
+    public void 성공_구독자_없음() {
+      //given
+      FundingNotificationCommandDto command = new FundingNotificationCommandDto(
+          NotificationType.FUNDING_START, "123", "PRODUCT"
+      );
+      when(
+          notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
+              123L))
+          .thenReturn(List.of());
+
+      //when
+      notificationService.createFundingNotification(command);
+
+      //then
+      verify(notificationRepository, never()).save(any(Notification.class));
     }
   }
 

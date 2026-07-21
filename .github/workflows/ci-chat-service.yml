@@ -1,5 +1,4 @@
 name: CI - chat-service
-
 on:
   push:
     branches: [main, develop]
@@ -9,11 +8,9 @@ on:
     branches: [develop]
     paths:
       - 'services/chat-service/**'
-
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     services:
       postgresql:
         image: postgres:17
@@ -28,19 +25,21 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
             services/chat-service
             modules/common
+            modules/messaging
+            libs/bds-events
             build.gradle
             settings.gradle
             gradlew
             gradle
 
-      - name: Build and start RabbitMQ (STOMP enabled)
+      # 채팅 내부 브로커 — STOMP 플러그인이 필요해 커스텀 이미지 빌드
+      - name: Build and start Chat RabbitMQ (STOMP enabled)
         run: |
           docker build -t rabbitmq-ci:local \
             -f services/chat-service/docker/rabbitmq/Dockerfile.ci \
@@ -50,13 +49,32 @@ jobs:
             -e RABBITMQ_DEFAULT_USER=bds \
             -e RABBITMQ_DEFAULT_PASS=bds1234 \
             rabbitmq-ci:local
-          for i in $(seq 1 30); do
-            if docker exec rabbitmq rabbitmq-diagnostics ping > /dev/null 2>&1; then
-              echo "RabbitMQ ready"
-              break
-            fi
-            echo "Waiting for RabbitMQ... ($i/30)"
-            sleep 2
+
+      # MSA 공용 브로커 — 순정 이미지로 충분 (큐/exchange는 앱이 코드로 선언)
+      # 호스트 포트 충돌 방지를 위해 5673으로 매핑, vhost는 실환경(definitions.json)과 동일하게 msa
+      - name: Start MSA RabbitMQ
+        run: |
+          docker run -d --name rabbitmq-msa \
+            -p 5673:5672 \
+            -e RABBITMQ_DEFAULT_USER=chat-service \
+            -e RABBITMQ_DEFAULT_PASS=chat1234 \
+            -e RABBITMQ_DEFAULT_VHOST=msa \
+            rabbitmq:4
+
+      # 두 브로커의 기동을 함께 대기. 시간 내 준비되지 않으면 이 스텝에서 즉시 실패시켜
+      # 원인이 테스트 실패로 위장되는 것을 방지
+      - name: Wait for RabbitMQ brokers
+        run: |
+          for name in rabbitmq rabbitmq-msa; do
+            for i in $(seq 1 30); do
+              if docker exec $name rabbitmq-diagnostics -q ping > /dev/null 2>&1; then
+                echo "$name ready"
+                break
+              fi
+              echo "Waiting for $name... ($i/30)"
+              sleep 2
+            done
+            docker exec $name rabbitmq-diagnostics -q ping || { echo "$name failed to start"; exit 1; }
           done
 
       - uses: actions/setup-java@v4
@@ -76,20 +94,24 @@ jobs:
           DB_NAME: chat
           DB_USERNAME: postgres
           DB_PASSWORD: postgres
+          # 채팅 내부 브로커 (spring.rabbitmq.*)
           RABBITMQ_HOST: localhost
           RABBITMQ_PORT: 5672
           RABBITMQ_USERNAME: bds
           RABBITMQ_PASSWORD: bds1234
+          # MSA 공용 브로커 (bds.msa-broker.*)
+          MSA_RABBITMQ_HOST: localhost
+          MSA_RABBITMQ_PORT: 5673
+          MSA_RABBITMQ_USERNAME: chat-service
+          MSA_RABBITMQ_PASSWORD: chat1234
           CORS_ALLOWED_ORIGINS: http://localhost:3000
         run: ./gradlew :services:chat-service:clean :services:chat-service:build :services:chat-service:jacocoTestReport --stacktrace
-
       - name: Upload Coverage Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
           path: services/chat-service/build/reports/jacoco/test/html/
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
