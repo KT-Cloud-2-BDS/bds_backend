@@ -1,11 +1,8 @@
 name: CD - platform
 
-# CI - platform이 main에서 성공하면 실행되는 "얇은 호출자"
-# 배포 로직은 전부 cd-common.yml에 있고, 여기서는
-# "어떤 서비스를 배포할지"만 결정해서 넘긴다
-#
-# strategy.matrix + uses(reusable workflow)는 GitHub Actions 스펙상 조합 불가이므로
-# 서비스별 독립 job으로 분리하고 needs로 순서를 보장한다
+# CI - platform이 main에서 성공하면 실행
+# config-service는 배포하지 않기로 결정 (설정은 GitHub Secrets / Parameter Store로 관리)
+# → 현재 배포 대상은 discovery-service 하나
 on:
   workflow_run:
     workflows: ["CI - platform"]
@@ -13,15 +10,15 @@ on:
     branches: [main]
 
 jobs:
-  # CI가 올린 artifact 목록으로 실제 변경된 서비스만 추출
+  # CI가 올린 artifact 목록으로 실제 변경(빌드)된 서비스만 추출
   detect-artifacts:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       actions: read
     outputs:
-      has_config: ${{ steps.list.outputs.has_config }}
       has_discovery: ${{ steps.list.outputs.has_discovery }}
+      has_gateway: ${{ steps.list.outputs.has_gateway }}
     steps:
       - id: list
         env:
@@ -29,36 +26,12 @@ jobs:
         run: |
           NAMES=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts" \
             --jq '.artifacts[].name')
-          echo "has_config=$(echo "$NAMES" | grep -qx 'config-service' && echo true || echo false)" >> $GITHUB_OUTPUT
           echo "has_discovery=$(echo "$NAMES" | grep -qx 'discovery-service' && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has_gateway=$(echo "$NAMES" | grep -qx 'gateway-service' && echo true || echo false)" >> $GITHUB_OUTPUT
 
-  # Config Server를 먼저 배포 (Discovery가 설정을 여기서 받아오므로)
-  deploy-config:
-    needs: detect-artifacts
-    if: needs.detect-artifacts.outputs.has_config == 'true'
-    permissions:
-      id-token: write
-      contents: read
-      actions: read
-    uses: ./.github/workflows/cd-common.yml
-    with:
-      service: config-service
-      port: "8888"
-      ci-run-id: ${{ github.event.workflow_run.id }}
-      image-tag: ${{ github.event.workflow_run.head_sha }}
-      ssm-path-prefix: /platform
-    secrets: inherit
-
-  # Config 배포가 성공하거나 변경 없이 스킵된 경우에만 Discovery 배포
-  # config 배포 실패(failure/cancelled) 시에는 Discovery 배포도 중단
   deploy-discovery:
-    needs: [detect-artifacts, deploy-config]
-    if: >-
-      always() &&
-      needs.detect-artifacts.result == 'success' &&
-      needs.detect-artifacts.outputs.has_discovery == 'true' &&
-      needs.deploy-config.result != 'failure' &&
-      needs.deploy-config.result != 'cancelled'
+    needs: detect-artifacts
+    if: needs.detect-artifacts.outputs.has_discovery == 'true'
     permissions:
       id-token: write
       contents: read
@@ -66,8 +39,31 @@ jobs:
     uses: ./.github/workflows/cd-common.yml
     with:
       service: discovery-service
-      port: "8761"
+      port: "8761"          # Eureka 관례 포트 유지 (ALB 뒤가 아니라 인프라 수정 불필요)
       ci-run-id: ${{ github.event.workflow_run.id }}
       image-tag: ${{ github.event.workflow_run.head_sha }}
       ssm-path-prefix: /platform
     secrets: inherit
+
+  # gateway-service 구현 완료 후 주석 해제
+  # (CI - platform의 서비스 목록에도 gateway-service 추가 필요)
+  # deploy-gateway:
+  #   needs: [detect-artifacts, deploy-discovery]
+  #   if: >-
+  #     always() &&
+  #     needs.detect-artifacts.result == 'success' &&
+  #     needs.detect-artifacts.outputs.has_gateway == 'true' &&
+  #     needs.deploy-discovery.result != 'failure' &&
+  #     needs.deploy-discovery.result != 'cancelled'
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #     actions: read
+  #   uses: ./.github/workflows/cd-common.yml
+  #   with:
+  #     service: gateway-service
+  #     port: "8080"
+  #     ci-run-id: ${{ github.event.workflow_run.id }}
+  #     image-tag: ${{ github.event.workflow_run.head_sha }}
+  #     ssm-path-prefix: /platform
+  #   secrets: inherit

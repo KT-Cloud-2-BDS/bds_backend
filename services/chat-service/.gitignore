@@ -5,5 +5,5 @@ build/
 # Local environment
 .env
 
-# RabbitMQ definitions (contains credentials — copy from definitions.json.example)
-docker/rabbitmq/definitions.json
+# RabbitMQ definitions 는 placeholder 템플릿이므로 커밋 대상
+# 실제 credential 은 EC2의 .env 파일에서 BDS_HASH / BDS_ADMIN_HASH 로 주입
