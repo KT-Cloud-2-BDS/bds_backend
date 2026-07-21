@@ -24,3 +24,7 @@ mail:
 
 internal:
   gateway-secret: "test-internal-secret"
+
+eureka:
+  client:
+    enabled: false
