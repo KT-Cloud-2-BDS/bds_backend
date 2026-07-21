@@ -7,7 +7,7 @@ on:
     paths:
       - 'services/member-service/**'
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'services/member-service/**'
 

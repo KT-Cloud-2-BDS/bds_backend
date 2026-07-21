@@ -5,7 +5,7 @@ on:
     paths:
       - 'services/chat-service/**'
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'services/chat-service/**'
 jobs:
