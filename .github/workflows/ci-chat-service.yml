@@ -74,7 +74,12 @@ jobs:
               echo "Waiting for $name... ($i/30)"
               sleep 2
             done
-            docker exec $name rabbitmq-diagnostics -q ping || { echo "$name failed to start"; exit 1; }
+            if ! docker exec $name rabbitmq-diagnostics -q ping 2>/dev/null; then
+              echo "=== $name logs ==="
+              docker logs $name || true
+              echo "$name failed to start"
+              exit 1
+            fi
           done
 
       - uses: actions/setup-java@v4

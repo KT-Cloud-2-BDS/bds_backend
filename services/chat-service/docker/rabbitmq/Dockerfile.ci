@@ -1,2 +1,2 @@
 FROM rabbitmq:4-management
-COPY enabled_plugins /etc/rabbitmq/enabled_plugins
+RUN rabbitmq-plugins enable --offline rabbitmq_stomp
