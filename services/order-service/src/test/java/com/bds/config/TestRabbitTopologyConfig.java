@@ -1,6 +1,5 @@
 package com.bds.config;
 
-import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.ExchangeBuilder;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -10,8 +9,8 @@ import org.springframework.context.annotation.Bean;
 public class TestRabbitTopologyConfig {
 
     @Bean
-    public DirectExchange paymentExchange() {
-        return ExchangeBuilder.directExchange("payment.exchange").durable(true).build();
+    public TopicExchange paymentExchange() {
+        return ExchangeBuilder.topicExchange("payment.exchange").durable(true).build();
     }
 
     @Bean
