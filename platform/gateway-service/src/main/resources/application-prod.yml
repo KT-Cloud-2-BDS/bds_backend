@@ -15,22 +15,22 @@ spring:
                 - Path=/api/members/**
 
             - id: chat-service
-              uri: http://${CHAT_SERVICE_HOST}:${CHAT_SERVICE_PORT}
+              uri: lb://chat-service
               predicates:
                 - Path=/api/chat/**
 
             - id: notification-service
-              uri: http://${NOTIFICATION_SERVICE_HOST}:${NOTIFICATION_SERVICE_PORT}
+              uri: lb://notification-service
               predicates:
                 - Path=/api/notifications/**
 
             - id: order-service
-              uri: http://${ORDER_SERVICE_HOST}:${ORDER_SERVICE_PORT}
+              uri: lb://order
               predicates:
                 - Path=/api/orders/**
 
             - id: payment-service
-              uri: http://${PAYMENT_SERVICE_HOST}:${PAYMENT_SERVICE_PORT}
+              uri: lb://payment-service
               predicates:
                 - Path=/api/payments/**
 
