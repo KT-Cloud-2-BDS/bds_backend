@@ -1,0 +1,35 @@
+### 주문서 생성
+POST http://localhost:8084/api/orders/billing
+Content-Type: application/json
+X-User-Id: 1
+
+{
+  "fundingId": 1,
+  "isReservedOrder": false,
+  "rewards": [
+    {
+      "id": 1,
+      "qty": 1
+    }
+  ]
+}
+
+### 주문 생성 (결제 요청)
+POST http://localhost:8084/api/orders
+Content-Type: application/json
+X-User-Id: 1
+
+{
+  "orderId": 16,
+  "fundingId": 1,
+  "isNowPay": true
+}
+
+### 주문 취소
+PATCH http://localhost:8084/api/orders/1/cancel
+Content-Type: application/json
+X-User-Id: 1
+
+{
+  "fundingId": 1
+}

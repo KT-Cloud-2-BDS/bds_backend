@@ -2,19 +2,9 @@ spring:
   application:
     name: order-test
 
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    virtual-host: msa
-    username: ${RABBITMQ_USER:order-service}
-    password: ${RABBITMQ_PASSWORD:order1234}
-    # 발행 서비스 필수 — confirm 콜백이 동작하기 위한 설정
-    publisher-confirm-type: correlated
-    publisher-returns: true
-
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
     show-sql: true
 
   flyway:
@@ -24,3 +14,4 @@ logging:
   level:
     com.bds: DEBUG
     org.hibernate.SQL: DEBUG
+    org.springframework.modulith: DEBUG

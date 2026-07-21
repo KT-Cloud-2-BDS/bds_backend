@@ -1,5 +1,6 @@
 package com.bds.order.infrastructure.common;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 public abstract class BaseEntity {
 
+    @Column(updatable = false)
     @CreatedDate
     private LocalDateTime createdAt;
 
