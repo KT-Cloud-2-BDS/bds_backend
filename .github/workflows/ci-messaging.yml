@@ -9,7 +9,7 @@ on:
       - 'build.gradle'
       - 'settings.gradle'
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'libs/**'
       - 'modules/messaging/**'

@@ -4,16 +4,10 @@ on:
     branches: [main, develop]
     paths:
       - 'services/chat-service/**'
-      - 'modules/common/**'
-      - 'modules/messaging/**'
-      - 'libs/bds-events/**'
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'services/chat-service/**'
-      - 'modules/common/**'
-      - 'modules/messaging/**'
-      - 'libs/bds-events/**'
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
