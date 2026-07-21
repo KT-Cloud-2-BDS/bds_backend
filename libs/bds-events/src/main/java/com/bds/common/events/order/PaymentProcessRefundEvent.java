@@ -6,7 +6,7 @@ import java.util.UUID;
 
 @Externalized("payment.exchange::payment.process.refund")
 public record PaymentProcessRefundEvent(
-        String requestId,
+        UUID requestId,
         Long orderId,
         Long memberId,
         Long fundingId,
@@ -15,7 +15,7 @@ public record PaymentProcessRefundEvent(
 ) {
     public static PaymentProcessRefundEvent of(Long orderId, Long memberId, Long fundingId, Long amount, String cancelReason) {
         return new PaymentProcessRefundEvent(
-                UUID.randomUUID().toString(),
+                UUID.randomUUID(),
                 orderId,
                 memberId,
                 fundingId,

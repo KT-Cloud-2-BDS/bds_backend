@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Externalized("payment.exchange::payment.process.settlement")
 public record PaymentProcessSettlementEvent(
-        String batchId,
+        UUID batchId,
         String type,
         Long creatorMemberId,
         Long fundingId,
@@ -15,7 +15,7 @@ public record PaymentProcessSettlementEvent(
 ) {
     public static PaymentProcessSettlementEvent of(String type, Long creatorMemberId, Long fundingId, List<SettlementItem> items) {
         return new PaymentProcessSettlementEvent(
-                UUID.randomUUID().toString(),
+                UUID.randomUUID(),
                 type,
                 creatorMemberId,
                 fundingId,

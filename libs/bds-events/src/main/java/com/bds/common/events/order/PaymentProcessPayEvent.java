@@ -6,7 +6,7 @@ import java.util.UUID;
 
 @Externalized("payment.exchange::payment.process.pay")
 public record PaymentProcessPayEvent(
-        String requestId,
+        UUID requestId,
         Long orderId,
         Long memberId,
         Long fundingId,
@@ -15,7 +15,7 @@ public record PaymentProcessPayEvent(
 ) {
     public static PaymentProcessPayEvent of(Long orderId, Long memberId, Long fundingId, Long amount) {
         return new PaymentProcessPayEvent(
-                UUID.randomUUID().toString(),
+                UUID.randomUUID(),
                 orderId,
                 memberId,
                 fundingId,
