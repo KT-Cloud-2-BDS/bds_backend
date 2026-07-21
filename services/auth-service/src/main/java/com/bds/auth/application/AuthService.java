@@ -42,7 +42,7 @@ public class AuthService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @Transactional
+    @Transactional(readOnly = true)
     public void sendSignUpVerificationCode(String email) {
 
         Optional<Auth> existingAuth = authRepository.findByEmail(email);
@@ -57,7 +57,6 @@ public class AuthService {
         emailService.sendVerificationEmail(email, verificationCode);
     }
 
-    @Transactional
     public void verifyCode(String email, String code) {
         String redisCode = tokenCacheRepository.get("verify:" + email);
 
@@ -107,7 +106,7 @@ public class AuthService {
         return savedAuth.getId();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public void sendPasswordResetVerificationCode(String email) {
         Auth auth = authRepository.findByEmail(email)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
@@ -122,7 +121,6 @@ public class AuthService {
         emailService.sendPasswordResetVerificationEmail(email, verificationCode);
     }
 
-    @Transactional
     public void verifyPasswordResetCode(String email, String code) {
         String redisCode = tokenCacheRepository.get("pw-reset:" + email);
 
@@ -169,7 +167,7 @@ public class AuthService {
         authLocalRepository.save(authLocal);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public AuthLoginResponseDto login(String email, String password) {
         Auth auth = authRepository.findByEmail(email)
             .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN_CREDENTIALS));
@@ -224,7 +222,7 @@ public class AuthService {
         return savedAuth;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public AuthLoginResponseDto reissueToken(String refreshToken) {
         Long authId;
         try {
@@ -254,7 +252,6 @@ public class AuthService {
         return new AuthLoginResponseDto(newAccessToken, newRefreshToken);
     }
 
-    @Transactional
     public void logout(Long authId, String accessToken) {
         tokenCacheRepository.delete("refresh:" + authId);
 
