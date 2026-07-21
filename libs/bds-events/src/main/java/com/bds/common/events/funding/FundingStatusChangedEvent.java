@@ -2,7 +2,7 @@ package com.bds.common.events.funding;
 
 import org.springframework.modulith.events.Externalized;
 
-@Externalized("funding.exchange::funding.status")
+@Externalized("notification.exchange::funding.status")
 public record FundingStatusChangedEvent(
         String type,
         String targetType,

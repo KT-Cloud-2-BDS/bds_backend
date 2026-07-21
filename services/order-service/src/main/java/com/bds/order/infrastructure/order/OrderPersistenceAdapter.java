@@ -41,6 +41,11 @@ public class OrderPersistenceAdapter implements OrderRepository {
     }
 
     @Override
+    public Optional<Order> findById(Long orderId) {
+        return orderJpaRepository.findByIdWithRewards(orderId).map(orderMapper::toDomain);
+    }
+
+    @Override
     public List<Long> findOrderIdsByFundingIdAndStatus(Long fundingId, OrderStatus status, Long lastOrderId, int size) {
         return orderJpaRepository.findOrderIdsByFundingIdAndStatus(fundingId, status, lastOrderId, PageRequest.of(0, size));
     }

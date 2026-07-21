@@ -12,6 +12,8 @@ public interface OrderRepository {
 
     void deleteAll();
 
+    Optional<Order> findById(Long orderId);
+
     Optional<Order> findByIdForUpdate(Long orderId);
 
     List<OrderListProjection> findOrderListWithFunding(Long memberId, Pageable pageable);

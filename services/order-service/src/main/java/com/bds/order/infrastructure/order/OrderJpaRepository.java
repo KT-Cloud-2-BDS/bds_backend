@@ -59,4 +59,9 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
             "JOIN r.funding f " +
             "WHERE o.id = :orderId")
     Optional<String> findFundingTitleByOrderId(@Param("orderId") Long orderId);
+
+
+    @Query("SELECT o FROM OrderJpaEntity o LEFT JOIN FETCH o.orderRewards WHERE o.id = :orderId")
+    Optional<OrderJpaEntity> findByIdWithRewards(@Param("orderId") Long orderId);
+
 }

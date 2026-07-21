@@ -39,11 +39,6 @@ public class RabbitTopologyConfig {
     }
 
     @Bean
-    public TopicExchange fundingExchange() {
-        return ExchangeBuilder.topicExchange(FUNDING_EXCHANGE).durable(true).build();
-    }
-
-    @Bean
     public Queue orderProcessQueue() {
         return new Queue(ORDER_PROCESS_QUEUE, true);
     }
