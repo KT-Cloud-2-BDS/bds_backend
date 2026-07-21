@@ -5,12 +5,12 @@ spring:
         webflux:
           routes:
             - id: auth-service
-              uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
+              uri: lb://auth-service
               predicates:
                 - Path=/api/auths/**
 
             - id: member-service
-              uri: http://${MEMBER_SERVICE_HOST:localhost}:${MEMBER_SERVICE_PORT:8086}
+              uri: lb://member-service
               predicates:
                 - Path=/api/members/**
 
@@ -36,6 +36,11 @@ spring:
 
 jwt:
   jwks-uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}/oauth2/jwks
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
 
 internal:
   # 게이트웨이와 다운스트림 서비스가 공유하는 내부 시크릿(로컬 개발 전용 기본값).

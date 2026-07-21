@@ -5,12 +5,12 @@ spring:
         webflux:
           routes:
             - id: auth-service
-              uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+              uri: lb://auth-service
               predicates:
                 - Path=/api/auths/**
 
             - id: member-service
-              uri: http://${MEMBER_SERVICE_HOST}:${MEMBER_SERVICE_PORT}
+              uri: lb://member-service
               predicates:
                 - Path=/api/members/**
 
@@ -36,6 +36,11 @@ spring:
 
 jwt:
   jwks-uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}/oauth2/jwks
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/
 
 internal:
   gateway-secret: ${INTERNAL_GATEWAY_SECRET}

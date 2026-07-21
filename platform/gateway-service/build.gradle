@@ -21,6 +21,10 @@ dependencies {
     // Resource Server 의존성 (NimbusJwtDecoder 포함)
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
+    // Eureka 서비스 디스커버리 + lb:// 라우팅을 위한 로드밸런서
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+
     // 리액티브 테스트 라이브러리
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
