@@ -7,7 +7,7 @@ on:
     paths:
       - 'services/order-service/**'
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'services/order-service/**'
 
