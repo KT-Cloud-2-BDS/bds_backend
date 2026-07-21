@@ -29,6 +29,7 @@ public class ChatStompController {
     private final ReadReceiptBuffer readReceiptBuffer;
     private final SimpMessagingTemplate messagingTemplate;
 
+
     @MessageMapping("/chat/send/{roomId}")
     public void send(@DestinationVariable Long roomId,
                      @Payload ChatSendRequest request,

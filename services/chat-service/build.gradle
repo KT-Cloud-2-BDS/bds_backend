@@ -15,6 +15,7 @@ jacocoTestReport {
 test {
     finalizedBy jacocoTestReport
     systemProperty 'spring.profiles.active', 'local'
+    systemProperty 'management.server.port', '0'   // 테스트 시 management 포트 충돌 방지
     testLogging {
                 exceptionFormat 'full'
                 events 'failed'
@@ -23,12 +24,16 @@ test {
 
 dependencies {
     implementation project(':modules:common')
+    implementation project(':libs:bds-events')
+    implementation project(':modules:messaging')
 
     // web, validation은 common의 api로 자동 전파됨
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'org.postgresql:postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
     // Flyway (Spring Boot 4.x에서 자동구성이 별도 모듈로 분리됨)
     implementation 'org.springframework.boot:spring-boot-flyway'

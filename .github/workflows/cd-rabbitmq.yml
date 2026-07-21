@@ -1,0 +1,81 @@
+name: CD - rabbitmq
+
+# infra/rabbitmq 설정 변경 시 MSA 공용 브로커에 반영
+# 흐름: 설정 파일 S3 업로드 → SSM으로 EC2가 내려받아 docker compose 재기동
+# (앱 서비스와 달리 이미지 빌드가 없어 cd-common을 쓰지 않음)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/rabbitmq/**'
+  workflow_dispatch: {}   # 최초 세팅 등 수동 실행용
+
+env:
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            infra/rabbitmq
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload config to S3
+        run: |
+          aws s3 sync infra/rabbitmq "s3://${{ secrets.ARTIFACTS_BUCKET }}/rabbitmq" --delete
+
+      - name: Apply config on EC2 via SSM
+        run: |
+          cat > params.json << EOF
+          {
+            "commands": [
+              "mkdir -p /opt/rabbitmq /opt/rabbitmq-data",
+              "aws s3 sync s3://${{ secrets.ARTIFACTS_BUCKET }}/rabbitmq /opt/rabbitmq --delete",
+              "aws ssm get-parameter --region ap-northeast-2 --name /infra/rabbitmq/env --with-decryption --query Parameter.Value --output text > /opt/rabbitmq/.env",
+              "chmod 600 /opt/rabbitmq/.env",
+              "cd /opt/rabbitmq && docker compose --env-file .env up -d --force-recreate",
+              "for i in \$(seq 1 30); do sleep 2; if docker exec rabbitmq-prod rabbitmq-diagnostics -q ping >/dev/null 2>&1; then echo 'RabbitMQ OK'; exit 0; fi; done; echo 'RabbitMQ FAILED'; cd /opt/rabbitmq && docker compose logs --tail 100; exit 1"
+            ],
+            "workingDirectory": ["/opt/rabbitmq"]
+          }
+          EOF
+
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Service,Values=rabbitmq" \
+            --comment "Apply rabbitmq config ${GITHUB_SHA::7}" \
+            --timeout-seconds 600 \
+            --parameters file://params.json \
+            --query "Command.CommandId" --output text)
+          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
+
+      - name: Wait for result
+        run: |
+          for i in $(seq 1 60); do
+            sleep 5
+            STATUSES=$(aws ssm list-command-invocations \
+              --command-id "$COMMAND_ID" \
+              --query "CommandInvocations[].Status" --output text)
+            echo "[$i/60] 상태: ${STATUSES:-대기 중...}"
+            if echo "$STATUSES" | grep -qE "Failed|Cancelled|TimedOut"; then
+              echo "❌ 적용 실패 - SSM Run Command 콘솔에서 로그 확인"
+              exit 1
+            fi
+            if [ -n "$STATUSES" ] && [ -z "$(echo "$STATUSES" | tr '\t' '\n' | grep -v '^Success$')" ]; then
+              echo "✅ 적용 완료"
+              exit 0
+            fi
+          done
+          echo "⏰ 타임아웃"
+          exit 1
