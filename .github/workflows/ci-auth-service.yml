@@ -7,7 +7,7 @@ on:
     paths:
       - 'services/auth-service/**'
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'services/auth-service/**'
 
@@ -15,20 +15,32 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-      # TODO: auth-service DB 확정 후 추가
-      # ex) mysql, postgresql,redis 등
-      # 예시
-#    services:
-      # JWT 로그아웃 블랙리스트 처리에 사용
-#      redis:
-#        image: redis:8
-#        ports:
-#          - 6379:6379
-#        options: >-
-#          --health-cmd "redis-cli ping"
-#          --health-interval 10s
-#          --health-timeout 5s
-#          --health-retries 5
+    services:
+      # 1. PostgreSQL
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: auth_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      # 2. Redis
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
 
     steps:
@@ -52,10 +64,17 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and Test
-        run: ./gradlew :services:auth-service:clean :services:auth-service:build
+        run: ./gradlew :services:auth-service:clean :services:auth-service:build :services:auth-service:jacocoTestReport --stacktrace -Dspring.profiles.active=dev
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: auth-service
           path: services/auth-service/build/libs/*[!plain].jar
+
+      - name: Upload Auth Service Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-auth-report
+          path: services/auth-service/build/reports/jacoco/test/html/
