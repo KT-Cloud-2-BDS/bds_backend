@@ -1,0 +1,7 @@
+FROM eclipse-temurin:25-jre
+ARG JAR_FILE
+ARG SERVER_PORT=8080
+COPY ${JAR_FILE} app.jar
+EXPOSE ${SERVER_PORT}
+ENV SERVER_PORT=${SERVER_PORT}
+ENTRYPOINT ["java", "-jar", "/app.jar"]

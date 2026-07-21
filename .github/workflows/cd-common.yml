@@ -41,11 +41,11 @@ jobs:
     env:
       AWS_REGION: ${{ inputs.aws-region }}
     steps:
-      # 레포 루트의 공용 Dockerfile만 필요
+      # 공용 Dockerfile만 필요
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            Dockerfile
+            infra/docker/Dockerfile
 
       # CI run에서 해당 서비스의 fat JAR 다운로드 (CI에서 테스트 통과한 결과물 재사용)
       - uses: actions/download-artifact@v4
@@ -72,6 +72,7 @@ jobs:
         run: |
           JAR=$(ls build-jar/*.jar | head -n 1)
           docker build \
+            -f infra/docker/Dockerfile \
             --build-arg JAR_FILE="$JAR" \
             --build-arg SERVER_PORT="${{ inputs.port }}" \
             -t "$IMAGE:${{ inputs.image-tag }}" \
