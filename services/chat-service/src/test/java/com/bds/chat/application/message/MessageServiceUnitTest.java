@@ -15,6 +15,7 @@ import com.bds.chat.domain.message.ChatMessageRepository;
 import com.bds.chat.domain.message.MessageStatus;
 import com.bds.chat.domain.message.MessageType;
 import com.bds.chat.domain.shared.*;
+import com.bds.chat.infrastructure.messaging.DirectEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,6 +35,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +45,7 @@ class MessageServiceUnitTest {
     @Mock ChatRoomRepository chatRoomRepository;
     @Mock InquiryChatMemberRepository memberRepository;
     @Mock FundingChatBlacklistRepository blacklistRepository;
+    @Mock DirectEventPublisher directEventPublisher;
     @Mock Clock clock;
 
     @InjectMocks MessageService messageService;
@@ -51,6 +54,7 @@ class MessageServiceUnitTest {
     private static final Long ROOM_ID = 10L;
     private static final Long MSG_ID = 100L;
     private static final Long SENDER_ID = 5L;
+    private static final Long RECIPIENT_ID = 7L;
     private static final Long CREATOR_ID = 2L;
     private static final Long PRODUCT_ID = 1L;
 
@@ -76,9 +80,19 @@ class MessageServiceUnitTest {
                 "hello", MessageType.TEXT, "cm-1", MessageStatus.SENT, NOW, null);
     }
 
+    private ChatMessage systemMessage() {
+        return ChatMessage.restore(ChatMessageId.of(MSG_ID), ChatRoomId.of(ROOM_ID), null,
+                "시스템 알림", MessageType.TEXT, "cm-sys", MessageStatus.SENT, NOW, null);
+    }
+
     private InquiryChatMember activeMember() {
         return InquiryChatMember.restore(InquiryChatMemberId.of(1L), ChatRoomId.of(ROOM_ID),
                 MemberId.of(SENDER_ID), MemberStatus.ACTIVE, null, NOW, NOW, null);
+    }
+
+    private InquiryChatMember recipientMember() {
+        return InquiryChatMember.restore(InquiryChatMemberId.of(2L), ChatRoomId.of(ROOM_ID),
+                MemberId.of(RECIPIENT_ID), MemberStatus.ACTIVE, null, NOW, NOW, null);
     }
 
     @Nested
@@ -122,6 +136,60 @@ class MessageServiceUnitTest {
             MessageResponseDto result = messageService.create(request, SENDER_ID);
 
             assertThat(result.messageId()).isEqualTo(MSG_ID);
+        }
+
+        @Test
+        void INQUIRY_방에서_메시지_전송_시_recipient에게_이벤트가_발행된다() {
+            MessageSendRequestDto request = new MessageSendRequestDto(ROOM_ID, "hello", "TEXT", null);
+
+            given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(inquiryRoom()));
+            given(memberRepository.findActiveMembers(ROOM_ID)).willReturn(List.of(activeMember(), recipientMember()));
+            given(chatMessageRepository.save(any())).willReturn(sentMessage());
+
+            messageService.create(request, SENDER_ID);
+
+            verify(directEventPublisher).publish(any());
+        }
+
+        @Test
+        void INQUIRY_방에서_알림_발행_실패_시_메시지_저장은_유지된다() {
+            MessageSendRequestDto request = new MessageSendRequestDto(ROOM_ID, "hello", "TEXT", null);
+
+            given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(inquiryRoom()));
+            given(memberRepository.findActiveMembers(ROOM_ID)).willReturn(List.of(activeMember(), recipientMember()));
+            given(chatMessageRepository.save(any())).willReturn(sentMessage());
+            doThrow(new RuntimeException("RabbitMQ 연결 실패")).when(directEventPublisher).publish(any());
+
+            MessageResponseDto result = messageService.create(request, SENDER_ID);
+
+            assertThat(result.messageId()).isEqualTo(MSG_ID);
+        }
+
+        @Test
+        void senderId가_null인_시스템_메시지는_MessageResponseDto의_senderId가_null이다() {
+            MessageSendRequestDto request = new MessageSendRequestDto(ROOM_ID, "시스템 알림", "TEXT", null);
+
+            given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(fundingRoom()));
+            given(blacklistRepository.isBlacklisted(ROOM_ID, SENDER_ID)).willReturn(false);
+            given(chatMessageRepository.save(any())).willReturn(systemMessage());
+
+            MessageResponseDto result = messageService.create(request, SENDER_ID);
+
+            assertThat(result.senderId()).isNull();
+            assertThat(result.messageId()).isEqualTo(MSG_ID);
+        }
+
+        @Test
+        void FUNDING_방에서는_알림_이벤트가_발행되지_않는다() {
+            MessageSendRequestDto request = new MessageSendRequestDto(ROOM_ID, "hello", "TEXT", null);
+
+            given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(fundingRoom()));
+            given(blacklistRepository.isBlacklisted(ROOM_ID, SENDER_ID)).willReturn(false);
+            given(chatMessageRepository.save(any())).willReturn(sentMessage());
+
+            messageService.create(request, SENDER_ID);
+
+            verify(directEventPublisher, never()).publish(any());
         }
     }
 
