@@ -10,6 +10,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.amqp.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.Externalized;
 
 @Configuration
 public class RabbitTopologyConfig {
@@ -31,6 +33,13 @@ public class RabbitTopologyConfig {
                                          MessageConverter converter,
                                          ObjectProvider<RabbitTemplateCustomizer> customizers) {
         return BdsRabbit.standardTemplate(cf, converter, customizers);
+    }
+
+    @Bean
+    public EventExternalizationConfiguration eventExternalizationConfiguration() {
+        return EventExternalizationConfiguration.externalizing()
+                .selectAndRoute(Externalized.class, Externalized::value)
+                .build();
     }
 
     @Bean
