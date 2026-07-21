@@ -15,10 +15,21 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # TODO: payment-service DB 확정 후 services 블록 추가
-    # 비관적 락(Pessimistic Lock) 및 Saga 패턴 보상 트랜잭션 지원을 위해
-    # 강한 트랜잭션 보장이 가능한 DB 필요
-    # ex) mysql, postgresql 등
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: payment
+          MYSQL_USER: payment
+          MYSQL_PASSWORD: payment
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -u root -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +52,15 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and Test
-        run: ./gradlew :services:payment-service:clean :services:payment-service:build
+        run: ./gradlew :services:payment-service:clean :services:payment-service:build :services:payment-service:jacocoTestReport --stacktrace
+      
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: services/payment-service/build/reports/jacoco/test/html/
+        
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

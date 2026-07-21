@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: chat-service
+  datasource:
+    hikari:
+      connection-timeout: 5000
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jackson:
+    time-zone: UTC
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+  task:
+    scheduling:
+      shutdown:
+        await-termination: true
+        await-termination-period: 10s
+
+chat:
+  read:
+    flush-interval-ms: 10000  # 읽음 처리 버퍼 flush 주기 (ms)
+
+server:
+  port: 8082
+
+management:
+  server:
+    port: 8083
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}

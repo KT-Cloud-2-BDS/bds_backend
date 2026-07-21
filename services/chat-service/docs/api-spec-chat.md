@@ -2,25 +2,26 @@
 
 ## 엔드포인트 목록
 
-| method | path                                  | auth required | 설명                           |
-|--------|---------------------------------------|-----------|------------------------------|
-| POST   | `/api/chat/inquiry`                   | O         | 1:1 문의 채팅방 생성                |
-| GET    | `/api/chat/inquiry`                   | O         | 내 참여 문의 채팅방 목록 조회            |
-| GET    | `/api/chat/inquiry/{roomId}`          | O         | 1:1 문의 채팅방 상세 조회             |
-| PATCH  | `/api/chat/rooms/{roomId}/close`      | O         | 공개 채팅방 삭제                    |
-| POST   | `/internal/chat/funding/{productId}`  | X         | 펀딩 제품 생성시 공개 채팅방 자동 생성 (시스템) |
-| GET    | `/api/chat/funding/{productId}`       | X         | 공개 채팅방 조회                    |
-| POST   | `/api/chat/funding/{roomId}/ban`      | O         | 공개 채팅방 사용자 BAN               |
-| GET    | `/api/chat/rooms/messages`            | O         | 채팅 이력 조회                     |
-| GET    | `/api/chat/inquiry/{roomId}/messages` | O         | 1:1 문의 채팅방 메시지 조회            |
-| GET    | `/api/chat/funding/{roomId}/messages` | O         | 공개 채팅방 메시지 조회                |
-| DELETE | `/api/chat/messages/{messageId}`      | O         | 메시지 삭제(soft delete)          |
-| WS     | `/ws/chat`                            | X         | Websocket 연결                 |
-| SUB    | `/topic/rooms/{roomId}`               | O/X       | 채팅방 구독                       |
-| UNSUB  | `subscription-id`                     | O/X       | 채팅방 구독 취소                    |
-| PUB    | `/app/chat.send`                      | O         | 메시지 전송                       |
-| PUB    | `/app/chat.read`                      | O         | 읽음 상태 갱신                     |
-| PUB    | `/app/chat.typing`                    | O         | 타이핑 인디케이터                    |
+| method | path                                         | auth required | 설명                           |
+|--------|----------------------------------------------|-----------|------------------------------|
+| POST   | `/api/chat/Inquiries`                        | O         | 1:1 문의 채팅방 생성                |
+| GET    | `/api/chat/Inquiries`                        | O         | 내 참여 문의 채팅방 목록 조회            |
+| GET    | `/api/chat/Inquiries/{roomId}`               | O         | 1:1 문의 채팅방 상세 조회             |
+| DELETE | `/api/chat/Inquiries/{roomId}/members/me`    | O       | 1:1 문의 채팅방 나가기               |
+| DELETE  | `/api/chat/rooms/{roomId}/close`             | O         | 공개 채팅방 삭제                    |
+| POST   | `/internal/chat/fundings/{productId}`        | X         | 펀딩 제품 생성시 공개 채팅방 자동 생성 (시스템) |
+| GET    | `/api/chat/fundings/{productId}`             | X         | 공개 채팅방 조회                    |
+| POST   | `/api/chat/fundings/{roomId}/ban`            | O         | 공개 채팅방 사용자 BAN               |
+| DELETE | `/api/chat/fundings/{roomId}/ban/{targetId}` | O   | 공개 채팅방 사용자 BAN 해제            |
+| GET    | `/api/chat/rooms/messages`                   | O         | 채팅 이력 조회                     |
+| GET    | `/api/chat/Inquiries/{roomId}/messages`      | O         | 1:1 문의 채팅방 메시지 조회            |
+| GET    | `/api/chat/fundings/{roomId}/messages`       | O         | 공개 채팅방 메시지 조회                |
+| DELETE | `/api/chat/messages/{messageId}`             | O         | 메시지 삭제(soft delete)          |
+| WS     | `/ws/chat`                                   | X         | Websocket 연결                 |
+| SUB    | `/topic/rooms/{roomId}`                      | O/X       | 채팅방 구독                       |
+| UNSUB  | `subscription-id`                            | O/X       | 채팅방 구독 취소                    |
+| PUB    | `/app/chat.send`                             | O         | 메시지 전송                       |
+| PUB    | `/app/chat.read`                             | O         | 읽음 상태 갱신                     |
 
 ---
 
@@ -43,7 +44,7 @@ Response Body
 ```json
 {
     "roomId": 201,
-    "type": "DIRECT",
+    "type": "INQUIRY",
     "productId": 101,
     "participants": [55],
     "createdBy": 9,
@@ -56,9 +57,11 @@ Validation / Business Rules
 
 - 채팅방은 상품 생성자(seller) 와 요청 사용자(buyer) 간에만 생성된다.
 - productId는 반드시 존재하는 펀딩 상품이어야 한다.
-- 동일한 (productId + buyerId) 조합에 대해서는 하나의 채팅방만 생성된다. 
-- 이미 존재하는 경우 기존 채팅방을 반환하거나 409 Conflict를 반환한다 (정책 선택 가능).
+- 동일한 (productId + buyerId) 조합에 대해서는 하나의 채팅방만 생성된다.
+- 이미 존재하는 경우 409 Conflict를 반환한다.
 - 채팅방 type은 INQUIRY로 고정된다.
+- seller ID는 클라이언트로부터 직접 받지 않는다. 해당 product의 FUNDING 채팅방 creator_id를 seller로 간주하여 chat-service 내부에서 조회한다. 따라서 FUNDING 채팅방이 존재하지 않는 product에 대해서는 INQUIRY 채팅방 생성이 불가능하며 404를 반환한다.
+- 생성 시 buyer와 seller 모두 ACTIVE 멤버로 즉시 추가된다.
 ---
 
 ## 내 참여 문의 채팅방 목록 조회
@@ -76,17 +79,23 @@ Response Body
   "rooms": [
       {
         "roomId": 201,
-        "type": "DIRECT",
+        "type": "INQUIRY",
         "productId": 101,
         "participants": [55],
         "createdBy": 9,
         "createdAt": "2026-04-21T09:00:00Z",
-        "lastMessage": "안녕하세요",
+        "lastMessage": {
+          "messageId": 981,
+          "senderId": 55,
+          "content": "안녕하세요",
+          "isDeleted": false,
+          "createdAt": "2026-04-27T14:22:15Z"
+        },
         "unreadCount": 2,
         "status": "ACTIVE"
       }
   ],
-  "nextCursor": 0,
+  "nextCursor": null,
   "hasNext": false,
   "totalCount": 1
 }
@@ -97,7 +106,7 @@ Validation / Business Rules
 - 사용자는 자신이 참여중인 모든 1:1 채팅방에 대한 정보를 가져올 수 있다.
 - 채팅방을 최대 20개까지 한번에 가져올 수 있다.
 - 참여중인 채팅방이 20개가 넘어갈 시 "hasNext" 필드의 값이 true가 되며 다음으로 읽어야할 채팅방의 roomId가 "nextCursor"로 제공된다.
-- 만약 다음으로 읽어올 수 있는 채팅방이 존재하지 않을 경우 "hasNext" 필드의 값은 false, "nextCursor" 필드의 값은 0이 된다.
+- 만약 다음으로 읽어올 수 있는 채팅방이 존재하지 않을 경우 "hasNext" 필드의 값은 false, "nextCursor" 필드의 값은 null이 된다.
 ---
 ## 1:1 문의 채팅방 상세 조회
 
@@ -112,20 +121,20 @@ Response Body
 ```json
 {
     "roomId": 201,
-    "type": "DIRECT",
+    "type": "INQUIRY",
     "productId": 101,
     "participants": [55],
     "createdBy": 9,
     "createdAt": "2026-04-21T09:00:00Z",
-    "lastMessage":{
+    "lastMessage": {
       "messageId": 981,
       "senderId": 55,
       "content": "안녕하세요",
       "isDeleted": false,
       "createdAt": "2026-04-27T14:22:15Z"
     },
-    "myMemberShip": {
-      "status": "JOINED",
+    "myMembership": {
+      "status": "ACTIVE",
       "lastReadMessageId": 880,
       "joinedAt": "2026-04-21T09:00:00Z"
     },
@@ -136,7 +145,38 @@ Response Body
 Validation / Business Rules
 
 - 사용자는 자신이 참여중인 1:1 채팅방의 정보만 가져올 수 있다.
-- 사용자의 상태(JOINED,BANNED)등의 상태를 myMemberShip 필드를 통해 확인할 수 있다.
+- 사용자의 상태(ACTIVE, LEFT, BANNED)를 myMembership 필드를 통해 확인할 수 있다.
+---
+
+## 1:1 문의 채팅방 나가기
+
+```
+DELETE /api/chat/inquiry/{roomId}/members/me
+```
+
+Auth Required: **O**
+
+Path Variable
+
+| 필드       | 타입    | 필수 | 설명     |
+|----------|-------|---|--------|
+| `roomId` | Long* | Y | 채팅방 id |
+
+Response Body
+
+```json
+{
+  "roomId": 201,
+  "memberId": 55,
+  "leftAt": "2026-07-07T12:00:00Z"
+}
+```
+
+Validation / Business Rules
+
+- 본인이 참여 중인 채팅방만 나갈 수 있으며, 참여 중이 아닌 경우 404를 반환한다.
+- 차단(BANNED)된 사용자는 나가기를 수행할 수 없으며 403을 반환한다.
+- 상대방이 이미 나간 상태에서 본인이 다시 채팅방을 생성하면 양측 모두 자동으로 재입장 처리된다.
 ---
 
 ## 공개 채팅방 삭제
@@ -181,9 +221,15 @@ Auth Required: **X**
 
 Path Variable
 
-| 필드       | 타입      | 필수 | 설명       |
-|----------|---------|---|----------|
-| `productId` | Long*   | Y | 펀딩 제품 id |
+| 필드          | 타입    | 필수 | 설명       |
+|-------------|-------|---|----------|
+| `productId` | Long* | Y | 펀딩 제품 id |
+
+Request Body
+
+| 필드          | 타입    | 필수 | 설명            |
+|-------------|-------|---|---------------|
+| `creatorId` | Long* | Y | 펀딩 채팅방 생성자 id |
 
 Response Body
 
@@ -192,7 +238,7 @@ Response Body
     "roomId": 201,
     "type": "FUNDING",
     "productId": 101,
-    "participants": [55],
+    "participants": [],
     "createdBy": 9,
     "createdAt": "2026-04-21T09:00:00Z",
     "status": "ACTIVE"
@@ -257,9 +303,10 @@ Path Variable
 
 Request Body
 
-| 필드       | 타입      | 필수 | 설명         |
-|----------|---------|---|------------|
-| `userId` | Long*   | Y | 차단할 사용자 id |
+| 필드         | 타입     | 필수 | 설명         |
+|------------|--------|---|------------|
+| `targetId` | Long*  | Y | 차단할 사용자 id |
+| `reason`   | String | N | 차단 사유      |
 
 Response Body
 
@@ -267,24 +314,60 @@ Response Body
 {
     "roomId": 301,
     "bannedUserId": 44,
-    "status": "BANNED"
+    "status": "ACTIVE"
 }
 ```
-
 
 Validation / Business Rules
 - 차단된 사용자는 채팅 메시지를 전송할 수 없다.
 - 해당 펀딩 생성자만 수행할 수 있다.
+- 본인을 차단할 수 없으며 이 경우 400을 반환한다.
+- 이미 차단된 사용자를 다시 차단할 경우 409를 반환한다.
+---
+
+## 공개 채팅방 사용자 BAN 해제
+
+```
+DELETE /api/chat/funding/{roomId}/ban/{targetId}
+```
+
+Auth Required: **O**
+
+Path Variable
+
+| 필드         | 타입    | 필수 | 설명           |
+|------------|-------|---|--------------|
+| `roomId`   | Long* | Y | 채팅방 id       |
+| `targetId` | Long* | Y | 해제할 사용자 id   |
+
+Response Body
+
+```json
+{
+    "roomId": 301,
+    "bannedUserId": 44,
+    "status": "RELEASED"
+}
+```
+
+Validation / Business Rules
+- 해당 펀딩 생성자만 수행할 수 있다.
+- 활성 차단 상태인 사용자만 해제할 수 있으며, 차단 이력이 없거나 이미 해제된 경우 404를 반환한다.
 ---
 
 ## 채팅 이력 조회
 
 ```
-POST /api/chat/rooms/meesageId
+GET /api/chat/rooms/messages
 ```
 
 Auth Required: **O**
 
+Query Parameter
+
+| 필드       | 타입    | 필수 | 설명                        |
+|----------|-------|---|---------------------------|
+| `cursor` | Long* | N | 커서 기반 페이징 기준 messageId (미입력 시 최신부터 조회) |
 
 Response Body
 
@@ -293,14 +376,15 @@ Response Body
   "messages": [
     {
       "messageId": 981,
+      "roomId": 101,
       "senderId": 55,
       "content": "안녕하세요",
+      "type": "TEXT",
       "isDeleted": false,
-      "createdAt": "2026-04-27T14:22:15Z",
-      "roomId": 101
+      "createdAt": "2026-04-27T14:22:15Z"
     }
   ],
-  "nextCursor": 0,
+  "nextCursor": null,
   "hasNext": false,
   "totalCount": 1
 }
@@ -308,11 +392,11 @@ Response Body
 
 
 Validation / Business Rules
-- FUNDING, PRIVATE 등의 모든 TYPE의 채팅방 구분 없이 사용자가 작성한 모든 채팅 이력을 조회한다.
+- INQUIRY, FUNDING 등 모든 타입의 채팅방 구분 없이 사용자가 작성한 모든 채팅 이력을 조회한다.
 - 자신이 생성한 MESSAGE만 조회할 수 있다.
 - 메시지를 최대 20개까지 한번에 가져올 수 있다.
-- 생성한 메시지가 20개가 넘어갈 시 "hasNext" 필드의 값이 true가 되며 다음으로 읽어야할 메시지의 id가 "nextCursor"로 제공된다.
-- 만약 다음으로 읽어올 수 있는 메시지가 존재하지 않을 경우 "hasNext" 필드의 값은 false, "nextCursor" 필드의 값은 0이 된다.
+- 가져온 메시지가 20개가 넘어갈 시 "hasNext" 필드의 값이 true가 되며 다음으로 읽어야할 메시지의 id가 "nextCursor"로 제공된다.
+- 다음으로 읽어올 수 있는 메시지가 존재하지 않을 경우 "hasNext" 필드의 값은 false, "nextCursor" 필드의 값은 null이 된다.
 ---
 ## 1:1 문의 채팅방 메시지 조회
 
@@ -324,9 +408,15 @@ Auth Required: **O**
 
 Path Variable
 
-| 필드       | 타입      | 필수 | 설명     |
-|----------|---------|---|--------|
-| `roomId` | Long*   | Y | 채팅방 id |
+| 필드       | 타입    | 필수 | 설명     |
+|----------|-------|---|--------|
+| `roomId` | Long* | Y | 채팅방 id |
+
+Query Parameter
+
+| 필드       | 타입    | 필수 | 설명                        |
+|----------|-------|---|---------------------------|
+| `cursor` | Long* | N | 커서 기반 페이징 기준 messageId (미입력 시 최신부터 조회) |
 
 Response Body
 
@@ -335,14 +425,15 @@ Response Body
   "messages": [
     {
       "messageId": 981,
+      "roomId": 101,
       "senderId": 55,
       "content": "안녕하세요",
+      "type": "TEXT",
       "isDeleted": false,
-      "createdAt": "2026-04-27T14:22:15Z",
-      "roomId": 101
+      "createdAt": "2026-04-27T14:22:15Z"
     }
   ],
-  "nextCursor": 0,
+  "nextCursor": null,
   "hasNext": false,
   "totalCount": 1
 }
@@ -350,12 +441,12 @@ Response Body
 
 
 Validation / Business Rules
-- 문의 채팅방에서의 메시지만을 조회할 수 있으며 PUBLIC 채팅방일시 404 NOTFOUND 오류가 전파된다.
-- 조회와 동시에 가져온 마지막 MESSAGE ID가 읽음 처리가 된다.
-- 해당 채팅방의 멤버만이 조회할 수 있으며, 아닐수 403 FORBIDDEN 에러가 발생한다.
+- INQUIRY 채팅방의 메시지만 조회할 수 있으며, FUNDING 채팅방 roomId를 사용할 경우 404가 반환된다.
+- 조회와 동시에 가장 최근 메시지 id가 lastReadMessageId로 갱신된다.
+- 해당 채팅방의 활성 멤버(ACTIVE)만 조회할 수 있으며, 아닐 경우 403 FORBIDDEN 에러가 발생한다.
 - 메시지를 최대 20개까지 한번에 가져올 수 있다.
-- 생성한 메시지가 20개가 넘어갈 시 "hasNext" 필드의 값이 true가 되며 다음으로 읽어야할 메시지의 id가 "nextCursor"로 제공된다.
-- 만약 다음으로 읽어올 수 있는 메시지가 존재하지 않을 경우 "hasNext" 필드의 값은 false, "nextCursor" 필드의 값은 0이 된다.
+- 가져온 메시지가 20개가 넘어갈 시 "hasNext" 필드의 값이 true가 되며 다음으로 읽어야할 메시지의 id가 "nextCursor"로 제공된다.
+- 다음으로 읽어올 수 있는 메시지가 존재하지 않을 경우 "hasNext" 필드의 값은 false, "nextCursor" 필드의 값은 null이 된다.
 ---
 
 ## 공개 채팅방 메시지 조회
@@ -368,9 +459,15 @@ Auth Required: **O**
 
 Path Variable
 
-| 필드       | 타입      | 필수 | 설명     |
-|----------|---------|---|--------|
-| `roomId` | Long*   | Y | 채팅방 id |
+| 필드       | 타입    | 필수 | 설명     |
+|----------|-------|---|--------|
+| `roomId` | Long* | Y | 채팅방 id |
+
+Query Parameter
+
+| 필드       | 타입    | 필수 | 설명                        |
+|----------|-------|---|---------------------------|
+| `cursor` | Long* | N | 커서 기반 페이징 기준 messageId (미입력 시 최신부터 조회) |
 
 Response Body
 
@@ -379,14 +476,15 @@ Response Body
   "messages": [
     {
       "messageId": 981,
+      "roomId": 101,
       "senderId": 55,
       "content": "안녕하세요",
+      "type": "TEXT",
       "isDeleted": false,
-      "createdAt": "2026-04-27T14:22:15Z",
-      "roomId": 101
+      "createdAt": "2026-04-27T14:22:15Z"
     }
   ],
-  "nextCursor": 0,
+  "nextCursor": null,
   "hasNext": false,
   "totalCount": 1
 }
@@ -394,10 +492,10 @@ Response Body
 
 
 Validation / Business Rules
-- 공개 채팅방에서의 메시지만을 조회할 수 있으며 PRIVATE 채팅방일시 404 NOTFOUND 오류가 전파된다.
+- FUNDING 채팅방의 메시지만 조회할 수 있으며, INQUIRY 채팅방 roomId를 사용할 경우 404가 반환된다.
 - 메시지를 최대 20개까지 한번에 가져올 수 있다.
-- 생성한 메시지가 20개가 넘어갈 시 "hasNext" 필드의 값이 true가 되며 다음으로 읽어야할 메시지의 id가 "nextCursor"로 제공된다.
-- 만약 다음으로 읽어올 수 있는 메시지가 존재하지 않을 경우 "hasNext" 필드의 값은 false, "nextCursor" 필드의 값은 0이 된다.
+- 가져온 메시지가 20개가 넘어갈 시 "hasNext" 필드의 값이 true가 되며 다음으로 읽어야할 메시지의 id가 "nextCursor"로 제공된다.
+- 다음으로 읽어올 수 있는 메시지가 존재하지 않을 경우 "hasNext" 필드의 값은 false, "nextCursor" 필드의 값은 null이 된다.
 ---
 ## 메시지 삭제
 
@@ -656,54 +754,6 @@ content-type:application/json
 - 기존 저장된 값보다 작거나 같은 lastReadMessageId 요청은 처리하지 않고 무시합니다.
 - 실시간 브로드캐스트는 즉시 수행하되, 고부하를 방지하기 위해 RDB 영속화는 별도 스케줄러(2~3초 주기) 또는 웹소켓 연결 종료(DISCONNECT) 시점에 일괄 반영(Flush)합니다.
 - 본 이벤트는 1:1 문의방 등 비공개 방 멤버들 간의 동기화에 유효하며, 대규모 공개 채팅방의 읽음 표시는 시스템 정책에 따라 비활성화될 수 있습니다.
-
----
-
-### 타이핑 인디케이터
-
-#### 타이핑 인디케이터 Destination
-| Destination        | Auth | 설명                    |
-|:-------------------| :---: |:----------------------|
-| `/app/chat.typing` | O | 타이핑 시작/종료 상태 전송 (PUB) |
-
-#### Payload 명세
-| 필드명      |   타입    | 필수 여부 | 설명                   |
-|:---------|:-------:| :---: |:---------------------|
-| `roomId` |  Long   | **Y** | 대상 채팅방 ID            |
-| `typing` | Boolean | **Y** | 타이핑 중 여부(true: 시작, false: 종료) |
-
-#### 타이핑 상태 전송 예시 (Client -> Server)
-```stomp
-SEND
-destination:/app/chat.typing
-content-type:application/json
-
-{
-  "roomId": 201,
-  "typing": true
-}^@
-```
-
-#### 서버 브로드캐스트 응답 예시 (Server -> 같은 방의 다른 멤버)
-- Destination: `/topic/rooms/{roomId}`
-```stomp
-MESSAGE
-subscription-id:sub-room-10
-destination:/topic/rooms/201
-content-type:application/json
-
-{
-  "event": "TYPING",
-  "roomId": 201,
-  "userId": 9,
-  "typing": true,
-  "occurredAt": "2026-04-27T14:22:36Z"
-}^@
-```
-
-#### Validation / Business Rules
-- 본 이벤트는 영속성이 필요 없는 실시간 UI 제어용 이벤트이므로, DB 및 Redis에 데이터를 별도로 저장하지 않습니다.
-- 잦은 네트워크 패킷 발생을 막기 위해 동일한 사용자가 5초 이내에 연속으로 typing=true를 전송하는 경우, 클라이언트나 API 게이트웨이 단에서 디바운스(Debounce)/스로틀(Throttle) 처리를 할 것을 권장합니다.
 
 ---
 

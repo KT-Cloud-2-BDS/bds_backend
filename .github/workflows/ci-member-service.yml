@@ -15,9 +15,23 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # TODO: member-service DB 확정 후 services 블록 추가
-    # ex) mysql, postgresql 등
     # 참고: 이메일 인증(SMTP), OAuth 2.0 소셜 로그인은 테스트 시 Mock 처리
+
+    #1. PostgreSQL
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: member_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -40,10 +54,16 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and Test
-        run: ./gradlew :services:member-service:clean :services:member-service:build
-
+        run: ./gradlew :services:member-service:clean :services:member-service:build :services:member-service:jacocoTestReport --stacktrace -Dspring.profiles.active=dev
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: member-service
           path: services/member-service/build/libs/*[!plain].jar
+
+      - name: Upload Member Service Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-member-report
+          path: services/member-service/build/reports/jacoco/test/html/
