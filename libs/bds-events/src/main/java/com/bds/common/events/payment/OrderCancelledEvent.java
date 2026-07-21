@@ -1,11 +1,11 @@
-package com.bds.common.events.order;
+package com.bds.common.events.payment;
 
 import org.springframework.modulith.events.Externalized;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Externalized("order.exchange::order.process.cancel")
+@Externalized("payment.exchange::order.process.cancel")
 public record OrderCancelledEvent(
         UUID eventId,
         Long orderId,

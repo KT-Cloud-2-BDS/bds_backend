@@ -16,11 +16,6 @@ public class RabbitTopologyConfig {
     }
 
     @Bean
-    public TopicExchange orderExchange() {
-        return ExchangeBuilder.topicExchange("order.exchange").durable(true).build();
-    }
-
-    @Bean
     public EventExternalizationConfiguration eventExternalizationConfiguration() {
         return EventExternalizationConfiguration.externalizing()
                 .selectAndRoute(Externalized.class, Externalized::value)

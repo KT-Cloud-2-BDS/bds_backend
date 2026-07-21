@@ -1,4 +1,4 @@
-package com.bds.common.events.payment;
+package com.bds.payment.payment.presentation.request;
 
 import java.util.UUID;
 

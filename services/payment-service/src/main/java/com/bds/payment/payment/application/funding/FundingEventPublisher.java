@@ -1,8 +1,8 @@
 package com.bds.payment.payment.application.funding;
 
-import com.bds.common.events.order.OrderCancelledEvent;
-import com.bds.common.events.order.OrderPaidEvent;
-import com.bds.common.events.order.OrderProcessEvent;
+import com.bds.common.events.payment.OrderCancelledEvent;
+import com.bds.common.events.payment.OrderPaidEvent;
+import com.bds.common.events.payment.OrderProcessEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;

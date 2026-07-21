@@ -1,6 +1,6 @@
 package com.bds.payment.payment.application.funding.consumer;
 
-import com.bds.common.events.payment.SettlementRequestEvent;
+import com.bds.payment.payment.presentation.request.SettlementRequestEvent;
 import com.bds.messaging.idempotency.ProcessedEventStore;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.domain.common.SettlementType;

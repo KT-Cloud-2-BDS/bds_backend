@@ -1,4 +1,4 @@
-package com.bds.common.events.order;
+package com.bds.common.events.payment;
 
 
 import org.springframework.modulith.events.Externalized;
@@ -6,7 +6,7 @@ import org.springframework.modulith.events.Externalized;
 import java.time.Instant;
 import java.util.UUID;
 
-@Externalized("order.exchange::order.process.paid")
+@Externalized("payment.exchange::order.process.paid")
 public record OrderPaidEvent(
         UUID eventId,
         Long orderId,
