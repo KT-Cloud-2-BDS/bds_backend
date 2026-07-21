@@ -1,0 +1,58 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/${DB_NAME:chat}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: "SET synchronous_commit = off"
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  rabbitmq:
+    host: localhost
+    port: 5674
+    stomp-port: 61615
+    username: ${RABBITMQ_USERNAME:bds}
+    password: ${RABBITMQ_PASSWORD:bds1234}
+    publisher-confirm-type: correlated # nack 감지(confirmcallback)
+    publisher-returns: true #라우팅 실패 감지(returns callback)
+    listener:
+      simple:
+        acknowledge-mode: auto #리스너 정상 return 시 ack 예외시 reject
+        default-requeue-rejected: false #reject 시 requeue 대신 dlx로
+
+bds:
+  msa-broker:
+    host: ${MSA_RABBITMQ_HOST:localhost}
+    port: ${MSA_RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${MSA_RABBITMQ_USERNAME:chat-service}
+    password: ${MSA_RABBITMQ_PASSWORD:chat1234}
+
+app:
+  cors:
+    allowed-origins: "http://localhost:3000"
+  auth:
+    jwks-uri: ${AUTH_JWKS_URI:http://localhost:8080/oauth2/jwks}
+    issuer: ${AUTH_ISSUER:}
+    renew-before: PT2M
+    renew-grace: PT1M
+    max-anonymous-sessions: 1000
+
+logging:
+  level:
+    com.bds.chat: DEBUG
+    org.hibernate.SQL: DEBUG
+
+server:
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10

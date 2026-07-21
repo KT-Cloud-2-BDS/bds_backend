@@ -1,0 +1,66 @@
+plugins {
+    id 'jacoco'
+}
+
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+dependencies {
+    implementation project(':modules:common')
+
+    // JPA + PostgreSQL
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Flyway
+    implementation 'org.springframework.boot:spring-boot-flyway'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+
+    // TestContainers
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation platform('org.testcontainers:testcontainers-bom:1.19.8')
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        html.required = true
+        xml.required = false
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/dto/**',
+                    '**/entity/**',
+                    '**/exception/**',
+                    '**/*Application*'
+            ])
+        }))
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'CLASS'
+            includes = ['com.bds.notification.application.*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+    }
+}

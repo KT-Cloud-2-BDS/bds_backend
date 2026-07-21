@@ -7,10 +7,8 @@
 | GET | /api/notifications/connect | O | SSE 연결 (알림 구독) |
 | GET | /api/notifications | O | 알림 목록 조회 + 전체 읽음 처리 |
 | GET | /api/notifications/unread-count | O | 읽지 않은 알림 수 조회 |
-| POST | /api/notifications/products/{productId} | O | 상품 알림 등록 |
-| DELETE | /api/notifications/products/{productId} | O | 상품 알림 해지 |
-| POST | /api/notifications/promotions | O | 프로모션 알림 동의 |
-| DELETE | /api/notifications/promotions | O | 프로모션 알림 해지 |
+| POST | /api/notifications/subscriptions/{targetType}/{targetId} | O | 알림 구독 등록 |
+| DELETE | /api/notifications/subscriptions/{targetType}/{targetId} | O | 알림 구독 해지 |
 | POST | /api/notifications/fcm-token | O | FCM 토큰 저장 |
 | DELETE | /api/notifications/fcm-token | O | FCM 토큰 삭제 |
 
@@ -111,36 +109,50 @@ Auth Required: **O**
 
 ---
 
-## 상품 알림 등록
+## 알림 구독 등록
 
 ```
-POST /api/notifications/products/{productId}
+POST /api/notifications/subscriptions/{targetType}/{targetId}
 ```
 
 Auth Required: **O**
+
+**Path Parameters**
+
+| 파라미터 | 타입 | 설명 |
+|---------|------|------|
+| `targetType` | String | 구독 타입 (`PRODUCT` \| `PROMOTION`) |
+| `targetId` | Long | 구독 대상 ID |
 
 **Response Body**
 
 ```json
 {
-  "productId": 101,
+  "targetType": "PRODUCT",
+  "targetId": 101,
   "subscribed": true
 }
 ```
 
 **Validation / Business Rules**
-- 이미 등록된 상품에 재요청 시 `409 Conflict` 반환.
-- 존재하지 않는 `productId` 요청 시 `404 Not Found` 반환.
+- 이미 구독 중인 경우 `409 Conflict` 반환.
 
 ---
 
-## 상품 알림 해지
+## 알림 구독 해지
 
 ```
-DELETE /api/notifications/products/{productId}
+DELETE /api/notifications/subscriptions/{targetType}/{targetId}
 ```
 
 Auth Required: **O**
+
+**Path Parameters**
+
+| 파라미터 | 타입 | 설명 |
+|---------|------|------|
+| `targetType` | String | 구독 타입 (`PRODUCT` \| `PROMOTION`) |
+| `targetId` | Long | 구독 대상 ID |
 
 **Response Body**
 
@@ -149,49 +161,8 @@ Auth Required: **O**
 ```
 
 **Validation / Business Rules**
-- 등록되지 않은 상품에 대한 해지 요청 시 `404 Not Found` 반환.
-- 해지 후 해당 상품의 `FUNDING_START` / `FUNDING_SUCCESS` / `FUNDING_FAIL` 알림이 전달되지 않는다.
-
----
-
-## 프로모션 알림 동의
-
-```
-POST /api/notifications/promotions
-```
-
-Auth Required: **O**
-
-**Response Body**
-
-```json
-{
-  "promotionSubscribed": true
-}
-```
-
-**Validation / Business Rules**
-- 이미 동의 상태인 경우 `409 Conflict` 반환.
-
----
-
-## 프로모션 알림 해지
-
-```
-DELETE /api/notifications/promotions
-```
-
-Auth Required: **O**
-
-**Response Body**
-
-```
-204 No Content
-```
-
-**Validation / Business Rules**
-- 동의 상태가 아닌 경우 `404 Not Found` 반환.
-- 해지 후 `PROMOTION` 타입 알림이 전달되지 않는다.
+- 구독 정보가 없는 경우 `404 Not Found` 반환.
+- 소프트 딜리트 방식으로 처리된다.
 
 ---
 

@@ -1,0 +1,59 @@
+# 로컬 개발용 인프라 (postgresql + rabbitmq)
+# 실행:  docker compose -f docker-compose.local.yml up -d
+# 종료:  docker compose -f docker-compose.local.yml down
+#
+# [postgres 스키마 초기화]
+# 볼륨 포함 전체 삭제 후 재기동 (Flyway가 마이그레이션 재실행)
+#   docker compose -f docker-compose.local.yml down -v
+#   docker compose -f docker-compose.local.yml up -d
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: bds-chat-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-chat}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 평문 비밀번호: bds/bds1234, bds-admin/bdsadmin1234
+  # 변경하려면: docker run --rm rabbitmq:4 rabbitmqctl hash_password '새비밀번호'
+  # 후 BDS_HASH / BDS_ADMIN_HASH 환경변수로 오버라이드
+  definitions-init:
+    image: alpine:3.20
+    volumes:
+      - ./docker/rabbitmq/definitions.json:/input/definitions.json:ro
+      - rabbitmq_definitions:/output
+    environment:
+      BDS_HASH: ${BDS_HASH:-hFs5idAH8RNb+Sj8jyZQ8EgTZCzXigSDDK735Sn32VuIAdvN}
+      BDS_ADMIN_HASH: ${BDS_ADMIN_HASH:-If/DtQT20uoGjHcqS/APBYNkdPkEz1KQwXgaWRMZXKXPGkL4}
+    command: >
+      sh -c 'sed
+      -e "s|__BDS_HASH__|$$BDS_HASH|g"
+      -e "s|__BDS_ADMIN_HASH__|$$BDS_ADMIN_HASH|g"
+      /input/definitions.json > /output/definitions.json'
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: bds-chat-rabbitmq
+    depends_on:
+      definitions-init:
+        condition: service_completed_successfully
+    ports:
+      - "5674:5672"    # AMQP
+      - "15674:15672"  # Management UI
+      - "61615:61613"  # STOMP
+    volumes:
+      - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbitmq_definitions:/etc/rabbitmq/generated:ro
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  rabbitmq_definitions:

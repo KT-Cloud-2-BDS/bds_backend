@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: order-test
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+
+  flyway:
+    enabled: false
+
+logging:
+  level:
+    com.bds: DEBUG
+    org.hibernate.SQL: DEBUG

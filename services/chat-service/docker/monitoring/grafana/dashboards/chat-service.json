@@ -1,0 +1,603 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "BDS Chat Service 모니터링 — Spring Boot / RabbitMQ (채팅 전용 브로커) / PostgreSQL",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "title": "Spring Boot Application",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"options": {"0": {"color": "red", "index": 0, "text": "DOWN"}, "1": {"color": "green", "index": 1, "text": "UP"}}, "type": "value"}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+      "id": 2,
+      "options": {
+        "colorMode": "background", "graphMode": "none", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "up{job=\"chat-service\"}", "legendFormat": "Status", "refId": "A"}
+      ],
+      "title": "Chat Service 상태",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "max": 100, "min": 0, "unit": "percent",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 90}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+      "id": 3,
+      "options": {
+        "colorMode": "background", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(jvm_memory_used_bytes{area=\"heap\",application=\"chat-service\"}) / sum(jvm_memory_max_bytes{area=\"heap\",application=\"chat-service\"}) * 100", "legendFormat": "Heap %", "refId": "A"}
+      ],
+      "title": "JVM Heap 사용률",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "max": 100, "min": 0, "unit": "percent",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 90}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+      "id": 4,
+      "options": {
+        "colorMode": "background", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "process_cpu_usage{application=\"chat-service\"} * 100", "legendFormat": "CPU %", "refId": "A"}
+      ],
+      "title": "CPU 사용률",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 8}, {"color": "red", "value": 15}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
+      "id": 5,
+      "options": {
+        "colorMode": "background", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "hikaricp_connections_active{application=\"chat-service\"}", "legendFormat": "Active", "refId": "A"}
+      ],
+      "title": "DB Pool 활성 연결",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "reqps",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
+      "id": 6,
+      "options": {
+        "colorMode": "value", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(http_server_requests_seconds_count{application=\"chat-service\"}[1m]))", "legendFormat": "RPS", "refId": "A"}
+      ],
+      "title": "HTTP RPS",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 100}, {"color": "red", "value": 180}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
+      "id": 7,
+      "options": {
+        "colorMode": "background", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "jvm_threads_live_threads{application=\"chat-service\"}", "legendFormat": "Threads", "refId": "A"}
+      ],
+      "title": "Live Threads",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "5xx Errors"},
+            "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]
+          }
+        ]
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
+      "id": 8,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(http_server_requests_seconds_count{application=\"chat-service\",status!~\"5..\"}[1m]))", "legendFormat": "Success", "refId": "A"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(http_server_requests_seconds_count{application=\"chat-service\",status=~\"5..\"}[1m]))", "legendFormat": "5xx Errors", "refId": "B"}
+      ],
+      "title": "HTTP Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
+      "id": 9,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{application=\"chat-service\"}[5m])) by (le))", "legendFormat": "P50", "refId": "A"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"chat-service\"}[5m])) by (le))", "legendFormat": "P95", "refId": "B"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"chat-service\"}[5m])) by (le))", "legendFormat": "P99", "refId": "C"}
+      ],
+      "title": "HTTP 응답 시간 (P50 / P95 / P99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
+      "id": 10,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(jvm_memory_used_bytes{application=\"chat-service\",area=\"heap\"})", "legendFormat": "Heap Used", "refId": "A"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(jvm_memory_max_bytes{application=\"chat-service\",area=\"heap\"})", "legendFormat": "Heap Max", "refId": "B"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(jvm_memory_used_bytes{application=\"chat-service\",area=\"nonheap\"})", "legendFormat": "Non-Heap Used", "refId": "C"}
+      ],
+      "title": "JVM Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
+      "id": 11,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "hikaricp_connections_active{application=\"chat-service\"}", "legendFormat": "Active", "refId": "A"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "hikaricp_connections_idle{application=\"chat-service\"}", "legendFormat": "Idle", "refId": "B"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "hikaricp_connections{application=\"chat-service\"}", "legendFormat": "Total", "refId": "C"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "hikaricp_connections_pending{application=\"chat-service\"}", "legendFormat": "Pending", "refId": "D"}
+      ],
+      "title": "HikariCP 연결 풀",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 21},
+      "id": 20,
+      "title": "RabbitMQ (채팅 전용 브로커)",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"options": {"0": {"color": "red", "index": 0, "text": "DOWN"}, "1": {"color": "green", "index": 1, "text": "UP"}}, "type": "value"}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 22},
+      "id": 21,
+      "options": {
+        "colorMode": "background", "graphMode": "none", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "up{job=\"rabbitmq\"}", "legendFormat": "Status", "refId": "A"}
+      ],
+      "title": "RabbitMQ 상태",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 22},
+      "id": 22,
+      "options": {
+        "colorMode": "value", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "rabbitmq_connections{job=\"rabbitmq\"}", "legendFormat": "Connections", "refId": "A"}
+      ],
+      "title": "연결 수",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 22},
+      "id": 23,
+      "options": {
+        "colorMode": "value", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "rabbitmq_channels{job=\"rabbitmq\"}", "legendFormat": "Channels", "refId": "A"}
+      ],
+      "title": "채널 수",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 22},
+      "id": 24,
+      "options": {
+        "colorMode": "value", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "rabbitmq_consumers{job=\"rabbitmq\"}", "legendFormat": "Consumers", "refId": "A"}
+      ],
+      "title": "컨슈머 수",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1000}, {"color": "red", "value": 5000}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 22},
+      "id": 25,
+      "options": {
+        "colorMode": "background", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rabbitmq_queue_messages{job=\"rabbitmq\"})", "legendFormat": "Messages", "refId": "A"}
+      ],
+      "title": "큐 전체 메시지 수",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+      "id": 26,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "rabbitmq_queue_messages{job=\"rabbitmq\",vhost=\"/\"}", "legendFormat": "{{queue}}", "refId": "A"}
+      ],
+      "title": "큐별 메시지 수",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+      "id": 27,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(rabbitmq_queue_messages_published_total{job=\"rabbitmq\",vhost=\"/\"}[1m]))", "legendFormat": "Published/s", "refId": "A"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(rabbitmq_queue_messages_delivered_total{job=\"rabbitmq\",vhost=\"/\"}[1m]))", "legendFormat": "Delivered/s", "refId": "B"}
+      ],
+      "title": "메시지 처리율 (Publish / Deliver)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
+      "id": 30,
+      "title": "PostgreSQL",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"options": {"0": {"color": "red", "index": 0, "text": "DOWN"}, "1": {"color": "green", "index": 1, "text": "UP"}}, "type": "value"}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 35},
+      "id": 31,
+      "options": {
+        "colorMode": "background", "graphMode": "none", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "up{job=\"postgres\"}", "legendFormat": "Status", "refId": "A"}
+      ],
+      "title": "PostgreSQL 상태",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 80}, {"color": "red", "value": 150}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 35},
+      "id": 32,
+      "options": {
+        "colorMode": "background", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "pg_stat_activity_count{job=\"postgres\",datname=\"chat\",state=\"active\"}", "legendFormat": "Active", "refId": "A"}
+      ],
+      "title": "활성 연결 수",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "bytes",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 35},
+      "id": 33,
+      "options": {
+        "colorMode": "value", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "pg_database_size_bytes{job=\"postgres\",datname=\"chat\"}", "legendFormat": "Size", "refId": "A"}
+      ],
+      "title": "DB 크기",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "max": 100, "min": 0, "unit": "percent",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 80}, {"color": "green", "value": 95}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 35},
+      "id": 34,
+      "options": {
+        "colorMode": "background", "graphMode": "area", "justifyMode": "center",
+        "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(pg_stat_database_blks_hit_total{job=\"postgres\",datname=\"chat\"}[5m])) / (sum(rate(pg_stat_database_blks_hit_total{job=\"postgres\",datname=\"chat\"}[5m])) + sum(rate(pg_stat_database_blks_read_total{job=\"postgres\",datname=\"chat\"}[5m]))) * 100", "legendFormat": "Cache Hit %", "refId": "A"}
+      ],
+      "title": "캐시 히트율",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Rollback/s"},
+            "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]
+          }
+        ]
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 39},
+      "id": 35,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(pg_stat_database_xact_commit_total{job=\"postgres\",datname=\"chat\"}[1m]))", "legendFormat": "Commit/s", "refId": "A"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(pg_stat_database_xact_rollback_total{job=\"postgres\",datname=\"chat\"}[1m]))", "legendFormat": "Rollback/s", "refId": "B"}
+      ],
+      "title": "트랜잭션 처리율",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 39},
+      "id": 36,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "pg_stat_activity_count{job=\"postgres\",datname=\"chat\",state=\"active\"}", "legendFormat": "active", "refId": "A"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "pg_stat_activity_count{job=\"postgres\",datname=\"chat\",state=\"idle\"}", "legendFormat": "idle", "refId": "B"},
+        {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "pg_stat_activity_count{job=\"postgres\",datname=\"chat\",state=\"idle in transaction\"}", "legendFormat": "idle in tx", "refId": "C"}
+      ],
+      "title": "연결 상태별 수",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["chat-service", "bds"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "BDS Chat Service 모니터링",
+  "uid": "bds-chat-service",
+  "version": 1
+}

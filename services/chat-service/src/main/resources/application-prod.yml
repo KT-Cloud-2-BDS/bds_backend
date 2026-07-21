@@ -1,0 +1,56 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: "SET synchronous_commit = off"
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    stomp-port: ${RABBITMQ_STOMP_PORT:61613}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+
+bds:
+  msa-broker:
+    host: ${MSA_RABBITMQ_HOST}
+    port: ${MSA_RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${MSA_RABBITMQ_USERNAME}
+    password: ${MSA_RABBITMQ_PASSWORD}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  auth:
+    jwks-uri: ${AUTH_JWKS_URI}
+    issuer: ${AUTH_ISSUER}
+    renew-before: PT2M
+    renew-grace: PT1M
+    max-anonymous-sessions: 1000
+
+server:
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+
+logging:
+  level:
+    com.bds.chat: INFO
