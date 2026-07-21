@@ -1,4 +1,5 @@
 name: CD - services
+run-name: "CD - ${{ github.event.workflow_run.name }}"
 
 # 서비스 6개의 CD를 하나로 통합한 워크플로우
 # 어떤 CI가 트리거했는지(workflow_run.name)에서 서비스명을 추출해 cd-common에 위임
