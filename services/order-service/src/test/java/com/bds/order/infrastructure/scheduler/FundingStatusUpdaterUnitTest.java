@@ -1,7 +1,7 @@
 package com.bds.order.infrastructure.scheduler;
 
 import com.bds.common.events.funding.FundingStatusChangedEvent;
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
@@ -127,7 +127,7 @@ class FundingStatusUpdaterUnitTest {
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
                     .thenReturn(List.of(1L));
             when(orderService.createSettlementItem(1L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(1L, 10L, 30000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(1L, 10L, 30000L)));
 
             fundingStatusUpdater.handleFundingSuccess(1L, 100L);
 
@@ -174,7 +174,7 @@ class FundingStatusUpdaterUnitTest {
             when(orderService.createSettlementItem(anyLong()))
                     .thenAnswer(invocation -> {
                         Long orderId = invocation.getArgument(0);
-                        return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(orderId, 10L, 30000L));
+                        return Optional.of(new OrderProcessSettlementEvent.SettlementItem(orderId, 10L, 30000L));
                     });
 
             fundingStatusUpdater.handleFundingSuccess(1L, 100L);
@@ -196,7 +196,7 @@ class FundingStatusUpdaterUnitTest {
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.RESERVED), eq(0L), eq(500)))
                     .thenReturn(List.of(2L));
             when(orderService.processReservedFundingConfirmed(2L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
 
             fundingStatusUpdater.handleReservedFundingSuccess(1L, 100L);
 
@@ -243,7 +243,7 @@ class FundingStatusUpdaterUnitTest {
             when(orderService.processReservedFundingConfirmed(anyLong()))
                     .thenAnswer(invocation -> {
                         Long orderId = invocation.getArgument(0);
-                        return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(orderId, 10L, 30000L));
+                        return Optional.of(new OrderProcessSettlementEvent.SettlementItem(orderId, 10L, 30000L));
                     });
 
             fundingStatusUpdater.handleReservedFundingSuccess(1L, 100L);
@@ -265,7 +265,7 @@ class FundingStatusUpdaterUnitTest {
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAID), eq(0L), eq(500)))
                     .thenReturn(List.of(1L));
             when(orderService.processFundingFailedRefund(1L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(1L, 10L, 30000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(1L, 10L, 30000L)));
 
             fundingStatusUpdater.handleFundingFailure(1L, 100L);
 
@@ -312,7 +312,7 @@ class FundingStatusUpdaterUnitTest {
             when(orderService.processFundingFailedRefund(anyLong()))
                     .thenAnswer(invocation -> {
                         Long orderId = invocation.getArgument(0);
-                        return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(orderId, 10L, 30000L));
+                        return Optional.of(new OrderProcessSettlementEvent.SettlementItem(orderId, 10L, 30000L));
                     });
 
             fundingStatusUpdater.handleFundingFailure(1L, 100L);

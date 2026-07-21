@@ -1,6 +1,6 @@
 package com.bds.order.infrastructure.scheduler;
 
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
@@ -62,7 +62,7 @@ class FundingOrderRecoverySchedulerUnitExceptionTest {
             when(orderService.createSettlementItem(10L))
                     .thenThrow(new RuntimeException("lock timeout"));
             when(orderService.createSettlementItem(11L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(11L, 1L, 30000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(11L, 1L, 30000L)));
 
             recoveryScheduler.recover();
 

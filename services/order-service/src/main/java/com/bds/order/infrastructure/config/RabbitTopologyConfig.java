@@ -14,10 +14,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.Externalized;
 
-import static com.bds.order.infrastructure.config.OrderQueues.ORDER_EXCHANGE;
-
 @Configuration
 public class RabbitTopologyConfig {
+
+    public static final String ORDER_EXCHANGE = "order.exchange";
+    public static final String FUNDING_EXCHANGE = "funding.exchange";
 
     @Bean
     public MessageConverter jacksonMessageConverter() {
@@ -41,6 +42,11 @@ public class RabbitTopologyConfig {
     @Bean
     public TopicExchange orderExchange() {
         return ExchangeBuilder.topicExchange(ORDER_EXCHANGE).durable(true).build();
+    }
+
+    @Bean
+    public TopicExchange fundingExchange() {
+        return ExchangeBuilder.topicExchange(FUNDING_EXCHANGE).durable(true).build();
     }
 
 }

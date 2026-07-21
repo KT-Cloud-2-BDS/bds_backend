@@ -1,6 +1,6 @@
 package com.bds.order.infrastructure.scheduler;
 
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
@@ -96,7 +96,7 @@ class FundingStatusUpdaterUnitExceptionTest {
             when(orderService.createSettlementItem(1L))
                     .thenReturn(Optional.empty());
             when(orderService.createSettlementItem(2L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
 
             fundingStatusUpdater.handleFundingSuccess(1L, 100L);
 
@@ -118,7 +118,7 @@ class FundingStatusUpdaterUnitExceptionTest {
             when(orderService.processReservedFundingConfirmed(1L))
                     .thenReturn(Optional.empty());
             when(orderService.processReservedFundingConfirmed(2L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
 
             fundingStatusUpdater.handleReservedFundingSuccess(1L, 100L);
 
@@ -140,7 +140,7 @@ class FundingStatusUpdaterUnitExceptionTest {
             when(orderService.processFundingFailedRefund(1L))
                     .thenReturn(Optional.empty());
             when(orderService.processFundingFailedRefund(2L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(2L, 20L, 50000L)));
 
             fundingStatusUpdater.handleFundingFailure(1L, 100L);
 

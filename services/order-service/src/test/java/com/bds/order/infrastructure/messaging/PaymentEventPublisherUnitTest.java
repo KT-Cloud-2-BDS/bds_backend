@@ -1,8 +1,8 @@
 package com.bds.order.infrastructure.messaging;
 
-import com.bds.common.events.order.PaymentProcessPayEvent;
-import com.bds.common.events.order.PaymentProcessRefundEvent;
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessPayEvent;
+import com.bds.common.events.order.OrderProcessRefundEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,7 @@ class PaymentEventPublisherUnitTest {
 
     @Test
     void publishPay_호출시_이벤트를_발행한다() {
-        PaymentProcessPayEvent event = PaymentProcessPayEvent.of(1L, 1L, 1L, 30000L);
+        OrderProcessPayEvent event = OrderProcessPayEvent.of(1L, 1L, 1L, 30000L);
 
         paymentEventPublisher.publishPay(event);
 
@@ -35,9 +35,9 @@ class PaymentEventPublisherUnitTest {
 
     @Test
     void publishSettlement_호출시_이벤트를_발행한다() {
-        PaymentProcessSettlementEvent event = PaymentProcessSettlementEvent.of(
+        OrderProcessSettlementEvent event = OrderProcessSettlementEvent.of(
                 "SETTLEMENT_CONFIRMED", 100L, 1L, List.of(
-                        new PaymentProcessSettlementEvent.SettlementItem(1L, 1L, 30000L)));
+                        new OrderProcessSettlementEvent.SettlementItem(1L, 1L, 30000L)));
 
         paymentEventPublisher.publishSettlement(event);
 
@@ -46,7 +46,7 @@ class PaymentEventPublisherUnitTest {
 
     @Test
     void publishRefund_호출시_이벤트를_발행한다() {
-        PaymentProcessRefundEvent event = PaymentProcessRefundEvent.of(1L, 1L, 1L, 30000L, "USER_CANCEL");
+        OrderProcessRefundEvent event = OrderProcessRefundEvent.of(1L, 1L, 1L, 30000L, "USER_CANCEL");
 
         paymentEventPublisher.publishRefund(event);
 

@@ -1,6 +1,6 @@
 package com.bds.order.infrastructure.scheduler;
 
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
@@ -91,7 +91,7 @@ public class FundingOrderRecoveryScheduler {
             List<Long> orderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, status, lastOrderId, CHUNK_SIZE);
             if (orderIds.isEmpty()) break;
 
-            List<PaymentProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
+            List<OrderProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
             for (Long orderId : orderIds) {
                 try {
                     orderService.createSettlementItem(orderId).ifPresent(items::add);
@@ -103,7 +103,7 @@ public class FundingOrderRecoveryScheduler {
 
             if (!items.isEmpty()) {
                 paymentEventPublisher.publishSettlement(
-                        PaymentProcessSettlementEvent.of(settlementType, creatorMemberId, fundingId, items));
+                        OrderProcessSettlementEvent.of(settlementType, creatorMemberId, fundingId, items));
             }
 
             lastOrderId = orderIds.get(orderIds.size() - 1);

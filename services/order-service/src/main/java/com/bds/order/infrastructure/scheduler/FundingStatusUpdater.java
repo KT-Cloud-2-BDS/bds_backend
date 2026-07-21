@@ -2,7 +2,7 @@ package com.bds.order.infrastructure.scheduler;
 
 
 import com.bds.common.events.funding.FundingStatusChangedEvent;
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
@@ -79,7 +79,7 @@ public class FundingStatusUpdater {
             List<Long> paidOrderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, OrderStatus.PAID, lastOrderId, CHUNK_SIZE);
             if (paidOrderIds.isEmpty()) break;
 
-            List<PaymentProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
+            List<OrderProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
             for (Long orderId : paidOrderIds) {
                 try {
                     orderService.createSettlementItem(orderId).ifPresent(items::add);
@@ -91,7 +91,7 @@ public class FundingStatusUpdater {
 
             if (!items.isEmpty()) {
                 paymentEventPublisher.publishSettlement(
-                        PaymentProcessSettlementEvent.of("SETTLEMENT_CONFIRMED", creatorMemberId, fundingId, items));
+                        OrderProcessSettlementEvent.of("SETTLEMENT_CONFIRMED", creatorMemberId, fundingId, items));
             }
 
             lastOrderId = paidOrderIds.get(paidOrderIds.size() - 1);
@@ -107,7 +107,7 @@ public class FundingStatusUpdater {
             List<Long> reservedOrderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, OrderStatus.RESERVED, lastOrderId, CHUNK_SIZE);
             if (reservedOrderIds.isEmpty()) break;
 
-            List<PaymentProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
+            List<OrderProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
             for (Long orderId : reservedOrderIds) {
                 try {
                     orderService.processReservedFundingConfirmed(orderId).ifPresent(items::add);
@@ -119,7 +119,7 @@ public class FundingStatusUpdater {
 
             if (!items.isEmpty()) {
                 paymentEventPublisher.publishSettlement(
-                        PaymentProcessSettlementEvent.of("RESERVED_FUNDING_CONFIRMED", creatorMemberId, fundingId, items));
+                        OrderProcessSettlementEvent.of("RESERVED_FUNDING_CONFIRMED", creatorMemberId, fundingId, items));
             }
 
             lastOrderId = reservedOrderIds.get(reservedOrderIds.size() - 1);
@@ -135,7 +135,7 @@ public class FundingStatusUpdater {
             List<Long> paidOrderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, OrderStatus.PAID, lastOrderId, CHUNK_SIZE);
             if (paidOrderIds.isEmpty()) break;
 
-            List<PaymentProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
+            List<OrderProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
             for (Long orderId : paidOrderIds) {
                 try {
                     orderService.processFundingFailedRefund(orderId).ifPresent(items::add);
@@ -147,7 +147,7 @@ public class FundingStatusUpdater {
 
             if (!items.isEmpty()) {
                 paymentEventPublisher.publishSettlement(
-                        PaymentProcessSettlementEvent.of("FUNDING_FAILED_REFUND", creatorMemberId, fundingId, items));
+                        OrderProcessSettlementEvent.of("FUNDING_FAILED_REFUND", creatorMemberId, fundingId, items));
             }
 
             lastOrderId = paidOrderIds.get(paidOrderIds.size() - 1);

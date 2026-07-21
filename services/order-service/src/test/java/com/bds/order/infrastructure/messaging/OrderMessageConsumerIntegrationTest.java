@@ -29,7 +29,7 @@ class OrderMessageConsumerIntegrationTest extends AbstractRabbitMQIntegrationTes
     void order_process_큐에_메시지를_보내면_handleBulkResult가_처리한다() throws InterruptedException {
         PaymentProcessedMessage message = new PaymentProcessedMessage(List.of(1L, 2L), PaymentProcessedMessage.ResultType.CONFIRMED);
 
-        rabbitTemplate.convertAndSend(OrderQueues.ORDER_EXCHANGE, "order.process", message);
+        rabbitTemplate.convertAndSend(OrderQueues.PAYMENT_EXCHANGE, "order.process", message);
 
         Thread.sleep(1000);
         verify(orderMessageHandler).processBulk(argThat(msg ->
@@ -40,7 +40,7 @@ class OrderMessageConsumerIntegrationTest extends AbstractRabbitMQIntegrationTes
     void order_process_paid_큐에_메시지를_보내면_handlePaidResult가_처리한다() throws InterruptedException {
         PaymentPaidMessage message = new PaymentPaidMessage(1L);
 
-        rabbitTemplate.convertAndSend(OrderQueues.ORDER_EXCHANGE, "order.process.paid", message);
+        rabbitTemplate.convertAndSend(OrderQueues.PAYMENT_EXCHANGE, "order.process.paid", message);
 
         Thread.sleep(1000);
         verify(orderMessageHandler).processPaid(1L);
@@ -50,7 +50,7 @@ class OrderMessageConsumerIntegrationTest extends AbstractRabbitMQIntegrationTes
     void order_process_cancel_큐에_메시지를_보내면_handleCancelResult가_처리한다() throws InterruptedException {
         PaymentCancelledMessage message = new PaymentCancelledMessage(1L, "USER_CANCEL");
 
-        rabbitTemplate.convertAndSend(OrderQueues.ORDER_EXCHANGE, "order.process.cancel", message);
+        rabbitTemplate.convertAndSend(OrderQueues.PAYMENT_EXCHANGE, "order.process.cancel", message);
 
         Thread.sleep(1000);
         verify(orderMessageHandler).processCancelled(1L, "USER_CANCEL");

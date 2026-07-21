@@ -4,23 +4,23 @@ import org.springframework.modulith.events.Externalized;
 
 import java.util.UUID;
 
-@Externalized("payment.exchange::payment.process.pay")
-public record PaymentProcessPayEvent(
+@Externalized("order.exchange::payment.process.refund")
+public record OrderProcessRefundEvent(
         UUID requestId,
         Long orderId,
         Long memberId,
         Long fundingId,
         Long amount,
-        String paymentType
+        String cancelReason
 ) {
-    public static PaymentProcessPayEvent of(Long orderId, Long memberId, Long fundingId, Long amount) {
-        return new PaymentProcessPayEvent(
+    public static OrderProcessRefundEvent of(Long orderId, Long memberId, Long fundingId, Long amount, String cancelReason) {
+        return new OrderProcessRefundEvent(
                 UUID.randomUUID(),
                 orderId,
                 memberId,
                 fundingId,
                 amount,
-                "INSTANT"
+                cancelReason
         );
     }
 }

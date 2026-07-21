@@ -1,6 +1,6 @@
 package com.bds.order.application;
 
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
@@ -427,7 +427,7 @@ class OrderServiceUnitTest {
             Order order = OrderFixture.createOrder(OrderStatus.PAID);
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.createSettlementItem(1L);
+            Optional<OrderProcessSettlementEvent.SettlementItem> result = orderService.createSettlementItem(1L);
 
             assertThat(result).isPresent();
             assertThat(result.get().orderId()).isEqualTo(order.getId());
@@ -452,7 +452,7 @@ class OrderServiceUnitTest {
             Order order = OrderFixture.createOrder(OrderStatus.RESERVED);
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processReservedFundingConfirmed(1L);
+            Optional<OrderProcessSettlementEvent.SettlementItem> result = orderService.processReservedFundingConfirmed(1L);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);
             verify(orderRepository).save(order);
@@ -467,7 +467,7 @@ class OrderServiceUnitTest {
             Order order = OrderFixture.createOrder(OrderStatus.CANCELLED);
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processReservedFundingConfirmed(1L);
+            Optional<OrderProcessSettlementEvent.SettlementItem> result = orderService.processReservedFundingConfirmed(1L);
 
             assertThat(result).isEmpty();
             verify(orderRepository, never()).save(any());
@@ -495,7 +495,7 @@ class OrderServiceUnitTest {
             );
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processFundingFailedRefund(1L);
+            Optional<OrderProcessSettlementEvent.SettlementItem> result = orderService.processFundingFailedRefund(1L);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(order.getCancelReason()).isEqualTo("FUNDING_FAILED");
@@ -512,7 +512,7 @@ class OrderServiceUnitTest {
             Order order = OrderFixture.createOrder(OrderStatus.CANCELLED);
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
 
-            Optional<PaymentProcessSettlementEvent.SettlementItem> result = orderService.processFundingFailedRefund(1L);
+            Optional<OrderProcessSettlementEvent.SettlementItem> result = orderService.processFundingFailedRefund(1L);
 
             assertThat(result).isEmpty();
             verify(orderRepository, never()).save(any());

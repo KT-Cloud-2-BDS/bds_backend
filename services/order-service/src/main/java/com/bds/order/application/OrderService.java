@@ -1,9 +1,9 @@
 package com.bds.order.application;
 
+import com.bds.common.events.order.OrderProcessPayEvent;
+import com.bds.common.events.order.OrderProcessRefundEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.common.events.order.OrderStatusChangedEvent;
-import com.bds.common.events.order.PaymentProcessPayEvent;
-import com.bds.common.events.order.PaymentProcessRefundEvent;
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.order.CancelReason;
@@ -122,7 +122,7 @@ public class OrderService {
             }
         });
 
-        paymentEventPublisher.publishPay(PaymentProcessPayEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount()));
+        paymentEventPublisher.publishPay(OrderProcessPayEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount()));
 
         orderRepository.save(order);
         return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), order.getStatus(), LocalDateTime.now());
@@ -148,7 +148,7 @@ public class OrderService {
         });
 
         paymentEventPublisher.publishRefund(
-                PaymentProcessRefundEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount(), CancelReason.USER_CANCEL.name()));
+                OrderProcessRefundEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount(), CancelReason.USER_CANCEL.name()));
 
         orderRepository.save(order);
         return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
@@ -228,17 +228,17 @@ public class OrderService {
     }
 
     @Transactional
-    public Optional<PaymentProcessSettlementEvent.SettlementItem> createSettlementItem(Long orderId) {
+    public Optional<OrderProcessSettlementEvent.SettlementItem> createSettlementItem(Long orderId) {
         Optional<Order> orderOpt = findOrderForUpdate(orderId);
         if (orderOpt.isEmpty()) return Optional.empty();
 
         Order order = orderOpt.get();
-        return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(
+        return Optional.of(new OrderProcessSettlementEvent.SettlementItem(
                 order.getId(), order.getMemberId(), order.getTotalAmount()));
     }
 
     @Transactional
-    public Optional<PaymentProcessSettlementEvent.SettlementItem> processReservedFundingConfirmed(Long orderId) {
+    public Optional<OrderProcessSettlementEvent.SettlementItem> processReservedFundingConfirmed(Long orderId) {
         Optional<Order> orderOpt = findOrderForUpdate(orderId);
         if (orderOpt.isEmpty()) return Optional.empty();
 
@@ -247,7 +247,7 @@ public class OrderService {
             order.updateStatus(OrderStatus.PAYING);
             orderRepository.save(order);
 
-            return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(
+            return Optional.of(new OrderProcessSettlementEvent.SettlementItem(
                     order.getId(), order.getMemberId(), order.getTotalAmount()));
         } catch (IllegalStateException e) {
             log.warn("[OrderService] processReservedFundingConfirmed failed - invalid state: orderId={}, reason={}",
@@ -261,7 +261,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Optional<PaymentProcessSettlementEvent.SettlementItem> processFundingFailedRefund(Long orderId) {
+    public Optional<OrderProcessSettlementEvent.SettlementItem> processFundingFailedRefund(Long orderId) {
         Optional<Order> orderOpt = findOrderForUpdate(orderId);
         if (orderOpt.isEmpty()) return Optional.empty();
 
@@ -273,7 +273,7 @@ public class OrderService {
             order.cancelOrder(CancelReason.FUNDING_FAILED.name());
             orderRepository.save(order);
 
-            return Optional.of(new PaymentProcessSettlementEvent.SettlementItem(
+            return Optional.of(new OrderProcessSettlementEvent.SettlementItem(
                     order.getId(), order.getMemberId(), order.getTotalAmount()));
         } catch (IllegalStateException e) {
             log.warn("[OrderService] processFundingFailedRefund failed - invalid state: orderId={}, reason={}",

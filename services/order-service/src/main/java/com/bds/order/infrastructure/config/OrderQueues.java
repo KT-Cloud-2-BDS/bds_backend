@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OrderQueues {
 
-    public static final String ORDER_EXCHANGE = "order.exchange";
+    public static final String PAYMENT_EXCHANGE = "payment.exchange";
 
     public static final String ORDER_PROCESS_QUEUE = "order.process";
     public static final String ORDER_PROCESS_PAID_QUEUE = "order.process.paid";
@@ -16,17 +16,17 @@ public class OrderQueues {
 
     @Bean
     public Declarables orderProcessQueue() {
-        return BdsQueues.workQueue(ORDER_PROCESS_QUEUE, ORDER_EXCHANGE, "order.process");
+        return BdsQueues.workQueue(ORDER_PROCESS_QUEUE, PAYMENT_EXCHANGE, "order.process");
     }
 
     @Bean
     public Declarables orderProcessPaidQueue() {
-        return BdsQueues.workQueue(ORDER_PROCESS_PAID_QUEUE, ORDER_EXCHANGE, "order.process.paid");
+        return BdsQueues.workQueue(ORDER_PROCESS_PAID_QUEUE, PAYMENT_EXCHANGE, "order.process.paid");
     }
 
     @Bean
     public Declarables orderProcessCancelQueue() {
-        return BdsQueues.workQueue(ORDER_PROCESS_CANCEL_QUEUE, ORDER_EXCHANGE, "order.process.cancel");
+        return BdsQueues.workQueue(ORDER_PROCESS_CANCEL_QUEUE, PAYMENT_EXCHANGE, "order.process.cancel");
     }
 }
 

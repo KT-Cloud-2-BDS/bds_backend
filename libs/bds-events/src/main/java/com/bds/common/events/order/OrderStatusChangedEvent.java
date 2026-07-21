@@ -2,7 +2,7 @@ package com.bds.common.events.order;
 
 import org.springframework.modulith.events.Externalized;
 
-@Externalized("notification.exchange::order.status")
+@Externalized("order.exchange::order.status")
 public record OrderStatusChangedEvent(
         String type,
         Long memberId,

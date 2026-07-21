@@ -1,6 +1,6 @@
 package com.bds.order.infrastructure.scheduler;
 
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
@@ -80,7 +80,7 @@ class FundingOrderRecoverySchedulerUnitTest {
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.CANCELLED), eq(0L), eq(500)))
                     .thenReturn(List.of(10L));
             when(orderService.createSettlementItem(10L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(10L, 1L, 30000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(10L, 1L, 30000L)));
 
             recoveryScheduler.recover();
 
@@ -123,7 +123,7 @@ class FundingOrderRecoverySchedulerUnitTest {
             when(orderRepository.findOrderIdsByFundingIdAndStatus(eq(1L), eq(OrderStatus.PAYING), eq(0L), eq(500)))
                     .thenReturn(List.of(20L));
             when(orderService.createSettlementItem(20L))
-                    .thenReturn(Optional.of(new PaymentProcessSettlementEvent.SettlementItem(20L, 2L, 50000L)));
+                    .thenReturn(Optional.of(new OrderProcessSettlementEvent.SettlementItem(20L, 2L, 50000L)));
 
             recoveryScheduler.recover();
 

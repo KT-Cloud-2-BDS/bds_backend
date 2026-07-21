@@ -1,8 +1,8 @@
 package com.bds.order.infrastructure.messaging;
 
-import com.bds.common.events.order.PaymentProcessPayEvent;
-import com.bds.common.events.order.PaymentProcessRefundEvent;
-import com.bds.common.events.order.PaymentProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessPayEvent;
+import com.bds.common.events.order.OrderProcessRefundEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.support.AbstractRabbitMQIntegrationTest;
 import org.junit.jupiter.api.AfterEach;
@@ -29,38 +29,38 @@ class PaymentEventPublisherIntegrationTest extends AbstractRabbitMQIntegrationTe
 
     @Test
     void publishPay_호출시_outbox에_저장된다() {
-        PaymentProcessPayEvent event = PaymentProcessPayEvent.of(1L, 1L, 1L, 30000L);
+        OrderProcessPayEvent event = OrderProcessPayEvent.of(1L, 1L, 1L, 30000L);
 
         paymentEventPublisher.publishPay(event);
 
         int count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM event_publication WHERE event_type LIKE '%PaymentProcessPayEvent%'",
+                "SELECT COUNT(*) FROM event_publication WHERE event_type LIKE '%OrderProcessPayEvent%'",
                 Integer.class);
         assertThat(count).isGreaterThanOrEqualTo(1);
     }
 
     @Test
     void publishSettlement_호출시_outbox에_저장된다() {
-        PaymentProcessSettlementEvent event = PaymentProcessSettlementEvent.of(
+        OrderProcessSettlementEvent event = OrderProcessSettlementEvent.of(
                 "SETTLEMENT_CONFIRMED", 100L, 1L, List.of(
-                        new PaymentProcessSettlementEvent.SettlementItem(1L, 1L, 30000L)));
+                        new OrderProcessSettlementEvent.SettlementItem(1L, 1L, 30000L)));
 
         paymentEventPublisher.publishSettlement(event);
 
         int count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM event_publication WHERE event_type LIKE '%PaymentProcessSettlementEvent%'",
+                "SELECT COUNT(*) FROM event_publication WHERE event_type LIKE '%OrderProcessSettlementEvent%'",
                 Integer.class);
         assertThat(count).isGreaterThanOrEqualTo(1);
     }
 
     @Test
     void publishRefund_호출시_outbox에_저장된다() {
-        PaymentProcessRefundEvent event = PaymentProcessRefundEvent.of(1L, 1L, 1L, 30000L, "USER_CANCEL");
+        OrderProcessRefundEvent event = OrderProcessRefundEvent.of(1L, 1L, 1L, 30000L, "USER_CANCEL");
 
         paymentEventPublisher.publishRefund(event);
 
         int count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM event_publication WHERE event_type LIKE '%PaymentProcessRefundEvent%'",
+                "SELECT COUNT(*) FROM event_publication WHERE event_type LIKE '%OrderProcessRefundEvent%'",
                 Integer.class);
         assertThat(count).isGreaterThanOrEqualTo(1);
     }

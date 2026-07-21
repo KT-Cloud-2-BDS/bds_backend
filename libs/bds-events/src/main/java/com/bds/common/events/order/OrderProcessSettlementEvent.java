@@ -5,16 +5,16 @@ import org.springframework.modulith.events.Externalized;
 import java.util.List;
 import java.util.UUID;
 
-@Externalized("payment.exchange::payment.process.settlement")
-public record PaymentProcessSettlementEvent(
+@Externalized("order.exchange::payment.process.settlement")
+public record OrderProcessSettlementEvent(
         UUID batchId,
         String type,
         Long creatorMemberId,
         Long fundingId,
         List<SettlementItem> items
 ) {
-    public static PaymentProcessSettlementEvent of(String type, Long creatorMemberId, Long fundingId, List<SettlementItem> items) {
-        return new PaymentProcessSettlementEvent(
+    public static OrderProcessSettlementEvent of(String type, Long creatorMemberId, Long fundingId, List<SettlementItem> items) {
+        return new OrderProcessSettlementEvent(
                 UUID.randomUUID(),
                 type,
                 creatorMemberId,

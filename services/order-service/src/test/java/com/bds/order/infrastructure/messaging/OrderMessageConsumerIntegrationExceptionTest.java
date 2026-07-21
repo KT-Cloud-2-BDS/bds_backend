@@ -90,7 +90,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         Long nonExistentOrderId = 9999L;
 
         rabbitTemplate.convertAndSend(
-                OrderQueues.ORDER_EXCHANGE,
+                OrderQueues.PAYMENT_EXCHANGE,
                 "order.process.cancel",
                 new PaymentCancelledMessage(nonExistentOrderId, "PAYMENT_CANCELLED")
         );
@@ -106,7 +106,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         Long nonExistentOrderId = 9999L;
 
         rabbitTemplate.convertAndSend(
-                OrderQueues.ORDER_EXCHANGE,
+                OrderQueues.PAYMENT_EXCHANGE,
                 "order.process.paid",
                 new PaymentPaidMessage(nonExistentOrderId)
         );
@@ -123,7 +123,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         Order order = createOrderWithStatus(OrderStatus.REFUNDED);
 
         rabbitTemplate.convertAndSend(
-                OrderQueues.ORDER_EXCHANGE,
+                OrderQueues.PAYMENT_EXCHANGE,
                 "order.process.cancel",
                 new PaymentCancelledMessage(order.getId(), "PAYMENT_CANCELLED")
         );
@@ -140,7 +140,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         Order order = createOrderWithStatus(OrderStatus.CANCELLED);
 
         rabbitTemplate.convertAndSend(
-                OrderQueues.ORDER_EXCHANGE,
+                OrderQueues.PAYMENT_EXCHANGE,
                 "order.process.paid",
                 new PaymentPaidMessage(order.getId())
         );
@@ -157,7 +157,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         Order order = createOrderWithStatus(OrderStatus.CANCELLED);
 
         rabbitTemplate.convertAndSend(
-                OrderQueues.ORDER_EXCHANGE,
+                OrderQueues.PAYMENT_EXCHANGE,
                 "order.process",
                 new PaymentProcessedMessage(List.of(order.getId()), PaymentProcessedMessage.ResultType.CONFIRMED)
         );
@@ -175,7 +175,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         Long nonExistentOrderId = 9999L;
 
         rabbitTemplate.convertAndSend(
-                OrderQueues.ORDER_EXCHANGE,
+                OrderQueues.PAYMENT_EXCHANGE,
                 "order.process",
                 new PaymentProcessedMessage(
                         List.of(validOrder.getId(), nonExistentOrderId),
@@ -195,7 +195,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         Order invalidOrder = createOrderWithStatus(OrderStatus.CANCELLED);
 
         rabbitTemplate.convertAndSend(
-                OrderQueues.ORDER_EXCHANGE,
+                OrderQueues.PAYMENT_EXCHANGE,
                 "order.process",
                 new PaymentProcessedMessage(
                         List.of(validOrder.getId(), invalidOrder.getId()),
