@@ -426,7 +426,7 @@ public class AuthServiceUnitExceptionTest {
     @DisplayName("로그인 상태 비밀번호 변경 예외")
     public class ChangePasswordException {
         @Test
-        @DisplayName("계정의 로컬 로그인 정보가 존재하지 않으면 ACCOUNT_NOT_FOUND 예외가 터진다")
+        @DisplayName("계정의 로컬 로그인 정보가 존재하지 않으면 INVALID_PASSWORD 예외가 터진다")
         public void 로컬로그인정보없음_예외() {
             // given
             Long authId = 999L;
@@ -436,7 +436,7 @@ public class AuthServiceUnitExceptionTest {
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 authService.changePassword(authId, "currentPassword", "newPassword123!");
             });
-            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, exception.getErrorCode());
+            assertEquals(ErrorCode.INVALID_PASSWORD, exception.getErrorCode());
         }
 
         @Test

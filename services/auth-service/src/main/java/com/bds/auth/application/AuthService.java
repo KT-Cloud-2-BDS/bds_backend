@@ -157,7 +157,7 @@ public class AuthService {
     @Transactional
     public void changePassword(Long authId, String currentPassword, String newPassword) {
         AuthLocal authLocal = authLocalRepository.findByAuthId(authId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PASSWORD));
 
         if (!passwordEncoder.matches(currentPassword, authLocal.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
