@@ -5,7 +5,7 @@ spring:
         webflux:
           routes:
             - id: auth-service
-              uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
+              uri: lb://auth-service
               predicates:
                 - Path=/api/auths/**
 
@@ -15,35 +15,37 @@ spring:
                 - Path=/oauth2/**,/login/oauth2/**
 
             - id: member-service
-              uri: http://${MEMBER_SERVICE_HOST:localhost}:${MEMBER_SERVICE_PORT:8086}
+              uri: lb://member-service
               predicates:
                 - Path=/api/members/**
 
             - id: chat-service
-              uri: http://${CHAT_SERVICE_HOST:localhost}:${CHAT_SERVICE_PORT:8082}
+              uri: lb://chat-service
               predicates:
                 - Path=/api/chat/**
 
             - id: notification-service
-              uri: http://${NOTIFICATION_SERVICE_HOST:localhost}:${NOTIFICATION_SERVICE_PORT:8083}
+              uri: lb://notification-service
               predicates:
                 - Path=/api/notifications/**
 
             - id: order-service
-              uri: http://${ORDER_SERVICE_HOST:localhost}:${ORDER_SERVICE_PORT:8084}
+              uri: lb://order-service
               predicates:
                 - Path=/api/orders/**
 
             - id: payment-service
-              uri: http://${PAYMENT_SERVICE_HOST:localhost}:${PAYMENT_SERVICE_PORT:8085}
+              uri: lb://payment-service
               predicates:
                 - Path=/api/payments/**
 
-jwt:
-  jwks-uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}/oauth2/jwks
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
 
 auth-service:
-  internal-uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
+  internal-uri: lb://auth-service
 
 internal:
   # 게이트웨이와 다운스트림 서비스가 공유하는 내부 시크릿(로컬 개발 전용 기본값).

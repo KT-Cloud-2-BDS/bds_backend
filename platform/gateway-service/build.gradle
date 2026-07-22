@@ -21,22 +21,15 @@ dependencies {
     // Resource Server 의존성 (NimbusJwtDecoder 포함)
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
+    // lb:// 라우팅을 위한 로드밸런서 (eureka-client는 modules:common에서 공통 제공)
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+
     // 리액티브 테스트 라이브러리
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
 
     // AuthBlacklistClient(WebClient) HTTP 상호작용 테스트용 가짜 서버
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
-}
-
-ext {
-    set('springCloudVersion', '2025.1.2')
-}
-
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
 }
 
 jacoco {

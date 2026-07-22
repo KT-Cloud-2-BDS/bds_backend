@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 
-@FeignClient(name = "auth-client", url = "http://localhost:8081")
+@FeignClient(name = "auth-service", url = "${client.auth-service.url:}")
 public interface AuthFeignClient {
 
     @PostMapping("/internal/auths/account")
