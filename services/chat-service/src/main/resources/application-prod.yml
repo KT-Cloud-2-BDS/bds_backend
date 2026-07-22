@@ -39,7 +39,7 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
   auth:
-    jwks-uri: ${AUTH_JWKS_URI}
+    jwks-uri: ${AUTH_JWKS_URI:http://auth-service/oauth2/jwks}
     issuer: ${AUTH_ISSUER}
     renew-before: PT2M
     renew-grace: PT1M

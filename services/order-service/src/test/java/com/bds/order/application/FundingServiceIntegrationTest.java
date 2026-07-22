@@ -126,7 +126,7 @@ class FundingServiceIntegrationTest extends AbstractIntegrationTest {
                     ), null
             );
 
-            FundingCreateResponseDto result = fundingService.createFunding(200L, "MAKER", request);
+            FundingCreateResponseDto result = fundingService.createFunding(200L, true, request);
 
             assertThat(result.fundingId()).isNotNull();
             assertThat(result.title()).isEqualTo("새 펀딩");
@@ -152,7 +152,7 @@ class FundingServiceIntegrationTest extends AbstractIntegrationTest {
                     ), FundingType.RESERVED
             );
 
-            FundingCreateResponseDto result = fundingService.createFunding(200L, "MAKER", request);
+            FundingCreateResponseDto result = fundingService.createFunding(200L, true, request);
 
             assertThat(result.fundingId()).isNotNull();
             assertThat(result.type()).isEqualTo("RESERVED");

@@ -1,5 +1,8 @@
 package com.bds.order.infrastructure.messaging;
 
+import com.bds.common.events.payment.OrderCancelledEvent;
+import com.bds.common.events.payment.OrderPaidEvent;
+import com.bds.common.events.payment.OrderProcessEvent;
 import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.order.Order;
@@ -8,9 +11,6 @@ import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.infrastructure.config.OrderQueues;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import com.bds.order.infrastructure.funding.FundingJpaRepository;
-import com.bds.order.infrastructure.messaging.dto.PaymentCancelledMessage;
-import com.bds.order.infrastructure.messaging.dto.PaymentPaidMessage;
-import com.bds.order.infrastructure.messaging.dto.PaymentProcessedMessage;
 import com.bds.order.infrastructure.order.OrderJpaEntity;
 import com.bds.order.infrastructure.order.OrderJpaRepository;
 import com.bds.order.infrastructure.order.OrderMapper;
@@ -92,7 +92,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
                 "payment.refunded",
-                new PaymentCancelledMessage(nonExistentOrderId, "PAYMENT_CANCELLED")
+                OrderCancelledEvent.of(nonExistentOrderId, "PAYMENT_CANCELLED")
         );
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -108,7 +108,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
                 "payment.paid",
-                new PaymentPaidMessage(nonExistentOrderId)
+                OrderPaidEvent.of(nonExistentOrderId)
         );
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -125,7 +125,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
                 "payment.refunded",
-                new PaymentCancelledMessage(order.getId(), "PAYMENT_CANCELLED")
+                OrderCancelledEvent.of(order.getId(), "PAYMENT_CANCELLED")
         );
 
         await().during(2, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -142,7 +142,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
                 "payment.paid",
-                new PaymentPaidMessage(order.getId())
+                OrderPaidEvent.of(order.getId())
         );
 
         await().during(2, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -159,7 +159,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
                 "payment.settled",
-                new PaymentProcessedMessage(List.of(order.getId()), PaymentProcessedMessage.ResultType.CONFIRMED)
+                OrderProcessEvent.confirmed(List.of(order.getId()))
         );
 
         await().during(2, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -177,9 +177,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
                 "payment.settled",
-                new PaymentProcessedMessage(
-                        List.of(validOrder.getId(), nonExistentOrderId),
-                        PaymentProcessedMessage.ResultType.CONFIRMED)
+                OrderProcessEvent.confirmed(List.of(validOrder.getId(), nonExistentOrderId))
         );
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -197,9 +195,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
                 "payment.settled",
-                new PaymentProcessedMessage(
-                        List.of(validOrder.getId(), invalidOrder.getId()),
-                        PaymentProcessedMessage.ResultType.CONFIRMED)
+                OrderProcessEvent.confirmed(List.of(validOrder.getId(), invalidOrder.getId()))
         );
 
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {

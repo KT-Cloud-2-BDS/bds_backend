@@ -1,10 +1,10 @@
 package com.bds.order.infrastructure.messaging;
 
+import com.bds.common.events.payment.OrderCancelledEvent;
+import com.bds.common.events.payment.OrderPaidEvent;
+import com.bds.common.events.payment.OrderProcessEvent;
 import com.bds.order.application.OrderMessageHandler;
 import com.bds.order.infrastructure.messaging.consumer.OrderMessageConsumer;
-import com.bds.order.infrastructure.messaging.dto.PaymentCancelledMessage;
-import com.bds.order.infrastructure.messaging.dto.PaymentPaidMessage;
-import com.bds.order.infrastructure.messaging.dto.PaymentProcessedMessage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,7 +26,7 @@ class OrderMessageConsumerUnitTest {
 
     @Test
     void handleBulkResult_수신시_processBulk를_호출한다() {
-        PaymentProcessedMessage message = new PaymentProcessedMessage(List.of(1L, 2L), PaymentProcessedMessage.ResultType.CONFIRMED);
+        OrderProcessEvent message = OrderProcessEvent.confirmed(List.of(1L, 2L));
 
         orderMessageConsumer.handleBulkResult(message);
 
@@ -35,7 +35,7 @@ class OrderMessageConsumerUnitTest {
 
     @Test
     void handlePaidResult_수신시_processPaid를_호출한다() {
-        PaymentPaidMessage message = new PaymentPaidMessage(1L);
+        OrderPaidEvent message = OrderPaidEvent.of(1L);
 
         orderMessageConsumer.handlePaidResult(message);
 
@@ -44,7 +44,7 @@ class OrderMessageConsumerUnitTest {
 
     @Test
     void handleCancelResult_수신시_processCancelled를_호출한다() {
-        PaymentCancelledMessage message = new PaymentCancelledMessage(1L, "USER_CANCEL");
+        OrderCancelledEvent message = OrderCancelledEvent.of(1L, "USER_CANCEL");
 
         orderMessageConsumer.handleCancelResult(message);
 
