@@ -1,6 +1,6 @@
 spring:
   application:
-    name: order
+    name: order-service
 
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
@@ -32,12 +32,15 @@ spring:
     events:
       externalization:
         enabled: true
-      #        mode: outbox
       republish-outstanding-events-on-restart: false
       staleness: #Fail 기준
         published: 1m
         processing: 5m
         resubmitted: 2m
+
+  autoconfigure:
+    exclude:
+      - org.springframework.modulith.events.amqp.RabbitJackson2Configuration
 
 bds:
   messaging:
