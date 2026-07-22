@@ -48,4 +48,15 @@ public class TestContainersConfig {
         return registry -> registry.add("spring.rabbitmq.stomp-port",
                 () -> String.valueOf(rabbitmqContainer.getMappedPort(61613)));
     }
+
+    @Bean
+    public DynamicPropertyRegistrar msaBrokerRegistrar(RabbitMQContainer rabbitmqContainer) {
+        return registry -> {
+            registry.add("bds.msa-broker.host", rabbitmqContainer::getHost);
+            registry.add("bds.msa-broker.port", () -> String.valueOf(rabbitmqContainer.getMappedPort(5672)));
+            registry.add("bds.msa-broker.virtual-host", () -> "msa");
+            registry.add("bds.msa-broker.username", () -> "bds");
+            registry.add("bds.msa-broker.password", () -> "bds1234");
+        };
+    }
 }

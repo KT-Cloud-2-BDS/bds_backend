@@ -94,7 +94,8 @@ jobs:
           cat > params.json << EOF
           {
             "commands": [
-              "aws ssm get-parameter --region $AWS_REGION --name $SSM_ENV_PATH --with-decryption --query Parameter.Value --output text > /tmp/$SERVICE.env 2>/dev/null || { echo 'Parameter 없음 - 빈 env로 진행'; : > /tmp/$SERVICE.env; }",
+              "aws ssm get-parameter --region $AWS_REGION --name /shared/env --with-decryption --query Parameter.Value --output text > /tmp/$SERVICE.env 2>/dev/null || : > /tmp/$SERVICE.env",
+              "aws ssm get-parameter --region $AWS_REGION --name $SSM_ENV_PATH --with-decryption --query Parameter.Value --output text >> /tmp/$SERVICE.env 2>/dev/null || true",
               "chmod 600 /tmp/$SERVICE.env",
               "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY",
               "docker pull $REGISTRY/$SERVICE:$TAG",
