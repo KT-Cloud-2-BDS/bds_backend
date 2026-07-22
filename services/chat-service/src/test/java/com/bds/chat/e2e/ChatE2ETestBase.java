@@ -73,6 +73,7 @@ public abstract class ChatE2ETestBase {
         registry.add("app.auth.renew-before", () -> "PT5S");
         registry.add("app.auth.renew-grace", () -> "PT5S");
         registry.add("spring.cloud.loadbalancer.enabled", () -> "false");
+        registry.add("eureka.client.enabled", () -> "false");
     }
 
     @LocalServerPort
