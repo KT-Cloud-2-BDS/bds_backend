@@ -40,6 +40,27 @@ public record PaymentHistoryCommand(
         );
     }
 
+    //창작자 정산용
+    public static PaymentHistoryCommand ofSettlement(
+            Wallet wallet,
+            UUID tranSeqNo,
+            String message,
+            Long amount,
+            PaymentHistoryStatus status
+    ) {
+        return new PaymentHistoryCommand(
+                wallet.getId(),
+                null,
+                tranSeqNo,
+                TransactionType.DEPOSIT,
+                TransactionReason.SETTLEMENT,
+                message,
+                amount,
+                wallet.getBalance(),
+                status
+        );
+    }
+
     // 펀딩용 (fundingPaymentId 있음)
     public static PaymentHistoryCommand ofFunding(
             Long walletId,

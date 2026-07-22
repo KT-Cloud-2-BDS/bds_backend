@@ -1,12 +1,12 @@
 package com.bds.payment.payment.presentation.request;
 
-import com.bds.payment.payment.domain.common.PaymentType;
+import java.util.UUID;
 
-public record FundingPaymentRequestDto(
+public record PaymentRequestEvent(
+        UUID requestId,
         Long orderId,
         Long memberId,
         Long productId,
         Long amount,
-        PaymentType paymentType
-) {
-}
+        String paymentType
+) {}
