@@ -1,2 +1,4 @@
 FROM rabbitmq:4-management
-RUN rabbitmq-plugins enable --offline rabbitmq_stomp
+RUN rabbitmq-plugins enable --offline rabbitmq_stomp \
+ && chown -R rabbitmq:rabbitmq /var/lib/rabbitmq \
+ && chmod 700 /var/lib/rabbitmq
