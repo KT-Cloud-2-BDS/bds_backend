@@ -3,6 +3,7 @@ package com.bds.chat.infrastructure.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,6 +19,17 @@ import org.springframework.security.web.SecurityFilterChain;
    public class SecurityConfig {
 
   @Bean
+  @Order(1)
+  public SecurityFilterChain actuatorFilterChain(HttpSecurity http) throws Exception {
+    return http
+            .securityMatcher("/actuator/**")
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            .build();
+  }
+
+  @Bean
+  @Order(2)
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     return http
        // REST는 API 게이트웨이에서 인증, WebSocket은 STOMP 채널 인터셉터에서 인증
@@ -28,7 +40,7 @@ import org.springframework.security.web.SecurityFilterChain;
             .authorizeHttpRequests(auth -> auth
                     // WebSocket 핸드셰이크: 익명 허용 설계이므로 개방 (인증은 STOMP CONNECT에서)
                     .requestMatchers("/ws/chat/**").permitAll()
-                    .requestMatchers("/actuator/health").permitAll()
+                    .requestMatchers("/api/chat/fundings/**").permitAll()
                     // 그 외 REST(메시지 동기화 조회 등): ALB 직행 우회 대비 JWT 필수
                     .anyRequest().authenticated())
             .oauth2ResourceServer(rs -> rs.jwt(Customizer.withDefaults()))

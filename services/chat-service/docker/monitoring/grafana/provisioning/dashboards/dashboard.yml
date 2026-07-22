@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: BDS Chat Service
+    orgId: 1
+    folder: BDS Chat Service
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
