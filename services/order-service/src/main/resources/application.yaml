@@ -1,6 +1,6 @@
 spring:
   application:
-    name: order
+    name: order-service
 
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
