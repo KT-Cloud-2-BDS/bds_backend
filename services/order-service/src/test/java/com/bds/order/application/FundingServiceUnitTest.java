@@ -128,7 +128,7 @@ class FundingServiceUnitTest {
             given(fundingRepository.saveWithRewards(any(Funding.class), eq(request.rewards())))
                     .willReturn(savedFunding);
 
-            FundingCreateResponseDto result = fundingService.createFunding(100L, "MAKER", request);
+            FundingCreateResponseDto result = fundingService.createFunding(100L, true, request);
 
             assertThat(result.fundingId()).isEqualTo(1L);
             assertThat(result.title()).isEqualTo("새 펀딩");

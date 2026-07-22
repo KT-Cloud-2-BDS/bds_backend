@@ -52,8 +52,8 @@ public class FundingService {
     }
 
     @Transactional
-    public FundingCreateResponseDto createFunding(Long creatorId, String role, FundingCreateRequestDto request) {
-        if (!"MAKER".equalsIgnoreCase(role)) {
+    public FundingCreateResponseDto createFunding(Long creatorId, boolean isMaker, FundingCreateRequestDto request) {
+        if (!isMaker) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 

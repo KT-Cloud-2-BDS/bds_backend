@@ -79,7 +79,7 @@ class FundingServiceUnitExceptionTest {
                     , null
             );
 
-            assertThatThrownBy(() -> fundingService.createFunding(100L, "", request))
+            assertThatThrownBy(() -> fundingService.createFunding(100L, false, request))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.ACCESS_DENIED);
@@ -94,7 +94,7 @@ class FundingServiceUnitExceptionTest {
                     , null
             );
 
-            assertThatThrownBy(() -> fundingService.createFunding(100L, "MAKER", request))
+            assertThatThrownBy(() -> fundingService.createFunding(100L, true, request))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.INVALID_START_DATE);
@@ -109,7 +109,7 @@ class FundingServiceUnitExceptionTest {
                     , null
             );
 
-            assertThatThrownBy(() -> fundingService.createFunding(100L, "MAKER", request))
+            assertThatThrownBy(() -> fundingService.createFunding(100L, true, request))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.INVALID_DATE_RANGE);
@@ -124,7 +124,7 @@ class FundingServiceUnitExceptionTest {
                     , null
             );
 
-            assertThatThrownBy(() -> fundingService.createFunding(100L, "MAKER", request))
+            assertThatThrownBy(() -> fundingService.createFunding(100L, true, request))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.INVALID_DATE_RANGE);
@@ -139,7 +139,7 @@ class FundingServiceUnitExceptionTest {
                     , null
             );
 
-            assertThatThrownBy(() -> fundingService.createFunding(100L, "MAKER", request))
+            assertThatThrownBy(() -> fundingService.createFunding(100L, true, request))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.INVALID_PAY_DATE);
