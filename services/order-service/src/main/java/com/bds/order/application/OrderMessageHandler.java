@@ -1,7 +1,7 @@
 package com.bds.order.application;
 
+import com.bds.common.events.payment.OrderProcessEvent;
 import com.bds.order.domain.order.OrderStatus;
-import com.bds.order.infrastructure.messaging.dto.PaymentProcessedMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -13,10 +13,11 @@ public class OrderMessageHandler {
 
     private final OrderService orderService;
 
-    public void processBulk(PaymentProcessedMessage message) {
+    public void processBulk(OrderProcessEvent message) {
         OrderStatus targetStatus = switch (message.type()) {
-            case CONFIRMED -> OrderStatus.CONFIRMED;
-            case REFUNDED -> OrderStatus.REFUNDED;
+            case "CONFIRMED" -> OrderStatus.CONFIRMED;
+            case "REFUNDED" -> OrderStatus.REFUNDED;
+            default -> throw new IllegalStateException("Unexpected value: " + message.type());
         };
 
         for (Long orderId : message.orderIds()) {
