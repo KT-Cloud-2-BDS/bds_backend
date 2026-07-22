@@ -1,6 +1,7 @@
 package com.bds.payment.payment.application.funding.consumer;
 
-import com.bds.payment.payment.presentation.request.SettlementRequestEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent.SettlementItem;
 import com.bds.messaging.idempotency.ProcessedEventStore;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.domain.common.SettlementType;
@@ -21,9 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SettlementRequestListenerUnitTest {
@@ -32,15 +31,15 @@ class SettlementRequestListenerUnitTest {
 
     @InjectMocks private SettlementRequestListener listener;
 
-    private SettlementRequestEvent createEvent(String type) {
-        return new SettlementRequestEvent(
+    private OrderProcessSettlementEvent createEvent(String type) {
+        return new OrderProcessSettlementEvent(
                 UuidCreator.getTimeOrderedEpoch(),
                 type,
                 999L,
                 100L,
                 List.of(
-                        new SettlementRequestEvent.Item(101L, 1L, 10000L),
-                        new SettlementRequestEvent.Item(102L, 2L, 20000L)
+                        new SettlementItem(101L, 1L, 10000L),
+                        new SettlementItem(102L, 2L, 20000L)
                 )
         );
     }
@@ -52,7 +51,7 @@ class SettlementRequestListenerUnitTest {
         @Test
         void SETTLEMENT_CONFIRMED_타입은_confirmSettlement를_호출한다() {
             // given
-            SettlementRequestEvent event = createEvent("SETTLEMENT_CONFIRMED");
+            OrderProcessSettlementEvent event = createEvent("SETTLEMENT_CONFIRMED");
             given(processedEventStore.markProcessed(event.batchId())).willReturn(true);
 
             // when
@@ -67,7 +66,7 @@ class SettlementRequestListenerUnitTest {
         @Test
         void RESERVED_FUNDING_CONFIRMED_타입은_confirmReservedFunding을_호출한다() {
             // given
-            SettlementRequestEvent event = createEvent("RESERVED_FUNDING_CONFIRMED");
+            OrderProcessSettlementEvent event = createEvent("RESERVED_FUNDING_CONFIRMED");
             given(processedEventStore.markProcessed(event.batchId())).willReturn(true);
 
             // when
@@ -82,7 +81,7 @@ class SettlementRequestListenerUnitTest {
         @Test
         void FUNDING_FAILED_REFUND_타입은_refundFailedFunding을_호출한다() {
             // given
-            SettlementRequestEvent event = createEvent("FUNDING_FAILED_REFUND");
+            OrderProcessSettlementEvent event = createEvent("FUNDING_FAILED_REFUND");
             given(processedEventStore.markProcessed(event.batchId())).willReturn(true);
 
             // when
@@ -97,7 +96,7 @@ class SettlementRequestListenerUnitTest {
         @Test
         void 알수없는_타입은_IllegalArgumentException을_던진다() {
             // given
-            SettlementRequestEvent event = createEvent("UNKNOWN_TYPE");
+            OrderProcessSettlementEvent event = createEvent("UNKNOWN_TYPE");
             given(processedEventStore.markProcessed(event.batchId())).willReturn(true);
 
             // when & then
@@ -115,7 +114,7 @@ class SettlementRequestListenerUnitTest {
         @Test
         void 중복_배치는_스킵한다() {
             // given
-            SettlementRequestEvent event = createEvent("SETTLEMENT_CONFIRMED");
+            OrderProcessSettlementEvent event = createEvent("SETTLEMENT_CONFIRMED");
             given(processedEventStore.markProcessed(event.batchId())).willReturn(false);
 
             // when
@@ -134,14 +133,14 @@ class SettlementRequestListenerUnitTest {
         void 이벤트_필드가_DTO에_정확히_전달된다() {
             // given
             UUID batchId = UuidCreator.getTimeOrderedEpoch();
-            SettlementRequestEvent event = new SettlementRequestEvent(
+            OrderProcessSettlementEvent event = new OrderProcessSettlementEvent(
                     batchId,
                     "SETTLEMENT_CONFIRMED",
                     999L,
                     100L,
                     List.of(
-                            new SettlementRequestEvent.Item(101L, 1L, 10000L),
-                            new SettlementRequestEvent.Item(102L, 2L, 20000L)
+                            new SettlementItem(101L, 1L, 10000L),
+                            new SettlementItem(102L, 2L, 20000L)
                     )
             );
             given(processedEventStore.markProcessed(event.batchId())).willReturn(true);

@@ -1,6 +1,6 @@
 package com.bds.payment.payment.application.funding.consumer;
 
-import com.bds.payment.payment.presentation.request.PaymentRequestEvent;
+import com.bds.common.events.order.OrderProcessPayEvent;
 import com.bds.messaging.idempotency.ProcessedEventStore;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.global.exception.BusinessException;
@@ -14,7 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -29,7 +30,7 @@ class PaymentRequestListenerUnitTest {
     @Test
     void 이벤트를_수신하면_FundingService_funding을_호출한다() {
         // given
-        PaymentRequestEvent event = new PaymentRequestEvent(
+        OrderProcessPayEvent event = new OrderProcessPayEvent(
                 UUID.randomUUID(), 101L, 1L, 100L, 10000L, "INSTANT"
         );
         given(processedEventStore.markProcessed(event.requestId())).willReturn(true);
@@ -44,7 +45,7 @@ class PaymentRequestListenerUnitTest {
     @Test
     void 중복_이벤트는_스킵한다() {
         // given
-        PaymentRequestEvent event = new PaymentRequestEvent(
+        OrderProcessPayEvent event = new OrderProcessPayEvent(
                 UUID.randomUUID(), 101L, 1L, 100L, 10000L, "INSTANT"
         );
         given(processedEventStore.markProcessed(event.requestId())).willReturn(false);
@@ -59,7 +60,7 @@ class PaymentRequestListenerUnitTest {
     @Test
     void FUNDING_DUPLICATED_예외는_스킵한다() {
         // given
-        PaymentRequestEvent event = new PaymentRequestEvent(
+        OrderProcessPayEvent event = new OrderProcessPayEvent(
                 UUID.randomUUID(), 101L, 1L, 100L, 10000L, "INSTANT"
         );
         given(processedEventStore.markProcessed(event.requestId())).willReturn(true);
@@ -73,7 +74,7 @@ class PaymentRequestListenerUnitTest {
     @Test
     void 다른_BusinessException은_전파한다() {
         // given
-        PaymentRequestEvent event = new PaymentRequestEvent(
+        OrderProcessPayEvent event = new OrderProcessPayEvent(
                 UUID.randomUUID(), 101L, 1L, 100L, 10000L, "INSTANT"
         );
         given(processedEventStore.markProcessed(event.requestId())).willReturn(true);

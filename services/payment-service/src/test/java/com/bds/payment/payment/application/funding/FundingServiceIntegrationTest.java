@@ -98,7 +98,7 @@ class FundingServiceIntegrationTest {
 
             // when
             fundingService.refund(new RefundRequestDto(
-                    UuidCreator.getTimeOrderedEpoch(), 1L, 1L, 10000L, "USER_CANCEL"
+                    UuidCreator.getTimeOrderedEpoch(), 1L, 1L, 1L, 10000L, "USER_CANCEL"
             ));
 
             // then
@@ -353,7 +353,7 @@ class FundingServiceIntegrationTest {
 
             // 먼저 환불
             fundingService.refund(new RefundRequestDto(
-                    UuidCreator.getTimeOrderedEpoch(), orderId, memberId, 10000L, "USER_CANCEL"
+                    UuidCreator.getTimeOrderedEpoch(), orderId, memberId, 1L, 10000L, "USER_CANCEL"
             ));
 
             // when: 배치로 다시 환불 시도

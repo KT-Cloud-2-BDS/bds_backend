@@ -1,6 +1,6 @@
 package com.bds.payment.payment.application.funding.consumer;
 
-import com.bds.payment.payment.presentation.request.RefundRequestEvent;
+import com.bds.common.events.order.OrderProcessRefundEvent;
 import com.bds.messaging.idempotency.ProcessedEventStore;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.global.exception.BusinessException;
@@ -21,7 +21,7 @@ public class RefundRequestListener {
     private final ProcessedEventStore processedEventStore;
 
     @RabbitListener(queues = PaymentQueues.REFUND_QUEUE)
-    public void handle(RefundRequestEvent event) {
+    public void handle(OrderProcessRefundEvent event) {
         if (!processedEventStore.markProcessed(event.requestId())) {
             log.info("중복 환불 요청 스킵: requestId={}", event.requestId());
             return;
@@ -34,6 +34,7 @@ public class RefundRequestListener {
                 event.requestId(),
                 event.orderId(),
                 event.memberId(),
+                event.fundingId(),
                 event.amount(),
                 event.cancelReason()
         );

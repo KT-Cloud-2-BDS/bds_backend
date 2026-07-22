@@ -1,6 +1,6 @@
 package com.bds.payment.payment.application.funding.consumer;
 
-import com.bds.payment.payment.presentation.request.PaymentRequestEvent;
+import com.bds.common.events.order.OrderProcessPayEvent;
 import com.bds.messaging.idempotency.ProcessedEventStore;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.domain.common.PaymentType;
@@ -22,7 +22,7 @@ public class PaymentRequestListener {
     private final ProcessedEventStore processedEventStore;
 
     @RabbitListener(queues = PaymentQueues.PAY_QUEUE)
-    public void handle(PaymentRequestEvent event) {
+    public void handle(OrderProcessPayEvent event) {
         if (!processedEventStore.markProcessed(event.requestId())) {
             log.info("중복 결제 요청 스킵: requestId={}", event.requestId());
             return;
@@ -34,7 +34,7 @@ public class PaymentRequestListener {
         FundingPaymentRequestDto dto = new FundingPaymentRequestDto(
                 event.orderId(),
                 event.memberId(),
-                event.productId(),
+                event.fundingId(),
                 event.amount(),
                 PaymentType.valueOf(event.paymentType())
         );

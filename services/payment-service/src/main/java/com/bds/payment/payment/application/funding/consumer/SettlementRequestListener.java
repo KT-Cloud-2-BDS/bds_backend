@@ -1,6 +1,6 @@
 package com.bds.payment.payment.application.funding.consumer;
 
-import com.bds.payment.payment.presentation.request.SettlementRequestEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
 import com.bds.messaging.idempotency.ProcessedEventStore;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.domain.common.SettlementType;
@@ -23,7 +23,7 @@ public class SettlementRequestListener {
     private final ProcessedEventStore processedEventStore;
 
     @RabbitListener(queues = PaymentQueues.SETTLEMENT_QUEUE)
-    public void handle(SettlementRequestEvent event) {
+    public void handle(OrderProcessSettlementEvent event) {
         if (!processedEventStore.markProcessed(event.batchId())) {
             log.info("중복 정산 배치 스킵: batchId={}", event.batchId());
             return;
@@ -40,7 +40,7 @@ public class SettlementRequestListener {
                 event.batchId(),
                 SettlementType.valueOf(event.type()),
                 event.creatorMemberId(),
-                event.productId(),
+                event.fundingId(),
                 items
         );
 
