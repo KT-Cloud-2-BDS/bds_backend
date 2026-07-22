@@ -18,7 +18,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -125,11 +126,11 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
                     1L, "새 펀딩", "SCHEDULED", "INSTANT", NOW, NOW.plusDays(30), NOW
             );
 
-            given(fundingService.createFunding(eq(1L), anyBoolean(), any())).willReturn(response);
+            given(fundingService.createFunding(eq(1L), eq(true), any())).willReturn(response);
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", List.of("MAKER"))
+                            .header("X-User-Roles", List.of("MAKER"))
                             .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))

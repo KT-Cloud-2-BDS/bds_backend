@@ -17,7 +17,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -79,12 +80,12 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     , null
             );
 
-            given(fundingService.createFunding(eq(1L), anyBoolean(), any()))
+            given(fundingService.createFunding(eq(1L), eq(false), any()))
                     .willThrow(new BusinessException(ErrorCode.ACCESS_DENIED));
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", List.of("USER"))
+                            .header("X-User-Roles", List.of("USER"))
                             .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -102,7 +103,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", List.of("MAKER"))
+                            .header("X-User-Roles", List.of("MAKER"))
                             .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -120,7 +121,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", List.of("MAKER"))
+                            .header("X-User-Roles", List.of("MAKER"))
                             .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -138,7 +139,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", List.of("MAKER"))
+                            .header("X-User-Roles", List.of("MAKER"))
                             .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -156,7 +157,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", List.of("MAKER"))
+                            .header("X-User-Roles", List.of("MAKER"))
                             .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -174,7 +175,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", List.of("MAKER"))
+                            .header("X-User-Roles", List.of("MAKER"))
                             .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
