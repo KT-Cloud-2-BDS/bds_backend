@@ -1,6 +1,7 @@
 {
   "vhosts": [
-    { "name": "/" }
+    { "name": "/" },
+    { "name": "msa" }
   ],
   "users": [
     {
@@ -27,6 +28,20 @@
     {
       "user": "bds-admin",
       "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "bds",
+      "vhost": "msa",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "bds-admin",
+      "vhost": "msa",
       "configure": ".*",
       "write": ".*",
       "read": ".*"

@@ -37,6 +37,11 @@ app:
     renew-grace: PT1M
     max-anonymous-sessions: 1000
 
+internal:
+  # 게이트웨이와 다운스트림 서비스가 공유하는 내부 시크릿(로컬 개발 전용 기본값).
+  # 운영 환경(application-prod.yml)에서는 반드시 INTERNAL_GATEWAY_SECRET 환경변수로 주입한다.
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}
+
 logging:
   level:
     com.bds.chat: DEBUG
