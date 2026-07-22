@@ -2,6 +2,8 @@ package com.bds.payment.payment.domain.fundingPayment;
 
 import com.bds.payment.payment.domain.common.FundingPaymentStatus;
 import com.bds.payment.payment.domain.common.PaymentType;
+import com.bds.payment.payment.global.exception.BusinessException;
+import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.presentation.request.FundingPaymentRequestDto;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +23,7 @@ public class FundingPayment {
     private Long amount;
     private PaymentType paymentType;
     private FundingPaymentStatus status;
+    private LocalDateTime creditedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -39,5 +42,32 @@ public class FundingPayment {
 
     public void refund() {
         this.status = FundingPaymentStatus.REFUNDED;
+    }
+
+    public void confirm() {
+        if (this.status != FundingPaymentStatus.SUCCESS) {
+            throw new BusinessException(ErrorCode.FUNDING_INVALID_STATUS);
+        }
+        this.status = FundingPaymentStatus.CONFIRMED;
+    }
+
+    public void confirmReserved() {
+        if (this.paymentType != PaymentType.RESERVED) {
+            throw new BusinessException(ErrorCode.FUNDING_INVALID_STATUS);
+        }
+        if (this.status != FundingPaymentStatus.RESERVED) {
+            throw new BusinessException(ErrorCode.FUNDING_INVALID_STATUS);
+        }
+        this.status = FundingPaymentStatus.CONFIRMED;
+    }
+
+    public void markCredited(LocalDateTime now) {
+        if (this.status != FundingPaymentStatus.CONFIRMED) {
+            throw new BusinessException(ErrorCode.FUNDING_INVALID_STATUS);
+        }
+        if (this.creditedAt != null) {
+            return;  // 이미 크레딧됨 (멱등)
+        }
+        this.creditedAt = now;
     }
 }
