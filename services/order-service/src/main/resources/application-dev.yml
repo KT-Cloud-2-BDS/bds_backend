@@ -40,6 +40,13 @@ bds:
       republish-min-age: 1m
       retention: 7d
 
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
 
 logging:
   level:

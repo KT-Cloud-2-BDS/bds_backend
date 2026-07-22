@@ -9,6 +9,7 @@ import com.bds.support.MockMvcTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,6 +31,9 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
     @MockitoBean
     private FundingService fundingService;
 
+    @Value("${internal.gateway-secret}")
+    private String gatewaySecret;
+
     @Nested
     @DisplayName("펀딩 상세 조회 예외")
     class GetFundingDetailExceptionTest {
@@ -40,7 +44,8 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     .willThrow(new BusinessException(ErrorCode.FUNDING_NOT_FOUND));
 
             mockMvc.perform(get("/api/fundings/999")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret))
                     .andExpect(status().isNotFound());
         }
     }
@@ -56,6 +61,7 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(get("/api/fundings")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .param("status", "INVALID"))
                     .andExpect(status().isBadRequest());
         }
@@ -74,12 +80,13 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
                     , null
             );
 
-            given(fundingService.createFunding(eq(1L), eq("USER"), any()))
+            given(fundingService.createFunding(eq(1L), eq(false), any()))
                     .willThrow(new BusinessException(ErrorCode.ACCESS_DENIED));
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "USER")
+                            .header("X-User-Roles", List.of("USER"))
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
@@ -96,7 +103,8 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "MAKER")
+                            .header("X-User-Roles", List.of("MAKER"))
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -113,7 +121,8 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "MAKER")
+                            .header("X-User-Roles", List.of("MAKER"))
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -130,7 +139,8 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "MAKER")
+                            .header("X-User-Roles", List.of("MAKER"))
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -147,7 +157,8 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "MAKER")
+                            .header("X-User-Roles", List.of("MAKER"))
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -164,7 +175,8 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "MAKER")
+                            .header("X-User-Roles", List.of("MAKER"))
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
