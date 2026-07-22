@@ -1,8 +1,6 @@
 spring:
   application:
     name: notification-service
-  profiles:
-    active: dev
   autoconfigure:
     exclude:
       - org.springframework.modulith.events.amqp.RabbitJackson2Configuration
