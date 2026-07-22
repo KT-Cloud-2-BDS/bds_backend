@@ -52,3 +52,6 @@ logging:
 bank:
   api:
     base-url: ${BANK_URL}
+
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}

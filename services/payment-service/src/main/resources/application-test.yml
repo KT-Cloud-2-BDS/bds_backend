@@ -52,3 +52,6 @@ bds:
 bank:
   api:
     base-url: http://localhost:8085
+
+internal:
+  gateway-secret: "test-internal-secret"

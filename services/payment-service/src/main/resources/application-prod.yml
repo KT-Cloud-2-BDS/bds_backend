@@ -18,6 +18,32 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: ${RABBITMQ_VHOST:msa}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  modulith:
+    events:
+      externalization:
+        enabled: true
+      republish-outstanding-events-on-restart: false
+      staleness:
+        published: 1m
+        processing: 5m
+        resubmitted: 2m
+
+bds:
+  messaging:
+    events:
+      republish-delay: 30s
+      republish-min-age: 1m
+      retention: 7d
+
 logging:
   level:
     com.bds.payment: INFO
@@ -25,3 +51,6 @@ logging:
 bank:
   api:
     base-url: ${BANK_URL}
+
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET}
