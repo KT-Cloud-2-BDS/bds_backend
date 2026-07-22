@@ -5,7 +5,7 @@ import org.springframework.modulith.events.Externalized;
 import java.time.Instant;
 import java.util.UUID;
 
-@Externalized("payment.exchange::order.process.cancel")
+@Externalized("payment.exchange::payment.refunded")
 public record OrderCancelledEvent(
         UUID eventId,
         Long orderId,

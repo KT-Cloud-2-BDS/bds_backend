@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-@Externalized("payment.exchange::order.process")
+@Externalized("payment.exchange::payment.settled")
 public record OrderProcessEvent(
         UUID eventId,
         List<Long> orderIds,

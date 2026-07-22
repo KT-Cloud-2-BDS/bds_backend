@@ -6,7 +6,7 @@ import org.springframework.modulith.events.Externalized;
 import java.time.Instant;
 import java.util.UUID;
 
-@Externalized("payment.exchange::order.process.paid")
+@Externalized("payment.exchange::payment.paid")
 public record OrderPaidEvent(
         UUID eventId,
         Long orderId,
