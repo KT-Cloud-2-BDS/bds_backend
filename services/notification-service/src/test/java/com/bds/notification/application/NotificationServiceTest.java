@@ -3,6 +3,7 @@ package com.bds.notification.application;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.bds.notification.application.dto.ChatNotificationMessageDto;
 import com.bds.notification.application.dto.FundingNotificationCommandDto;
 import com.bds.notification.application.dto.OrderNotificationMessageDto;
 import com.bds.notification.application.event.NotificationCreatedEvent;
@@ -247,7 +249,7 @@ public class NotificationServiceTest {
     public void 성공_주문완료_알림_생성() {
       //given
       OrderNotificationMessageDto command = new OrderNotificationMessageDto(
-          NotificationType.PAID,
+          "PAID",
           1L,
           "여름 맞이 물총 장난감",
           "order-1234-1234"
@@ -266,7 +268,7 @@ public class NotificationServiceTest {
     public void 실패_잘못된_알림타입() {
       //given
       OrderNotificationMessageDto command = new OrderNotificationMessageDto(
-          NotificationType.PROMOTION,
+          "PROMOTION",
           1L,
           "여름 맞이 물총 장난감",
           "order-1234-1234"
@@ -285,7 +287,7 @@ public class NotificationServiceTest {
     public void 성공_환불_알림_생성() {
       //given
       OrderNotificationMessageDto command = new OrderNotificationMessageDto(
-          NotificationType.REFUNDED,
+          "REFUNDED",
           1L,
           "여름 맞이 물총 장난감",
           "order-1234-1234"
@@ -309,7 +311,7 @@ public class NotificationServiceTest {
     public void 성공_펀딩시작_알림_생성() {
       //given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "123", "PRODUCT"
+          "FUNDING_START", "PRODUCT", 123L
       );
       when(
           notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
@@ -330,7 +332,7 @@ public class NotificationServiceTest {
     public void 성공_펀딩성공_알림_생성() {
       //given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_SUCCESS, "123", "PRODUCT"
+          "FUNDING_SUCCESS", "PRODUCT", 123L
       );
       when(
           notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
@@ -350,7 +352,7 @@ public class NotificationServiceTest {
     public void 성공_펀딩실패_알림_생성() {
       //given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_FAIL, "123", "PRODUCT"
+          "FUNDING_FAIL", "PRODUCT", 123L
       );
       when(
           notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
@@ -370,7 +372,7 @@ public class NotificationServiceTest {
     public void 성공_구독자_없음() {
       //given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "123", "PRODUCT"
+          "FUNDING_START", "PRODUCT", 123L
       );
       when(
           notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
@@ -382,6 +384,39 @@ public class NotificationServiceTest {
 
       //then
       verify(notificationRepository, never()).save(any(Notification.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("채팅 알림 전송 테스트")
+  class SendChatNotificationTest {
+
+    @Test
+    @DisplayName("SSE 연결 중인 사용자에게 채팅 알림이 전송된다.")
+    public void 성공_채팅_알림_전송() {
+      //given
+      ChatNotificationMessageDto dto = new ChatNotificationMessageDto(1L, 100L, "안녕하세요!");
+      when(sseEmitterManager.exist(1L)).thenReturn(true);
+
+      //when
+      notificationService.sendChatNotification(dto);
+
+      //then
+      verify(sseEmitterManager).send(eq(1L), eq("chat"), any());
+    }
+
+    @Test
+    @DisplayName("SSE 미연결 사용자에게는 채팅 알림이 전송되지 않는다.")
+    public void 성공_미연결_사용자_알림_미전송() {
+      //given
+      ChatNotificationMessageDto dto = new ChatNotificationMessageDto(1L, 100L, "안녕하세요!");
+      when(sseEmitterManager.exist(1L)).thenReturn(false);
+
+      //when
+      notificationService.sendChatNotification(dto);
+
+      //then
+      verify(sseEmitterManager, never()).send(any(), any(), any());
     }
   }
 
