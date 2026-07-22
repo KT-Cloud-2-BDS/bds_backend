@@ -1,0 +1,73 @@
+# 모니터링 스택 (Prometheus + Grafana + PostgreSQL Exporter)
+#
+# [실행] docker-compose.local.yml 과 함께 사용:
+#   docker compose -f docker-compose.local.yml -f docker-compose.monitoring.yml up -d
+#
+# [종료]
+#   docker compose -f docker-compose.local.yml -f docker-compose.monitoring.yml down
+#
+# [엔드포인트]
+#   Prometheus : http://localhost:9090
+#   Grafana    : http://localhost:3001  (admin / admin)
+#   RabbitMQ Metrics : http://localhost:15692/metrics
+#
+# [Spring Boot 앱은 별도 실행 필요]
+#   ./gradlew :services:chat-service:bootRun
+#   → actuator/prometheus: http://localhost:8083/actuator/prometheus
+
+services:
+
+  # RabbitMQ에 prometheus 플러그인 포트 추가 (docker-compose.local.yml 오버라이드)
+  rabbitmq:
+    ports:
+      - "15692:15692"
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: bds-chat-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-chat}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.53.2
+    container_name: bds-chat-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Linux에서 호스트(Spring Boot) 접근용
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: bds-chat-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_DOMAIN: localhost
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:

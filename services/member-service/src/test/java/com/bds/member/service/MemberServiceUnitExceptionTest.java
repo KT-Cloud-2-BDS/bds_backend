@@ -112,6 +112,41 @@ public class MemberServiceUnitExceptionTest {
     }
 
     @Nested
+    @DisplayName("소셜 로그인 프로필 완성 예외 핸들링")
+    public class CompleteSocialSignupException {
+        @Test
+        @DisplayName("이미 Member 로우가 존재하면 ALREADY_REGISTERED_MEMBER 예외가 터진다")
+        public void 이미가입된회원_예외() {
+            // given
+            Long authId = 100L;
+            given(memberRepository.existsByAuthId(authId)).willReturn(true);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                memberService.completeSocialSignup(authId, "닉네임");
+            });
+            assertEquals(ErrorCode.ALREADY_REGISTERED_MEMBER, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("닉네임이 이미 사용 중이면 DUPLICATE_NICKNAME 예외가 터진다")
+        public void 닉네임중복_예외() {
+            // given
+            Long authId = 100L;
+            String nickname = "중복닉네임";
+
+            given(memberRepository.existsByAuthId(authId)).willReturn(false);
+            given(memberRepository.existsByNickname(nickname)).willReturn(true);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                memberService.completeSocialSignup(authId, nickname);
+            });
+            assertEquals(ErrorCode.DUPLICATE_NICKNAME, exception.getErrorCode());
+        }
+    }
+
+    @Nested
     @DisplayName("닉네임 수정 예외 핸들링")
     public class UpdateNicknameException {
 
@@ -161,6 +196,25 @@ public class MemberServiceUnitExceptionTest {
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
                 memberService.updateNickname(authId, requestDto);
+            });
+            assertEquals(ErrorCode.MEMBER_NOT_FOUND, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("정보 조회 예외 핸들링")
+    public class GetInfoException {
+
+        @Test
+        @DisplayName("가입된 회원이 존재하지 않으면 MEMBER_NOT_FOUND 예외가 터진다")
+        public void 회원_정보없음_예외() {
+            // given
+            Long authId = 999L;
+            given(memberRepository.findByAuthId(authId)).willReturn(Optional.empty());
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                memberService.getInfo(authId);
             });
             assertEquals(ErrorCode.MEMBER_NOT_FOUND, exception.getErrorCode());
         }

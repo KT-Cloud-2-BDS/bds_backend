@@ -1,5 +1,6 @@
 package com.dbs.gateway.config;
 
+import com.dbs.gateway.security.AuthBlacklistClient;
 import com.dbs.gateway.security.BlockingJwtDecoderAdapter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,6 +61,6 @@ public class SecurityConfig {
 
         String jwksUri = instances.get(0).getUri() + jwksPath;
         JwtDecoder nimbusJwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwksUri).build();
-        return new BlockingJwtDecoderAdapter(nimbusJwtDecoder);
+        return new BlockingJwtDecoderAdapter(nimbusJwtDecoder, authBlacklistClient);
     }
 }

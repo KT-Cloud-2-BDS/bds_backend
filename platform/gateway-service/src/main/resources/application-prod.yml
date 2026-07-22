@@ -9,6 +9,11 @@ spring:
               predicates:
                 - Path=/api/auths/**
 
+            - id: auth-service-oauth2
+              uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+              predicates:
+                - Path=/oauth2/**,/login/oauth2/**
+
             - id: member-service
               uri: lb://member-service
               predicates:
@@ -38,6 +43,9 @@ eureka:
   client:
     service-url:
       defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/
+
+auth-service:
+  internal-uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
 
 internal:
   gateway-secret: ${INTERNAL_GATEWAY_SECRET}

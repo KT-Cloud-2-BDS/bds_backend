@@ -4,6 +4,8 @@ plugins {
 
 dependencies {
     implementation project(':modules:common')
+    implementation project(':libs:bds-events')
+    implementation project(':modules:messaging')
 
     implementation 'org.springframework.boot:spring-boot-starter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -27,7 +29,15 @@ dependencies {
     testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
     testImplementation 'org.testcontainers:postgresql:1.21.4'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.testcontainers:rabbitmq:1.21.4'
+    testImplementation 'org.awaitility:awaitility:4.3.0'
 
+    // Modulith outbox
+//    implementation 'org.springframework.modulith:spring-modulith-starter-core'
+    implementation 'org.springframework.modulith:spring-modulith-events-api'
+    implementation 'org.springframework.modulith:spring-modulith-events-amqp'
+    implementation 'org.springframework.modulith:spring-modulith-events-jdbc'
+    implementation 'org.springframework.modulith:spring-modulith-events-jackson'
 }
 
 tasks.named('test') {

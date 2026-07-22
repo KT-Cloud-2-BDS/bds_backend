@@ -4,11 +4,13 @@ import com.bds.common.annotation.LoginUser;
 import com.bds.common.dto.CurrentUser;
 import com.bds.member.application.MemberService;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
+import com.bds.member.presentation.dto.MemberResponseDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +29,15 @@ public class MemberController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @PostMapping("/social/signup")
+    public ResponseEntity<Void> completeSocialSignup(
+        @LoginUser CurrentUser user,
+        @RequestBody MemberInfoRequestDto requestDto
+    ) {
+        memberService.completeSocialSignup(user.id(), requestDto.nickname());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
     @PatchMapping("/info")
     public ResponseEntity<Void> updateNickname(
         @LoginUser CurrentUser user,
@@ -42,6 +53,13 @@ public class MemberController {
     ) {
         memberService.deleteMember(user.id());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity<MemberResponseDto> getInfo(
+        @LoginUser CurrentUser user
+    ) {
+        return ResponseEntity.ok(memberService.getInfo(user.id()));
     }
 }
 

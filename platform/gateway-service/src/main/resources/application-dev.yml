@@ -9,6 +9,11 @@ spring:
               predicates:
                 - Path=/api/auths/**
 
+            - id: auth-service-oauth2
+              uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
+              predicates:
+                - Path=/oauth2/**,/login/oauth2/**
+
             - id: member-service
               uri: lb://member-service
               predicates:
@@ -38,6 +43,9 @@ eureka:
   client:
     service-url:
       defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
+
+auth-service:
+  internal-uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
 
 internal:
   # 게이트웨이와 다운스트림 서비스가 공유하는 내부 시크릿(로컬 개발 전용 기본값).

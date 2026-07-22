@@ -11,7 +11,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("is_deleted = false")
 @Table(name = "member")
-public class MemberJpaEntity {
+public class MemberJpaEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

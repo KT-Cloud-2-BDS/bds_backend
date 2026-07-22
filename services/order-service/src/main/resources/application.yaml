@@ -18,6 +18,34 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${RABBITMQ_USER:order-service}
+    password: ${RABBITMQ_PASSWORD:order1234}
+    # 발행 서비스 필수 — confirm 콜백이 동작하기 위한 설정
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  modulith:
+    events:
+      externalization:
+        enabled: true
+      #        mode: outbox
+      republish-outstanding-events-on-restart: false
+      staleness: #Fail 기준
+        published: 1m
+        processing: 5m
+        resubmitted: 2m
+
+bds:
+  messaging:
+    events:
+      republish-delay: 30s
+      republish-min-age: 1m
+      retention: 7d
+
 management:
   endpoints:
     web:

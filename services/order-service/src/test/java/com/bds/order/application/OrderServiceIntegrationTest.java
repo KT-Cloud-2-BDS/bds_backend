@@ -2,20 +2,28 @@ package com.bds.order.application;
 
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
+import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import com.bds.order.infrastructure.funding.FundingJpaRepository;
+import com.bds.order.infrastructure.order.OrderJpaEntity;
+import com.bds.order.infrastructure.order.OrderJpaRepository;
+import com.bds.order.infrastructure.order.OrderMapper;
+import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaRepository;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import com.bds.order.infrastructure.reward.RewardJpaRepository;
 import com.bds.order.presentation.dto.*;
 import com.bds.support.AbstractIntegrationTest;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,6 +45,12 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     private OrderRepository orderRepository;
 
     @Autowired
+    private OrderJpaRepository orderJpaRepository;
+
+    @Autowired
+    private OrderMapper orderMapper;
+
+    @Autowired
     private FundingJpaRepository fundingJpaRepository;
 
     @Autowired
@@ -44,6 +58,9 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private OrderRewardJpaRepository orderRewardJpaRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private FundingJpaEntity savedFunding;
     private RewardJpaEntity savedReward;
@@ -54,7 +71,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         LocalDateTime now = LocalDateTime.now();
 
         savedFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE,
+                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                 now.minusDays(10), now.plusDays(30), now.plusDays(60),
                 0, 1000000L, 500000L, false, new ArrayList<>()
         ));
@@ -76,6 +93,24 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         orderRepository.deleteAll();
         rewardJpaRepository.deleteAll();
         fundingJpaRepository.deleteAll();
+    }
+
+    private Order createOrderWithStatus(OrderStatus status) {
+        OrderJpaEntity orderEntity = OrderJpaEntity.builder()
+                .orderNo("ORD-TEST-" + System.nanoTime())
+                .memberId(1L)
+                .status(status)
+                .totalRewardAmount(10000L)
+                .totalShippingCharge(3000L)
+                .build();
+
+        OrderRewardJpaEntity orderRewardEntity = new OrderRewardJpaEntity(
+                null, orderEntity, savedReward, 1, 10000L, 3000L
+        );
+        orderEntity.getOrderRewards().add(orderRewardEntity);
+
+        OrderJpaEntity saved = orderJpaRepository.saveAndFlush(orderEntity);
+        return orderMapper.toDomain(saved);
     }
 
     @Nested
@@ -210,7 +245,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         void 주문_취소_시_CANCELLED_상태로_변경되고_재고가_복구된다() {
             Long orderId = createAndStartOrder(1L, 3);
 
-            OrderCancelResponseDto result = orderService.cancelOrder(1L, orderId);
+            OrderCancelResponseDto result = orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(1L));
 
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(result.cancelledAt()).isNotNull();
@@ -450,7 +485,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             // 취소 시도
             executor.submit(() -> {
                 try {
-                    orderService.cancelOrder(1L, billing.orderId());
+                    orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L));
                     cancelSuccess.incrementAndGet();
                 } catch (Exception ignored) {
                 } finally {
@@ -555,7 +590,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(afterCreate.getRemainQty()).isEqualTo(8); // 10 - 2
 
             // 3. 주문 취소 (CANCELLED), 재고 복구
-            OrderCancelResponseDto cancelResult = orderService.cancelOrder(1L, billingResult.orderId());
+            OrderCancelResponseDto cancelResult = orderService.cancelOrder(1L, billingResult.orderId(), new OrderCancelRequestDto(1L));
             assertThat(cancelResult.status()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(cancelResult.cancelledAt()).isNotNull();
 
@@ -575,12 +610,132 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
                     billing.orderId(), savedFunding.getId(), true
             );
             orderService.createOrder(1L, createReqDto);
-            orderService.cancelOrder(1L, billing.orderId());
+            orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L));
 
             // 취소 후 다시 결제 시도
             assertThrows(Exception.class, () ->
                     orderService.createOrder(1L, createReqDto)
             );
+        }
+    }
+
+    @Nested
+    @DisplayName("processStatusUpdate 통합테스트")
+    class ProcessStatusUpdateIntegrationTest {
+
+        // PAYING 상태 주문 → PAID로 상태 변경 → DB 반영 확인
+        @Transactional
+        @Test
+        void PAYING_주문을_PAID로_변경하면_DB에_반영된다() {
+            Order order = createOrderWithStatus(OrderStatus.PAYING);
+
+            orderService.processStatusUpdate(order.getId(), OrderStatus.PAID);
+
+            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            assertThat(updated.getStatus()).isEqualTo(OrderStatus.PAID);
+        }
+
+        // 전이 불가능한 상태(REFUNDED → PAID) → 상태 유지
+        @Transactional
+        @Test
+        void 전이_불가능하면_상태가_변경되지_않는다() {
+            Order order = createOrderWithStatus(OrderStatus.REFUNDED);
+
+            orderService.processStatusUpdate(order.getId(), OrderStatus.PAID);
+
+            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            assertThat(updated.getStatus()).isEqualTo(OrderStatus.REFUNDED);
+        }
+
+        // 존재하지 않는 orderId → 예외 없이 조용히 처리
+        @Test
+        void 존재하지_않는_주문이면_아무_동작도_하지_않는다() {
+            orderService.processStatusUpdate(9999L, OrderStatus.PAID);
+        }
+    }
+
+    @Nested
+    @DisplayName("processCancelledUpdate 통합테스트")
+    class ProcessCancelledUpdateIntegrationTest {
+
+        // PAYING 주문 → CANCELLED + cancelReason 저장 확인
+        @Transactional
+        @Test
+        void PAYING_주문을_CANCELLED로_변경하고_cancelReason이_저장된다() {
+            Order order = createOrderWithStatus(OrderStatus.PAYING);
+
+            orderService.processCancelledUpdate(order.getId(), "PAYMENT_CANCELLED");
+
+            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            assertThat(updated.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+            assertThat(updated.getCancelReason()).isEqualTo("PAYMENT_CANCELLED");
+        }
+
+        // 취소 시 reward 재고 복구 확인
+        @Transactional
+        @Test
+        void 취소_시_재고가_복구된다() {
+            int initialRemainQty = savedReward.getRemainQty();
+            Order order = createOrderWithStatus(OrderStatus.PAYING);
+
+            orderService.processCancelledUpdate(order.getId(), "PAYMENT_CANCELLED");
+
+            entityManager.flush();
+            entityManager.clear();
+
+            RewardJpaEntity updatedReward = rewardJpaRepository.findById(savedReward.getId()).orElseThrow();
+            assertThat(updatedReward.getRemainQty()).isEqualTo(initialRemainQty + 1);
+        }
+    }
+
+    @Nested
+    @DisplayName("processReservedFundingConfirmed 통합테스트")
+    class ProcessPayingAndPublishSettlementIntegrationTest {
+
+        // RESERVED 주문 → PAYING 상태 변경 → DB 반영 확인
+        @Transactional
+        @Test
+        void RESERVED_주문을_PAYING으로_변경하면_DB에_반영된다() {
+            Order order = createOrderWithStatus(OrderStatus.RESERVED);
+
+            orderService.processReservedFundingConfirmed(order.getId());
+
+            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            assertThat(updated.getStatus()).isEqualTo(OrderStatus.PAYING);
+        }
+    }
+
+    @Nested
+    @DisplayName("processFundingFailedRefund 통합테스트")
+    class processFundingFailedRefundIntegrationTest {
+
+        // PAID 주문 → CANCELLED + FUNDING_FAILED reason 저장 확인
+        @Transactional
+        @Test
+        void PAID_주문을_CANCELLED로_변경하고_FUNDING_FAILED가_저장된다() {
+            Order order = createOrderWithStatus(OrderStatus.PAID);
+
+            orderService.processFundingFailedRefund(order.getId());
+
+            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            assertThat(updated.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+            assertThat(updated.getCancelReason()).isEqualTo("FUNDING_FAILED");
+        }
+
+        // 취소 시 reward 재고 복구 확인
+        @Transactional
+        @Test
+        void 취소_시_재고가_복구된다() {
+            int initialRemainQty = savedReward.getRemainQty();
+            Order order = createOrderWithStatus(OrderStatus.PAID);
+
+            orderService.processFundingFailedRefund(order.getId());
+
+            entityManager.flush();
+            entityManager.clear();
+
+            RewardJpaEntity updatedReward = rewardJpaRepository.findById(savedReward.getId()).orElseThrow();
+            assertThat(updatedReward.getRemainQty()).isEqualTo(initialRemainQty + 1);
         }
     }
 }

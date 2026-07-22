@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import com.dbs.gateway.security.AuthBlacklistClient;
 import com.dbs.gateway.security.BlockingJwtDecoderAdapter;
 import java.net.URI;
 import java.util.List;

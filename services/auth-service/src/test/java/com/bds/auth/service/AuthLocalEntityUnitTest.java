@@ -50,4 +50,21 @@ public class AuthLocalEntityUnitTest {
             assertEquals(authId, authLocal.getAuthId());
         }
     }
+
+    @Nested
+    @DisplayName("AuthLocal.changePassword() 테스트")
+    public class ChangePassword {
+        @Test
+        @DisplayName("정상적인 새 비밀번호가 주어지면 비밀번호가 갱신된다")
+        public void 비밀번호변경_성공() {
+            // given
+            AuthLocal authLocal = AuthLocal.of(1L, "oldEncodedPassword", 1L);
+
+            // when
+            authLocal.changePassword("newEncodedPassword");
+
+            // then
+            assertEquals("newEncodedPassword", authLocal.getPassword());
+        }
+    }
 }

@@ -11,12 +11,13 @@ import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(JwksController.class)
+@WebMvcTest(controllers = JwksController.class, excludeAutoConfiguration = OAuth2ClientWebSecurityAutoConfiguration.class)
 @AutoConfigureMockMvc(addFilters = false)
 @DisplayName("JwksController 단위 테스트")
 class JwksControllerTest {

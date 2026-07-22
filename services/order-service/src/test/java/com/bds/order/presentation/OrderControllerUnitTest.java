@@ -66,10 +66,10 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
             LocalDateTime now = LocalDateTime.now();
             RewardItemDto rewardItem = new RewardItemDto(1L, 2, "리워드A", 20000L, BadgeType.ULTRA_EARLY_BIRD, 3000L);
             OrderDetailResponseDto dto = new OrderDetailResponseDto(
-                    1L, "ORD-001", OrderStatus.PAID, now,
+                    1L, "ORD-001", OrderStatus.PAID, 1L, now,
                     "테스트 펀딩", 100L, false,
                     now, false,
-                    List.of(rewardItem),33000L, 3000L, 36000L, null
+                    List.of(rewardItem), 33000L, 3000L, 36000L, null
             );
 
             given(orderService.getOrderDetail(1L, 1L)).willReturn(dto);
@@ -126,10 +126,12 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
                     "ORD-001", OrderStatus.CANCELLED, cancelledAt, "REFUND_REQUESTED"
             );
 
-            given(orderService.cancelOrder(1L, 1L)).willReturn(dto);
+            given(orderService.cancelOrder(1L, 1L, new OrderCancelRequestDto(1L))).willReturn(dto);
 
             mockMvc.perform(patch("/api/orders/1/cancel")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"fundingId\":1}"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.orderNo").value("ORD-001"))
                     .andExpect(jsonPath("$.status").value("CANCELLED"))

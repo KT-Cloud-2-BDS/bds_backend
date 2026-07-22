@@ -110,7 +110,7 @@ class OrderPersistenceAdapterUnitTest {
             OrderDetailProjection projection = new OrderDetailProjection(
                     1L, "ORD-001", OrderStatus.PAID,
                     33000L, 3000L, now,
-                    "테스트 펀딩", 100L, now.plusDays(30), false,
+                    1L, "테스트 펀딩", 100L, now.plusDays(30), false,
                     null, null, now
             );
 

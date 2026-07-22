@@ -15,6 +15,9 @@ public enum ErrorCode {
   SUBSCRIPTION_NOT_FOUND(404, "구독 정보를 찾을 수 없습니다."),
   INVALID_TARGET_TYPE(400, "유효하지 않은 구독 타입입니다."),
 
+  // 알림
+  INVALID_NOTIFICATION_TYPE(400, "유효하지 않은 알림 타입입니다."),
+
   // FCM
   FCM_TOKEN_NOT_FOUND(404, "FCM 토큰을 찾을 수 없습니다.");
 

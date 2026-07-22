@@ -16,6 +16,7 @@ public class FundingPaymentMapper {
                 .amount(entity.getAmount())
                 .paymentType(entity.getPaymentType())
                 .status(entity.getStatus())
+                .creditedAt(entity.getCreditedAt())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -31,6 +32,7 @@ public class FundingPaymentMapper {
                 .amount(domain.getAmount())
                 .paymentType(domain.getPaymentType())
                 .status(domain.getStatus())
+                .creditedAt(domain.getCreditedAt())
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
                 .build();
