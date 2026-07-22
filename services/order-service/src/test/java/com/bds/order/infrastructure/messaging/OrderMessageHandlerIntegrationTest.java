@@ -1,5 +1,6 @@
 package com.bds.order.infrastructure.messaging;
 
+import com.bds.common.events.payment.OrderProcessEvent;
 import com.bds.order.application.OrderMessageHandler;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.funding.FundingStatus;
@@ -9,7 +10,6 @@ import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import com.bds.order.infrastructure.funding.FundingJpaRepository;
-import com.bds.order.infrastructure.messaging.dto.PaymentProcessedMessage;
 import com.bds.order.infrastructure.messaging.publisher.NotificationEventPublisher;
 import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaRepository;
@@ -130,7 +130,7 @@ class OrderMessageHandlerIntegrationTest extends AbstractIntegrationTest {
         @Test
         void CONFIRMED_타입이면_주문을_CONFIRMED로_변경한다() {
             Long orderId = createPayingOrder();
-            PaymentProcessedMessage message = new PaymentProcessedMessage(List.of(orderId), PaymentProcessedMessage.ResultType.CONFIRMED);
+            OrderProcessEvent message = OrderProcessEvent.confirmed(List.of(orderId));
 
             orderMessageHandler.processBulk(message);
 
