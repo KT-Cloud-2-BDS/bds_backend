@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class RewardPersistenceAdaptor implements RewardRepository {
+public class RewardPersistenceAdapter implements RewardRepository {
 
     private final RewardJpaRepository rewardJpaRepository;
     private final RewardMapper rewardMapper;
@@ -28,6 +28,13 @@ public class RewardPersistenceAdaptor implements RewardRepository {
     @Override
     public int decreaseStock(Long id, int qty) {
         return rewardJpaRepository.decreaseStock(id, qty);
+    }
+
+    @Override
+    public List<Reward> findByFundingId(Long fundingId) {
+        return rewardJpaRepository.findByFundingId(fundingId).stream()
+                .map(rewardMapper::toDomain)
+                .toList();
     }
 
 }

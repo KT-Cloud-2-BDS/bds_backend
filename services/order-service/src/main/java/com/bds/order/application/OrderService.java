@@ -1,5 +1,9 @@
 package com.bds.order.application;
 
+import com.bds.common.events.order.OrderProcessPayEvent;
+import com.bds.common.events.order.OrderProcessRefundEvent;
+import com.bds.common.events.order.OrderProcessSettlementEvent;
+import com.bds.common.events.order.OrderStatusChangedEvent;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.order.CancelReason;
@@ -12,11 +16,14 @@ import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
+import com.bds.order.infrastructure.messaging.publisher.NotificationEventPublisher;
+import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.order.infrastructure.order.OrderDetailProjection;
 import com.bds.order.infrastructure.order.OrderListProjection;
 import com.bds.order.infrastructure.orderReward.OrderRewardDetailProjection;
 import com.bds.order.presentation.dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +32,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -35,6 +44,8 @@ public class OrderService {
     private final FundingRepository fundingRepository;
     private final RewardRepository rewardRepository;
     private final OrderRewardRepository orderRewardRepository;
+    private final PaymentEventPublisher paymentEventPublisher;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     public List<OrderResponseDto> getAllOrders(Long memberId, Pageable pageable) {
         List<OrderListProjection> orderList = orderRepository.findOrderListWithFunding(memberId, pageable);
@@ -111,14 +122,14 @@ public class OrderService {
             }
         });
 
+        paymentEventPublisher.publishPay(OrderProcessPayEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount()));
 
-        // TODO: Calling Payment API 결제 시작
         orderRepository.save(order);
         return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), order.getStatus(), LocalDateTime.now());
     }
 
     @Transactional
-    public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId) {
+    public OrderCancelResponseDto cancelOrder(Long memberId, Long orderId, OrderCancelRequestDto reqDto) {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -127,7 +138,7 @@ public class OrderService {
         }
 
         try {
-            order.cancelOrder(CancelReason.USER_CANCEL);
+            order.cancelOrder(CancelReason.USER_CANCEL.name());
         } catch (IllegalStateException e) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
         }
@@ -136,7 +147,9 @@ public class OrderService {
             rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty());
         });
 
-        // TODO: Calling Refund API
+        paymentEventPublisher.publishRefund(
+                OrderProcessRefundEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount(), CancelReason.USER_CANCEL.name()));
+
         orderRepository.save(order);
         return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
     }
@@ -145,7 +158,7 @@ public class OrderService {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FUNDING_NOT_FOUND));
 
-        if (!funding.isFuningPeriod(LocalDateTime.now())) {
+        if (!funding.isFundingPeriod(LocalDateTime.now())) {
             throw new BusinessException(ErrorCode.FUNDING_NOT_AVAILABLE);
         }
 
@@ -172,9 +185,116 @@ public class OrderService {
         return new ValidatedRewards(foundRewards, rewardIdQtyMap);
     }
 
+    @Transactional
+    public void processStatusUpdate(Long orderId, OrderStatus targetStatus) {
+        findOrderForUpdate(orderId).ifPresent(order -> {
+            try {
+                order.updateStatus(targetStatus);
+                orderRepository.save(order);
+
+                String fundingTitle = orderRepository.findFundingTitleByOrderId(orderId)
+                        .orElseThrow(() -> new IllegalStateException(
+                                "[OrderService] FundingInfo not found: orderId=" + orderId));
+
+                notificationEventPublisher.publishStatusChanged(
+                        OrderStatusChangedEvent.of(targetStatus.name(), order.getMemberId(), fundingTitle, order.getOrderNo()));
+            } catch (IllegalStateException e) {
+                log.warn("[OrderService] processStatusUpdate failed - invalid state: orderId={}, target={}, reason={}",
+                        orderId, targetStatus, e.getMessage());
+            } catch (Exception e) {
+                log.error("[OrderService] processStatusUpdate failed - unexpected: orderId={}, target={}, exceptionType={}, reason={}",
+                        orderId, targetStatus, e.getClass().getSimpleName(), e.getMessage());
+            }
+        });
+    }
+
+    @Transactional
+    public void processCancelledUpdate(Long orderId, String cancelReason) {
+        findOrderForUpdate(orderId).ifPresent(order -> {
+            try {
+                order.getOrderRewards().forEach(orw ->
+                        rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
+                );
+                order.cancelOrder(cancelReason);
+                orderRepository.save(order);
+            } catch (IllegalStateException e) {
+                log.warn("[OrderService] processCancelledUpdate failed - invalid state: orderId={}, reason={}",
+                        orderId, e.getMessage());
+            } catch (Exception e) {
+                log.error("[OrderService] processCancelledUpdate failed - unexpected: orderId={}, exceptionType={}, reason={}",
+                        orderId, e.getClass().getSimpleName(), e.getMessage());
+            }
+        });
+    }
+
+    @Transactional
+    public Optional<OrderProcessSettlementEvent.SettlementItem> createSettlementItem(Long orderId) {
+        Optional<Order> orderOpt = findOrderForUpdate(orderId);
+        if (orderOpt.isEmpty()) return Optional.empty();
+
+        Order order = orderOpt.get();
+        return Optional.of(new OrderProcessSettlementEvent.SettlementItem(
+                order.getId(), order.getMemberId(), order.getTotalAmount()));
+    }
+
+    @Transactional
+    public Optional<OrderProcessSettlementEvent.SettlementItem> processReservedFundingConfirmed(Long orderId) {
+        Optional<Order> orderOpt = findOrderForUpdate(orderId);
+        if (orderOpt.isEmpty()) return Optional.empty();
+
+        Order order = orderOpt.get();
+        try {
+            order.updateStatus(OrderStatus.PAYING);
+            orderRepository.save(order);
+
+            return Optional.of(new OrderProcessSettlementEvent.SettlementItem(
+                    order.getId(), order.getMemberId(), order.getTotalAmount()));
+        } catch (IllegalStateException e) {
+            log.warn("[OrderService] processReservedFundingConfirmed failed - invalid state: orderId={}, reason={}",
+                    orderId, e.getMessage());
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("[OrderService] processReservedFundingConfirmed failed - unexpected: orderId={}, exceptionType={}, reason={}",
+                    orderId, e.getClass().getSimpleName(), e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Transactional
+    public Optional<OrderProcessSettlementEvent.SettlementItem> processFundingFailedRefund(Long orderId) {
+        Optional<Order> orderOpt = findOrderForUpdate(orderId);
+        if (orderOpt.isEmpty()) return Optional.empty();
+
+        Order order = orderOpt.get();
+        try {
+            order.getOrderRewards().forEach(orw ->
+                    rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty())
+            );
+            order.cancelOrder(CancelReason.FUNDING_FAILED.name());
+            orderRepository.save(order);
+
+            return Optional.of(new OrderProcessSettlementEvent.SettlementItem(
+                    order.getId(), order.getMemberId(), order.getTotalAmount()));
+        } catch (IllegalStateException e) {
+            log.warn("[OrderService] processFundingFailedRefund failed - invalid state: orderId={}, reason={}",
+                    orderId, e.getMessage());
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("[OrderService] processFundingFailedRefund failed - unexpected: orderId={}, exceptionType={}, reason={}",
+                    orderId, e.getClass().getSimpleName(), e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Order> findOrderForUpdate(Long orderId) {
+        Optional<Order> orderOpt = orderRepository.findByIdForUpdate(orderId);
+        if (orderOpt.isEmpty()) {
+            log.warn("Order not found: orderId={}", orderId);
+        }
+        return orderOpt;
+    }
+
     private record ValidatedRewards(List<Reward> rewards, Map<Long, Integer> qtyMap) {
     }
 
-    // TODO: 주문성공 처리 내부 API
-    // TODO: 주문실패 보상처리 내부 API
 }

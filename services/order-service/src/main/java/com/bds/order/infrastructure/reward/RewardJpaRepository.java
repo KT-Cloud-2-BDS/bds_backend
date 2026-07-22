@@ -24,4 +24,6 @@ public interface RewardJpaRepository extends JpaRepository<RewardJpaEntity, Long
               WHERE r.id = :id AND r.remainQty >= :qty
             """)
     int decreaseStock(@Param("id") Long id, @Param("qty") int qty);
+
+    List<RewardJpaEntity> findByFundingId(Long fundingId);
 }
