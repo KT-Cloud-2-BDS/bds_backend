@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 
 @DisplayName("AuthBlacklistClient 단위 테스트")
@@ -26,7 +27,7 @@ class AuthBlacklistClientUnitTest {
         mockWebServer.start();
 
         String baseUrl = mockWebServer.url("/").toString();
-        client = new AuthBlacklistClient(baseUrl, "test-internal-secret");
+        client = new AuthBlacklistClient(WebClient.builder(), baseUrl, "test-internal-secret");
     }
 
     @AfterEach
