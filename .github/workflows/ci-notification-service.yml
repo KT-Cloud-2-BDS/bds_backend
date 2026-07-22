@@ -7,7 +7,7 @@ on:
     paths:
       - 'services/notification-service/**'
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'services/notification-service/**'
 

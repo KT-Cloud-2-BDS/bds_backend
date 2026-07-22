@@ -1,13 +1,12 @@
 package com.bds.order.infrastructure.funding;
 
+import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.infrastructure.common.BaseEntity;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,6 +15,7 @@ import java.util.List;
 @Entity
 @Table(name = "funding")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class FundingJpaEntity extends BaseEntity {
@@ -33,6 +33,10 @@ public class FundingJpaEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private FundingStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private FundingType type;
 
     @Column(nullable = false)
     private LocalDateTime startAt;
@@ -54,6 +58,16 @@ public class FundingJpaEntity extends BaseEntity {
 
     private Boolean isSuccess;
 
-    @OneToMany(mappedBy = "funding", fetch = FetchType.LAZY)
+    @Builder.Default
+    @OneToMany(mappedBy = "funding", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RewardJpaEntity> rewards = new ArrayList<>();
+
+    public void addRewards(List<RewardJpaEntity> rewardEntities) {
+        this.rewards.addAll(rewardEntities);
+    }
+
+    public void updateFrom(Funding domain) {
+        this.status = domain.getStatus();
+        this.isSuccess = domain.getIsSuccess();
+    }
 }

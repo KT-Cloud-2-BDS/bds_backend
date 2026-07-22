@@ -43,6 +43,8 @@ public enum ErrorCode {
     FUNDING_DUPLICATED(HttpStatus.CONFLICT, "FUNDING_DUPLICATED", "중복된 거래입니다."),
     FUNDING_ALREADY_REFUNDED(HttpStatus.CONFLICT, "FUNDING_ALREADY_REFUNDED", "이미 환불된 거래입니다."),
     FUNDING_ACCESS_DENIED(HttpStatus.FORBIDDEN, "FUNDING_ACCESS_DENIED", "해당 거래에 접근할 권한이 없습니다."),
+    FUNDING_INVALID_STATUS(HttpStatus.valueOf(422), "FUNDING_INVALID_STATUS", "처리할 수 없는 펀딩 상태입니다."),
+    SETTLEMENT_AMOUNT_MISMATCH(HttpStatus.valueOf(422), "SETTLEMENT_AMOUNT_MISMATCH", "정산 금액이 원 결제 금액과 일치하지 않습니다."),
     ;
 
     private final HttpStatus httpStatus;

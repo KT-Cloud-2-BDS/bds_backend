@@ -4,13 +4,14 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
     show-sql: true
 
   flyway:
-    enabled: false
+    enabled: true
 
 logging:
   level:
     com.bds: DEBUG
     org.hibernate.SQL: DEBUG
+    org.springframework.modulith: DEBUG

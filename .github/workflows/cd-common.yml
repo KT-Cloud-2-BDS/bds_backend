@@ -1,0 +1,147 @@
+name: CD - common
+
+# 모든 서비스 CD가 공유하는 재사용 배포 워크플로우 (workflow_call)
+# 역할: CI artifact(JAR) 다운로드 → Docker 이미지 빌드 → ECR 푸시 → SSM으로 EC2 배포
+# 배포 로직 수정이 필요하면 이 파일 하나만 고치면 전 서비스에 반영됨
+#
+# 주의: permissions(id-token 등)는 이 파일이 아니라 "호출하는 쪽" job에 선언해야 함
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: '배포할 서비스 이름 (= CI artifact 이름 = ECR 리포지토리 이름 = EC2 Service 태그 값)'
+        required: true
+        type: string
+      port:
+        description: '서비스 포트 (컨테이너/호스트 동일 포트로 노출)'
+        required: true
+        type: string
+      ci-run-id:
+        description: 'artifact를 가져올 CI 워크플로우의 run id'
+        required: true
+        type: string
+      image-tag:
+        description: '이미지 태그 (보통 CI를 트리거한 commit SHA)'
+        required: true
+        type: string
+      ssm-path-prefix:
+        description: 'Parameter Store 경로 접두사 (예: /platform, /services)'
+        required: false
+        type: string
+        default: '/services'
+      aws-region:
+        required: false
+        type: string
+        default: 'ap-northeast-2'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ inputs.aws-region }}
+    steps:
+      # 공용 Dockerfile만 필요
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            infra/docker/Dockerfile
+
+      # CI run에서 해당 서비스의 fat JAR 다운로드 (CI에서 테스트 통과한 결과물 재사용)
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.service }}
+          run-id: ${{ inputs.ci-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: build-jar
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 이미지 태그 = commit SHA → 배포된 코드 추적 및 롤백 용이
+      - name: Build and push Docker image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ inputs.service }}
+        run: |
+          JAR=$(ls build-jar/*.jar | head -n 1)
+          docker build \
+            -f infra/docker/Dockerfile \
+            --build-arg JAR_FILE="$JAR" \
+            --build-arg SERVER_PORT="${{ inputs.port }}" \
+            -t "$IMAGE:${{ inputs.image-tag }}" \
+            -t "$IMAGE:latest" \
+            .
+          docker push --all-tags "$IMAGE"
+
+      # Service=<서비스명> 태그가 붙은 모든 EC2에 SSM으로 배포 명령 전송
+      - name: Deploy to EC2 via SSM
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          SERVICE: ${{ inputs.service }}
+          TAG: ${{ inputs.image-tag }}
+          PORT: ${{ inputs.port }}
+          SSM_ENV_PATH: ${{ inputs.ssm-path-prefix }}/${{ inputs.service }}/env
+        run: |
+          # EC2에서 실행될 배포 스크립트 (워크플로우 시점에 $변수 치환, \$변수는 EC2 실행 시점 평가)
+          # Parameter Store의 KEY=VALUE 목록을 임시 env 파일로 받아 컨테이너에 주입 후 즉시 삭제
+          cat > params.json << EOF
+          {
+            "commands": [
+              "aws ssm get-parameter --region $AWS_REGION --name $SSM_ENV_PATH --with-decryption --query Parameter.Value --output text > /tmp/$SERVICE.env 2>/dev/null || { echo 'Parameter 없음 - 빈 env로 진행'; : > /tmp/$SERVICE.env; }",
+              "chmod 600 /tmp/$SERVICE.env",
+              "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY",
+              "docker pull $REGISTRY/$SERVICE:$TAG",
+              "docker stop $SERVICE || true",
+              "docker rm $SERVICE || true",
+              "docker run -d --name $SERVICE --restart unless-stopped -p $PORT:$PORT --env-file /tmp/$SERVICE.env -e SPRING_PROFILES_ACTIVE=prod $REGISTRY/$SERVICE:$TAG",
+              "rm -f /tmp/$SERVICE.env",
+              "for i in \$(seq 1 30); do sleep 5; if curl -sf http://localhost:$PORT/actuator/health | grep -q '\"status\":\"UP\"'; then echo 'Health check OK'; docker image prune -f; exit 0; fi; done; echo 'Health check FAILED'; docker logs --tail 100 $SERVICE; exit 1"
+            ]
+          }
+          EOF
+
+          # --max-concurrency 1 : 인스턴스 1대씩 순차 배포 → 서비스 전체 동시 다운 방지
+          # --max-errors 0      : 한 대라도 실패하면 나머지 인스턴스로 확산 중단
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Service,Values=$SERVICE" \
+            --comment "Deploy $SERVICE:$TAG" \
+            --timeout-seconds 900 \
+            --max-concurrency 1 \
+            --max-errors 0 \
+            --parameters file://params.json \
+            --query "Command.CommandId" --output text)
+
+          echo "SSM Command ID: $COMMAND_ID"
+          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
+
+      # 모든 대상 인스턴스의 배포 결과를 폴링하며 대기
+      - name: Wait for deployment result
+        run: |
+          for i in $(seq 1 120); do
+            sleep 10
+            STATUSES=$(aws ssm list-command-invocations \
+              --command-id "$COMMAND_ID" \
+              --query "CommandInvocations[].Status" --output text)
+
+            echo "[$i/120] 인스턴스 상태: ${STATUSES:-대기 중...}"
+
+            if echo "$STATUSES" | grep -qE "Failed|Cancelled|TimedOut"; then
+              echo "❌ 배포 실패 - AWS 콘솔의 SSM Run Command에서 상세 로그 확인"
+              exit 1
+            fi
+
+            if [ -n "$STATUSES" ] && [ -z "$(echo "$STATUSES" | tr '\t' '\n' | grep -v '^Success$')" ]; then
+              echo "✅ 모든 인스턴스 배포 완료"
+              exit 0
+            fi
+          done
+          echo "⏰ 배포 대기 타임아웃"
+          exit 1

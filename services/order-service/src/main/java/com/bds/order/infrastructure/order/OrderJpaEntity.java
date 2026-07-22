@@ -1,6 +1,5 @@
 package com.bds.order.infrastructure.order;
 
-import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.infrastructure.common.BaseEntity;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaEntity;
@@ -36,8 +35,7 @@ public class OrderJpaEntity extends BaseEntity {
 
     private Long totalShippingCharge;
 
-    @Enumerated(EnumType.STRING)
-    private CancelReason cancelReason;
+    private String cancelReason;
 
     private LocalDateTime cancelledAt;
 

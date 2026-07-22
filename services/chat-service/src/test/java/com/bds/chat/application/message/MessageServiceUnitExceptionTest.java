@@ -15,6 +15,7 @@ import com.bds.chat.domain.message.ChatMessageRepository;
 import com.bds.chat.domain.message.MessageStatus;
 import com.bds.chat.domain.message.MessageType;
 import com.bds.chat.domain.shared.*;
+import com.bds.chat.infrastructure.messaging.DirectEventPublisher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +40,7 @@ class MessageServiceUnitExceptionTest {
     @Mock ChatRoomRepository chatRoomRepository;
     @Mock InquiryChatMemberRepository memberRepository;
     @Mock FundingChatBlacklistRepository blacklistRepository;
+    @Mock DirectEventPublisher directEventPublisher;
     @Mock Clock clock;
 
     @InjectMocks MessageService messageService;
@@ -100,7 +103,7 @@ class MessageServiceUnitExceptionTest {
             MessageSendRequestDto request = new MessageSendRequestDto(ROOM_ID, "hello", "TEXT", null);
 
             given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(inquiryRoom()));
-            given(memberRepository.findActiveMember(ROOM_ID, SENDER_ID)).willReturn(Optional.empty());
+            given(memberRepository.findActiveMembers(ROOM_ID)).willReturn(List.of());
 
             assertThatThrownBy(() -> messageService.create(request, SENDER_ID))
                     .isInstanceOf(BusinessException.class)

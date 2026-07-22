@@ -80,14 +80,14 @@ class OrderMapperUnitTest {
                     .status(OrderStatus.CANCELLED)
                     .totalRewardAmount(50000L)
                     .totalShippingCharge(5000L)
-                    .cancelReason(CancelReason.USER_CANCEL)
+                    .cancelReason(CancelReason.USER_CANCEL.name())
                     .cancelledAt(cancelledAt)
                     .build();
 
             Order order = orderMapper.toDomain(entity);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-            assertThat(order.getCancelReason()).isEqualTo(CancelReason.USER_CANCEL);
+            assertThat(order.getCancelReason()).isEqualTo(CancelReason.USER_CANCEL.name());
             assertThat(order.getCancelledAt()).isEqualTo(cancelledAt);
         }
     }
@@ -119,7 +119,7 @@ class OrderMapperUnitTest {
             OrderJpaEntity entity = orderMapper.toJpaEntity(order);
 
             assertThat(entity.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-            assertThat(entity.getCancelReason()).isEqualTo(CancelReason.USER_CANCEL);
+            assertThat(entity.getCancelReason()).isEqualTo(CancelReason.USER_CANCEL.name());
             assertThat(entity.getCancelledAt()).isEqualTo(cancelledAt);
         }
 

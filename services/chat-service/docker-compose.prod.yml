@@ -1,4 +1,4 @@
-# 프로덕션 인프라 (postgresql)
+# 프로덕션 인프라 (postgresql + rabbitmq)
 # 실행: docker compose -f docker-compose.prod.yml --env-file .env up -d
 
 services:
@@ -23,8 +23,49 @@ services:
     networks:
       - bds-chat-net
 
+  definitions-init:
+    image: alpine:3.20
+    volumes:
+      - ./docker/rabbitmq/definitions.json:/input/definitions.json:ro
+      - rabbitmq_definitions:/output
+    environment:
+      BDS_HASH: ${BDS_HASH:?BDS_HASH is required}
+      BDS_ADMIN_HASH: ${BDS_ADMIN_HASH:?BDS_ADMIN_HASH is required}
+    command: >
+      sh -c 'sed
+      -e "s|__BDS_HASH__|$$BDS_HASH|g"
+      -e "s|__BDS_ADMIN_HASH__|$$BDS_ADMIN_HASH|g"
+      /input/definitions.json > /output/definitions.json'
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: bds-chat-rabbitmq
+    depends_on:
+      definitions-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:5672:5672"    # AMQP
+      - "127.0.0.1:15672:15672"  # Management UI
+      - "127.0.0.1:61613:61613"  # STOMP
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - rabbitmq_definitions:/etc/rabbitmq/generated:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - bds-chat-net
+
 volumes:
   postgres_data:
+  rabbitmq_data:
+  rabbitmq_definitions:
 
 networks:
   bds-chat-net:
