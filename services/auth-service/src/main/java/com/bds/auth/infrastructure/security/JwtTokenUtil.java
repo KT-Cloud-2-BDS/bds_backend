@@ -1,6 +1,7 @@
 package com.bds.auth.infrastructure.security;
 
 import com.bds.auth.domain.entity.enums.Role;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.security.PublicKey;
@@ -62,6 +63,14 @@ public class JwtTokenUtil {
 
     public PublicKey getPublicKey() {
         return jwtKeyProvider.getPublicKey();
+    }
+
+    public Claims parseClaims(String token) {
+        return Jwts.parser()
+            .verifyWith(jwtKeyProvider.getPublicKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
     }
 
 }

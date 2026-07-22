@@ -32,4 +32,11 @@ public class AuthLocal {
         return authLocal;
     }
 
+    public void changePassword(String newPassword) {
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        this.password = newPassword;
+    }
+
 }

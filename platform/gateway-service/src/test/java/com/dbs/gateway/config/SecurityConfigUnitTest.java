@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import com.dbs.gateway.security.AuthBlacklistClient;
 import com.dbs.gateway.security.BlockingJwtDecoderAdapter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,8 @@ class SecurityConfigUnitTest {
     @Test
     @DisplayName("jwtDecoder 빈은 NimbusJwtDecoder를 논블로킹 어댑터로 감싸 반환한다")
     void JWT디코더_빈_생성() {
-        ReactiveJwtDecoder decoder = securityConfig.jwtDecoder("http://localhost:8081/oauth2/jwks");
+        AuthBlacklistClient authBlacklistClient = mock(AuthBlacklistClient.class);
+        ReactiveJwtDecoder decoder = securityConfig.jwtDecoder("http://localhost:8081/oauth2/jwks", authBlacklistClient);
 
         assertInstanceOf(BlockingJwtDecoderAdapter.class, decoder);
     }

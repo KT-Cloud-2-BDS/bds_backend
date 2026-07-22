@@ -40,4 +40,20 @@ public class EmailServiceUnitTest {
         // then
         verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
     }
+
+    @Test
+    @DisplayName("이메일 주소와 인증 코드가 주어지면 비밀번호 재설정 메일이 정상 발송된다")
+    public void 비밀번호재설정메일발송_성공() {
+        // given
+        String toEmail = "yeojin@email.com";
+        String code = "123456";
+
+        ReflectionTestUtils.setField(emailService, "senderEmail", "sender@bds.com");
+
+        // when
+        emailService.sendPasswordResetVerificationEmail(toEmail, code);
+
+        // then
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
+    }
 }

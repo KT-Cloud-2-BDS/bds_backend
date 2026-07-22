@@ -16,6 +16,6 @@ public interface MemberJpaRepository extends JpaRepository<MemberJpaEntity, Long
     boolean existsByAuthId(Long authId);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE MemberJpaEntity m SET m.isDeleted = true WHERE m.authId = :authId")
+    @Query("UPDATE MemberJpaEntity m SET m.isDeleted = true, m.updatedAt = CURRENT_TIMESTAMP, m.deletedAt = CURRENT_TIMESTAMP WHERE m.authId = :authId")
     void softDeleteByAuthId(@Param("authId") Long authId);
 }
