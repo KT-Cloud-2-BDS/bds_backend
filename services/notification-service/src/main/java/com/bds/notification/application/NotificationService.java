@@ -147,8 +147,10 @@ public class NotificationService {
   @Transactional
   public void createFundingNotification(FundingNotificationCommandDto command) {
     NotificationType type = parseNotificationType(command.type());
+    SubscriptionTargetType targetType = parseTargetType(command.targetType());
+
     List<Long> memberIds = notificationSubscriptionRepository.findSubscribedMemberIds(
-        SubscriptionTargetType.valueOf(command.targetType()),
+        targetType,
         command.targetId()
     );
 
@@ -168,13 +170,28 @@ public class NotificationService {
     };
 
     memberIds.forEach(memberId ->
-        createNotification(memberId, type, String.valueOf(command.targetId()), title, body, NotificationChannel.SSE)
+        createNotification(memberId, type, String.valueOf(command.targetId()), title, body,
+            NotificationChannel.SSE)
     );
   }
 
   private NotificationType parseNotificationType(String type) {
+    if (type == null) {
+      throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
+    }
     try {
       return NotificationType.valueOf(type);
+    } catch (IllegalArgumentException e) {
+      throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
+    }
+  }
+
+  private SubscriptionTargetType parseTargetType(String targetType) {
+    if (targetType == null) {
+      throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
+    }
+    try {
+      return SubscriptionTargetType.valueOf(targetType);
     } catch (IllegalArgumentException e) {
       throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
     }
