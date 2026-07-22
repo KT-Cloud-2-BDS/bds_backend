@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.bds.common.events.funding.FundingStatusChangedEvent;
+import com.bds.common.events.order.OrderStatusChangedEvent;
 import com.bds.notification.application.NotificationService;
-import com.bds.notification.application.dto.FundingNotificationCommandDto;
-import com.bds.notification.application.dto.OrderNotificationMessageDto;
 import com.bds.notification.domain.notification.entity.NotificationChannel;
 import com.bds.notification.domain.notification.entity.NotificationType;
 import com.bds.notification.domain.notification.entity.SubscriptionTargetType;
@@ -94,8 +94,8 @@ public class ConsumerIntegrationTest {
     @DisplayName("PAID 메시지 수신 시 알림이 DB에 저장되고 sse 알림이 전달된다.")
     public void 결제완료_메시지_수신_알림_저장() throws InterruptedException {
       //given
-      OrderNotificationMessageDto message = new OrderNotificationMessageDto(
-          NotificationType.PAID, 1L, "여름맞이 물총", "order-1234"
+      OrderStatusChangedEvent message = new OrderStatusChangedEvent(
+          "PAID", 1L, "여름맞이 물총", "order-1234"
       );
 
       // http 연결이라 mock으로 대체해서 send가 되는지만 확인
@@ -124,8 +124,8 @@ public class ConsumerIntegrationTest {
     @DisplayName("REFUND 메시지 수신 시 알림이 DB에 저장되고 sse 알림이 전달된다.")
     public void 환불_메시지_수신_알림_저장() throws InterruptedException {
       //given
-      OrderNotificationMessageDto message = new OrderNotificationMessageDto(
-          NotificationType.REFUNDED, 1L, "여름맞이 물총", "order-1234"
+      OrderStatusChangedEvent message = new OrderStatusChangedEvent(
+          "REFUNDED", 1L, "여름맞이 물총", "order-1234"
       );
 
       // http 연결이라 mock으로 대체해서 send가 되는지만 확인
@@ -161,8 +161,8 @@ public class ConsumerIntegrationTest {
       //given
       notificationService.subscribe(1L, SubscriptionTargetType.PRODUCT, 1234L);
 
-      FundingNotificationCommandDto message = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "1234", "PRODUCT"
+      FundingStatusChangedEvent message = new FundingStatusChangedEvent(
+          "FUNDING_START", "PRODUCT", 1234L, null
       );
 
       // http 연결이라 mock으로 대체해서 send가 되는지만 확인
@@ -193,8 +193,8 @@ public class ConsumerIntegrationTest {
       //given
       notificationService.subscribe(1L, SubscriptionTargetType.PRODUCT, 1234L);
 
-      FundingNotificationCommandDto message = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_SUCCESS, "1234", "PRODUCT"
+      FundingStatusChangedEvent message = new FundingStatusChangedEvent(
+          "FUNDING_SUCCESS", "PRODUCT", 1234L, null
       );
 
       // http 연결이라 mock으로 대체해서 send가 되는지만 확인
@@ -225,8 +225,8 @@ public class ConsumerIntegrationTest {
       //given
       notificationService.subscribe(1L, SubscriptionTargetType.PRODUCT, 1234L);
 
-      FundingNotificationCommandDto message = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_FAIL, "1234", "PRODUCT"
+      FundingStatusChangedEvent message = new FundingStatusChangedEvent(
+          "FUNDING_FAIL", "PRODUCT", 1234L, null
       );
 
       // http 연결이라 mock으로 대체해서 send가 되는지만 확인

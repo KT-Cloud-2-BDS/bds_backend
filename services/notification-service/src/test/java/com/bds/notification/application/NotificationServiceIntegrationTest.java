@@ -227,7 +227,7 @@ public class NotificationServiceIntegrationTest {
       notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
 
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "123", "PRODUCT"
+          "FUNDING_START", "PRODUCT", 123L
       );
       // when
       notificationService.createFundingNotification(command);
@@ -244,7 +244,7 @@ public class NotificationServiceIntegrationTest {
       notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
 
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_SUCCESS, "123", "PRODUCT"
+          "FUNDING_SUCCESS", "PRODUCT", 123L
       );
       // when
       notificationService.createFundingNotification(command);
@@ -261,7 +261,7 @@ public class NotificationServiceIntegrationTest {
       notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
 
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_FAIL, "123", "PRODUCT"
+          "FUNDING_FAIL", "PRODUCT", 123L
       );
       // when
       notificationService.createFundingNotification(command);
@@ -274,7 +274,7 @@ public class NotificationServiceIntegrationTest {
     public void 펀딩_알림_구독자없음_저장안됨() {
       // given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "123", "PRODUCT"
+          "FUNDING_START", "PRODUCT", 123L
       );
       // when
       notificationService.createFundingNotification(command);
@@ -292,7 +292,7 @@ public class NotificationServiceIntegrationTest {
     public void 주문완료_알림_DB_저장() {
       // given
       OrderNotificationMessageDto command = new OrderNotificationMessageDto(
-          NotificationType.PAID, 1L, "여름맞이 물총 장난감", "order-1234-1234"
+          "PAID", 1L, "여름맞이 물총 장난감", "order-1234-1234"
       );
       // when
       notificationService.createOrderNotification(command);

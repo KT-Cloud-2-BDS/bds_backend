@@ -249,7 +249,7 @@ public class NotificationServiceTest {
     public void 성공_주문완료_알림_생성() {
       //given
       OrderNotificationMessageDto command = new OrderNotificationMessageDto(
-          NotificationType.PAID,
+          "PAID",
           1L,
           "여름 맞이 물총 장난감",
           "order-1234-1234"
@@ -268,7 +268,7 @@ public class NotificationServiceTest {
     public void 실패_잘못된_알림타입() {
       //given
       OrderNotificationMessageDto command = new OrderNotificationMessageDto(
-          NotificationType.PROMOTION,
+          "PROMOTION",
           1L,
           "여름 맞이 물총 장난감",
           "order-1234-1234"
@@ -287,7 +287,7 @@ public class NotificationServiceTest {
     public void 성공_환불_알림_생성() {
       //given
       OrderNotificationMessageDto command = new OrderNotificationMessageDto(
-          NotificationType.REFUNDED,
+          "REFUNDED",
           1L,
           "여름 맞이 물총 장난감",
           "order-1234-1234"
@@ -311,7 +311,7 @@ public class NotificationServiceTest {
     public void 성공_펀딩시작_알림_생성() {
       //given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "123", "PRODUCT"
+          "FUNDING_START", "PRODUCT", 123L
       );
       when(
           notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
@@ -332,7 +332,7 @@ public class NotificationServiceTest {
     public void 성공_펀딩성공_알림_생성() {
       //given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_SUCCESS, "123", "PRODUCT"
+          "FUNDING_SUCCESS", "PRODUCT", 123L
       );
       when(
           notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
@@ -352,7 +352,7 @@ public class NotificationServiceTest {
     public void 성공_펀딩실패_알림_생성() {
       //given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_FAIL, "123", "PRODUCT"
+          "FUNDING_FAIL", "PRODUCT", 123L
       );
       when(
           notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
@@ -372,7 +372,7 @@ public class NotificationServiceTest {
     public void 성공_구독자_없음() {
       //given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "123", "PRODUCT"
+          "FUNDING_START", "PRODUCT", 123L
       );
       when(
           notificationSubscriptionRepository.findSubscribedMemberIds(SubscriptionTargetType.PRODUCT,
