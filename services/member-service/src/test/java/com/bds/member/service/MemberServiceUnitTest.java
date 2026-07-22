@@ -6,6 +6,7 @@ import com.bds.member.domain.repository.MemberRepository;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
+import com.bds.member.presentation.dto.MemberResponseDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,6 +51,27 @@ public class MemberServiceUnitTest {
 
             // when
             memberService.signUp(requestDto);
+
+            // then
+            verify(memberRepository, times(1)).save(any(Member.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("소셜 로그인 프로필 완성 기능")
+    public class CompleteSocialSignup {
+        @Test
+        @DisplayName("아직 Member 로우가 없고 닉네임 중복이 없으면 새 Member가 생성된다")
+        public void 소셜프로필완성_성공() {
+            // given
+            Long authId = 100L;
+            String nickname = "여진닉네임";
+
+            given(memberRepository.existsByAuthId(authId)).willReturn(false);
+            given(memberRepository.existsByNickname(nickname)).willReturn(false);
+
+            // when
+            memberService.completeSocialSignup(authId, nickname);
 
             // then
             verify(memberRepository, times(1)).save(any(Member.class));
@@ -102,6 +124,26 @@ public class MemberServiceUnitTest {
         verify(memberRepository, times(1)).save(mockMember);
 
         verify(memberRepository, never()).existsByNickname(anyString());
+    }
+
+    @Nested
+    @DisplayName("정보 조회 기능")
+    public class GetInfo {
+        @Test
+        @DisplayName("가입된 회원이면 닉네임이 담긴 정보를 반환한다")
+        public void 정보조회_성공() {
+            // given
+            Long authId = 24L;
+            Member mockMember = Member.create(authId, "BBandiz");
+
+            given(memberRepository.findByAuthId(authId)).willReturn(Optional.of(mockMember));
+
+            // when
+            MemberResponseDto response = memberService.getInfo(authId);
+
+            // then
+            assertEquals("BBandiz", response.nickname());
+        }
     }
 
     @Nested

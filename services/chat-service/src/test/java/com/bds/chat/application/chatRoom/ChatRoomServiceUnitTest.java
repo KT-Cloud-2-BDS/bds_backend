@@ -11,6 +11,10 @@ import com.bds.chat.domain.member.InquiryChatMemberRepository;
 import com.bds.chat.domain.member.MemberStatus;
 import com.bds.chat.domain.message.ChatMessageRepository;
 import com.bds.chat.domain.message.LatestWithUnread;
+import com.bds.chat.domain.message.ChatMessage;
+import com.bds.chat.domain.message.LatestWithUnread;
+import com.bds.chat.domain.message.MessageStatus;
+import com.bds.chat.domain.message.MessageType;
 import com.bds.chat.domain.shared.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +50,7 @@ class ChatRoomServiceUnitTest {
 
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 1, 1, 0, 0);
     private static final Long ROOM_ID = 10L;
+    private static final Long MSG_ID = 100L;
     private static final Long PRODUCT_ID = 1L;
     private static final Long BUYER_ID = 5L;
     private static final Long SELLER_ID = 2L;
@@ -166,6 +171,48 @@ class ChatRoomServiceUnitTest {
             assertThat(result.roomId()).isEqualTo(ROOM_ID);
             assertThat(result.type()).isEqualTo("INQUIRY");
             assertThat(result.participants()).contains(BUYER_ID);
+            assertThat(result.lastMessage()).isNull();
+        }
+
+        @Test
+        void 마지막_메시지가_있으면_LastMessageDto가_채워진다() {
+            ChatRoom room = inquiryRoom(SELLER_ID);
+            InquiryChatMember member = activeMember(1L, ROOM_ID, BUYER_ID);
+            ChatMessage message = ChatMessage.restore(
+                    ChatMessageId.of(MSG_ID), ChatRoomId.of(ROOM_ID),
+                    MemberId.of(BUYER_ID), "안녕하세요", MessageType.TEXT, "cm-1", MessageStatus.SENT, NOW, null);
+
+            given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(room));
+            given(memberRepository.findActiveMembers(ROOM_ID)).willReturn(List.of(member));
+            given(chatMessageRepository.findLatestWithUnread(ROOM_ID, null))
+                    .willReturn(new LatestWithUnread(message, 1L));
+
+            InquiryChatRoomDetailResponseDto result = chatRoomService.getInquiryChatRoomById(ROOM_ID, BUYER_ID);
+
+            assertThat(result.lastMessage()).isNotNull();
+            assertThat(result.lastMessage().messageId()).isEqualTo(MSG_ID);
+            assertThat(result.lastMessage().senderId()).isEqualTo(BUYER_ID);
+            assertThat(result.lastMessage().content()).isEqualTo("안녕하세요");
+        }
+
+        @Test
+        void senderId가_없는_시스템_메시지는_LastMessageDto의_senderId가_null이다() {
+            ChatRoom room = inquiryRoom(SELLER_ID);
+            InquiryChatMember member = activeMember(1L, ROOM_ID, BUYER_ID);
+            ChatMessage systemMessage = ChatMessage.restore(
+                    ChatMessageId.of(MSG_ID), ChatRoomId.of(ROOM_ID),
+                    null, "시스템 알림", MessageType.TEXT, "cm-sys", MessageStatus.SENT, NOW, null);
+
+            given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(room));
+            given(memberRepository.findActiveMembers(ROOM_ID)).willReturn(List.of(member));
+            given(chatMessageRepository.findLatestWithUnread(ROOM_ID, null))
+                    .willReturn(new LatestWithUnread(systemMessage, 0L));
+
+            InquiryChatRoomDetailResponseDto result = chatRoomService.getInquiryChatRoomById(ROOM_ID, BUYER_ID);
+
+            assertThat(result.lastMessage()).isNotNull();
+            assertThat(result.lastMessage().messageId()).isEqualTo(MSG_ID);
+            assertThat(result.lastMessage().senderId()).isNull();
         }
     }
 
@@ -212,7 +259,32 @@ class ChatRoomServiceUnitTest {
             InquiryRoomListResponseDto result = chatRoomService.getMyInquiryRooms(BUYER_ID, null, 10);
 
             assertThat(result.rooms()).hasSize(1);
+            assertThat(result.rooms().getFirst().lastMessage()).isNull();
             assertThat(result.hasNext()).isFalse();
+        }
+
+        @Test
+        void 마지막_메시지가_있으면_InquiryRoomSummaryDto의_lastMessage가_채워진다() {
+            InquiryChatMember membership = activeMember(1L, ROOM_ID, BUYER_ID);
+            ChatRoom room = inquiryRoom(SELLER_ID);
+            ChatMessage message = ChatMessage.restore(
+                    ChatMessageId.of(MSG_ID), ChatRoomId.of(ROOM_ID),
+                    MemberId.of(BUYER_ID), "마지막 메시지", MessageType.TEXT, "cm-1", MessageStatus.SENT, NOW, null);
+
+            given(memberRepository.findByMemberId(BUYER_ID)).willReturn(List.of(membership));
+            given(chatRoomRepository.findActiveByIds(List.of(ROOM_ID), null, 11)).willReturn(List.of(room));
+            given(memberRepository.findActiveMembersByRoomIds(List.of(ROOM_ID))).willReturn(List.of(membership));
+            given(chatMessageRepository.findLatestWithUnreadBatch(eq(List.of(ROOM_ID)), anyMap()))
+                    .willReturn(Map.of(ROOM_ID, new LatestWithUnread(message, 2L)));
+
+            InquiryRoomListResponseDto result = chatRoomService.getMyInquiryRooms(BUYER_ID, null, 10);
+
+            InquiryRoomSummaryDto summary = result.rooms().getFirst();
+            assertThat(summary.lastMessage()).isNotNull();
+            assertThat(summary.lastMessage().messageId()).isEqualTo(MSG_ID);
+            assertThat(summary.lastMessage().senderId()).isEqualTo(BUYER_ID);
+            assertThat(summary.lastMessage().content()).isEqualTo("마지막 메시지");
+            assertThat(summary.unreadCount()).isEqualTo(2L);
         }
     }
 }

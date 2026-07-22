@@ -1,9 +1,7 @@
 package com.bds.order.infrastructure.order;
 
-import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.OrderStatus;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record OrderDetailProjection(
@@ -13,12 +11,13 @@ public record OrderDetailProjection(
         Long totalRewardAmount,
         Long totalShippingCharge,
         LocalDateTime createdAt,
+        Long fundingId,
         String fundingTitle,
         Long hostId,
         LocalDateTime holdTo,
         boolean isSuccess,
         LocalDateTime cancelledAt,
-        CancelReason cancelReason,
+        String cancelReason,
         LocalDateTime updatedAt
 ) {
 }

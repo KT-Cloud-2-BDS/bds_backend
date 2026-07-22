@@ -9,4 +9,5 @@ public interface AuthRepository {
     Optional<Auth> findByEmail(String email);
     Optional<Auth> findById(Long authId);
     Auth save(Auth auth);
+    void softDelete(Long authId);
 }

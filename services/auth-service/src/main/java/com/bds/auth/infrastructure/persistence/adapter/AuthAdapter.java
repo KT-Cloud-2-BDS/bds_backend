@@ -41,4 +41,9 @@ public class AuthAdapter implements AuthRepository {
             .map(entity -> authMapper.toDomain(entity));
     }
 
+    @Override
+    public void softDelete(Long authId) {
+        authJpaRepo.softDeleteById(authId, Status.DELETED);
+    }
+
 }

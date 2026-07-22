@@ -74,6 +74,34 @@ class ChatRoomUnitTest {
     }
 
     @Nested
+    @DisplayName("채팅방 재오픈")
+    class ReopenTest {
+
+        @Test
+        void CLOSED_채팅방을_reopen하면_ACTIVE_상태가_된다() {
+            ChatRoom room = ChatRoom.restore(ChatRoomId.of(1L), CREATOR_ID, PRODUCT_ID, null,
+                    ChatRoomStatus.CLOSED, ChatRoomType.FUNDING, NOW, NOW);
+            room.reopen();
+            assertThat(room.getStatus()).isEqualTo(ChatRoomStatus.ACTIVE);
+        }
+
+        @Test
+        void CLOSED_채팅방을_reopen하면_deletedAt이_null로_초기화된다() {
+            ChatRoom room = ChatRoom.restore(ChatRoomId.of(1L), CREATOR_ID, PRODUCT_ID, null,
+                    ChatRoomStatus.CLOSED, ChatRoomType.FUNDING, NOW, NOW);
+            room.reopen();
+            assertThat(room.getDeletedAt()).isNull();
+        }
+
+        @Test
+        void 이미_ACTIVE인_채팅방을_reopen해도_예외없이_무시된다() {
+            ChatRoom room = ChatRoom.create(CREATOR_ID, PRODUCT_ID, null, ChatRoomType.FUNDING, NOW);
+            room.reopen();
+            assertThat(room.getStatus()).isEqualTo(ChatRoomStatus.ACTIVE);
+        }
+    }
+
+    @Nested
     @DisplayName("ID 할당")
     class AssignIdTest {
 

@@ -39,7 +39,7 @@ public class OrderFixture {
         return Order.reconstitute(
                 1L, "ORD-001", 1L, OrderStatus.CANCELLED,
                 33000L, 3000L, List.of(),
-                CancelReason.USER_CANCEL, NOW, NOW, cancelledAt, null
+                CancelReason.USER_CANCEL.name(), NOW, NOW, cancelledAt, null
         );
     }
 

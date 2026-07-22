@@ -1,0 +1,47 @@
+name: CD - services
+run-name: "CD - ${{ github.event.workflow_run.name }}"
+
+# 서비스 6개의 CD를 하나로 통합한 워크플로우
+# 어떤 CI가 트리거했는지(workflow_run.name)에서 서비스명을 추출해 cd-common에 위임
+# 새 서비스 추가 시: 아래 workflows 목록에 "CI - <서비스명>" 한 줄만 추가
+on:
+  workflow_run:
+    workflows:
+      - "CI - auth-service"
+      - "CI - member-service"
+      - "CI - chat-service"
+      - "CI - payment-service"
+      - "CI - order-service"
+      - "CI - notification-service"
+    types: [completed]
+    branches: [main]
+
+jobs:
+  # "CI - chat-service" → "chat-service" 추출
+  resolve:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      service: ${{ steps.name.outputs.service }}
+    steps:
+      - id: name
+        run: |
+          SERVICE="${{ github.event.workflow_run.name }}"
+          SERVICE="${SERVICE#CI - }"
+          echo "service=$SERVICE" >> $GITHUB_OUTPUT
+          echo "배포 대상: $SERVICE"
+
+  deploy:
+    needs: resolve
+    permissions:
+      id-token: write   # OIDC AWS 인증
+      contents: read
+      actions: read     # CI run의 artifact 다운로드
+    uses: ./.github/workflows/cd-common.yml
+    with:
+      service: ${{ needs.resolve.outputs.service }}
+      port: "8080"      # 전 서비스 8080 통일 (서비스별 EC2 분리라 충돌 없음)
+      ci-run-id: ${{ github.event.workflow_run.id }}
+      image-tag: ${{ github.event.workflow_run.head_sha }}
+      ssm-path-prefix: /services
+    secrets: inherit

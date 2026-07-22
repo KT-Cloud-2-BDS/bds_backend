@@ -87,6 +87,7 @@ class MemberDeleteIntegrationTest {
         // when : 탈퇴 API 호출
         mockMvc.perform(delete("/api/members/delete")
                 .header("X-User-Id", String.valueOf(mockAuthId))
+                .header("X-Internal-Secret", "test-internal-secret")
                 .contentType(MediaType.APPLICATION_JSON))
             .andDo(print())
             .andExpect(status().isOk());

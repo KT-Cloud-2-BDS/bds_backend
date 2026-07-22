@@ -42,6 +42,8 @@ public class FundingPaymentJpaEntity {
     @Enumerated(EnumType.STRING)
     private FundingPaymentStatus status;
 
+    private LocalDateTime creditedAt;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

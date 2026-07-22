@@ -44,4 +44,35 @@ public class AuthLocalEntityUnitExceptionTest {
             assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
         }
     }
+
+    @Nested
+    @DisplayName("AuthLocal.changePassword() 예외 핸들링")
+    public class ChangePasswordException {
+
+        @Test
+        @DisplayName("새 비밀번호가 null이면 INVALID_INPUT_VALUE 예외가 터진다")
+        public void 새비밀번호_null_예외발생() {
+            // given
+            AuthLocal authLocal = AuthLocal.of(1L, "encodedPassword", 1L);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authLocal.changePassword(null);
+            });
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("새 비밀번호가 공백(Blank)이면 INVALID_INPUT_VALUE 예외가 터진다")
+        public void 새비밀번호_공백_예외발생() {
+            // given
+            AuthLocal authLocal = AuthLocal.of(1L, "encodedPassword", 1L);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                authLocal.changePassword("   ");
+            });
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
+        }
+    }
 }

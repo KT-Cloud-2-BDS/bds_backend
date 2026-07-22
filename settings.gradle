@@ -11,8 +11,8 @@ if (file('modules/messaging').exists()) {
     include 'modules:messaging'
 }
 
-// 플랫폼 서비스 — sparse-checkout 환경에서 디렉토리가 존재할 때만 포함
-['config-service', 'discovery-service'].each { svc ->
+// 플랫폼 서비스 — 비즈니스 로직 없이 다른 서비스를 지원하는 인프라 성격의 서버 (sparse-checkout 환경에서 디렉토리가 존재할 때만 포함)
+['config-service', 'discovery-service', 'gateway-service'].each { svc ->
     if (file("platform/${svc}").exists()) {
         include "platform:${svc}"
     }

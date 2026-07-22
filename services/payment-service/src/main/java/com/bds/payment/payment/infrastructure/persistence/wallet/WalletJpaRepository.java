@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
-interface WalletJpaRepository extends JpaRepository<WalletJpaEntity, Long> {
+public interface WalletJpaRepository extends JpaRepository<WalletJpaEntity, Long> {
 
     boolean existsByMemberId(Long memberId);
 

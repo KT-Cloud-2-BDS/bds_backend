@@ -1,0 +1,40 @@
+package com.bds.order.infrastructure.reward;
+
+import com.bds.order.domain.reward.Reward;
+import com.bds.order.domain.reward.RewardRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+@RequiredArgsConstructor
+public class RewardPersistenceAdapter implements RewardRepository {
+
+    private final RewardJpaRepository rewardJpaRepository;
+    private final RewardMapper rewardMapper;
+
+    public List<Reward> findAllByIdAndFundingId(List<Long> ids, Long fundingId) {
+        return rewardJpaRepository.findAllByIdAndFundingId(ids, fundingId).stream()
+                .map(rewardMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public void increaseRemainQty(Long rewardId, int qty) {
+        rewardJpaRepository.increaseRemainQty(rewardId, qty);
+    }
+
+    @Override
+    public int decreaseStock(Long id, int qty) {
+        return rewardJpaRepository.decreaseStock(id, qty);
+    }
+
+    @Override
+    public List<Reward> findByFundingId(Long fundingId) {
+        return rewardJpaRepository.findByFundingId(fundingId).stream()
+                .map(rewardMapper::toDomain)
+                .toList();
+    }
+
+}

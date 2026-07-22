@@ -10,9 +10,6 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,12 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
  * Member 서버에서 내부 통신으로 전달된 계정 탈퇴 요청을 받아,
  * Auth 및 AuthLocal DB에서 해당 회원의 인증 정보가 정상적으로 삭제되는지 검증합니다.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
 @Transactional
 @DisplayName("인증 서버 탈퇴 통합 테스트")
-public class AuthDeleteIntegrationTest {
+public class AuthDeleteIntegrationTest extends AbstractAuthIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -65,7 +59,8 @@ public class AuthDeleteIntegrationTest {
 
 
         // when : 탈퇴 API 호출
-        mockMvc.perform(delete("/api/auths/" + authId))
+        mockMvc.perform(delete("/internal/auths/" + authId)
+                .header("X-Internal-Secret", "test-internal-secret"))
             .andDo(print())
 
             // then : 검증 (HTTP 상태 200 & DB 확인)
