@@ -23,8 +23,8 @@ services:
     image: rabbitmq:4-management
     container_name: notification-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-notification}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-notification1234}
       RABBITMQ_DEFAULT_VHOST: msa
     ports:
       - "5672:5672"    # AMQP

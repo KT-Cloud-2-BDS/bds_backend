@@ -25,6 +25,8 @@ dependencies {
     implementation project(':libs:bds-events')
     implementation project(':modules:messaging')
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'org.springframework.modulith:spring-modulith-events-amqp'
+    implementation 'org.springframework.modulith:spring-modulith-starter-jpa'
 
     // TestContainers
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -26,3 +26,10 @@ spring:
     virtual-host: msa
     username: ${RABBITMQ_USER:notification}
     password: ${RABBITMQ_PASSWORD:notification1234}
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
+
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}
