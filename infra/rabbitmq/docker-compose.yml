@@ -26,7 +26,6 @@ services:
       -e "s|__NOTIFICATION_HASH__|$$NOTIFICATION_HASH|g"
       -e "s|__ORDER_HASH__|$$ORDER_HASH|g"
       -e "s|__PAYMENT_HASH__|$$PAYMENT_HASH|g"
-      -e "s|__NOTIFICATION_HASH__|$$NOTIFICATION_HASH|g"
       /input/definitions.json > /output/definitions.json'
 
   rabbitmq:

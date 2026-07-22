@@ -44,12 +44,6 @@
       "password_hash": "__PAYMENT_HASH__",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
       "tags": []
-    },
-    {
-      "name": "notification-service",
-      "password_hash": "__NOTIFICATION_HASH__",
-      "hashing_algorithm": "rabbit_password_hashing_sha256",
-      "tags": []
     }
   ],
   "permissions": [
