@@ -40,6 +40,6 @@ public class FundingController {
             @Valid @RequestBody FundingCreateRequestDto request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(fundingService.createFunding(user.id(), user.role(), request));
+                .body(fundingService.createFunding(user.id(), user.roles().contains("MAKER"), request));
     }
 }

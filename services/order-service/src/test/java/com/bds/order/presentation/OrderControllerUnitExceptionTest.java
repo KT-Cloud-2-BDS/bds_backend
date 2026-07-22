@@ -12,6 +12,7 @@ import com.bds.support.MockMvcTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,6 +31,9 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
     @MockitoBean
     private OrderService orderService;
+
+    @Value("${internal.gateway-secret}")
+    private String gatewaySecret;
 
     @Nested
     @DisplayName("인증 예외 응답")
@@ -56,6 +60,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
         void page가_음수이면_400을_응답한다() throws Exception {
             mockMvc.perform(get("/api/orders")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .param("page", "-1"))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
@@ -72,7 +77,8 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
                     .willThrow(new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
             mockMvc.perform(get("/api/orders/999")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"));
         }
@@ -93,6 +99,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders/billing")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isNotFound())
@@ -110,6 +117,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders/billing")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isForbidden())
@@ -128,6 +136,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders/billing")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isBadRequest())
@@ -145,6 +154,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders/billing")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isConflict())
@@ -162,6 +172,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders/billing")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(invalidBody))
                     .andExpect(status().isBadRequest());
@@ -180,6 +191,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(patch("/api/orders/999/cancel")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"fundingId\":1}"))
                     .andExpect(status().isNotFound())
@@ -193,6 +205,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(patch("/api/orders/1/cancel")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"fundingId\":1}"))
                     .andExpect(status().isForbidden())
@@ -206,6 +219,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(patch("/api/orders/1/cancel")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"fundingId\":1}"))
                     .andExpect(status().isBadRequest())
@@ -226,6 +240,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isNotFound())
@@ -241,6 +256,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isForbidden())
@@ -256,6 +272,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isBadRequest())
@@ -271,6 +288,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isConflict())
