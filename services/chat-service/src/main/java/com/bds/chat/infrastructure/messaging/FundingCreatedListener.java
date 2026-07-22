@@ -18,7 +18,7 @@ public class FundingCreatedListener {
     @RabbitListener(queues = ChatQueues.FUNDING_CREATED, containerFactory = "msaListenerContainerFactory")
     public void handle(FundingStatusChangedEvent event) {
         //markProcessed(event.evenId())를 통한 증복 이벤트 감지 스킵
-        log.info("FundingCreatedEvent 수신: creatorId={}, targetId={}, type={}", event.creatorId(), event.targetId(), event.type());
+        log.info("FundingStatusChangedEvent 수신: creatorId={}, targetId={}, type={}", event.creatorId(), event.targetId(), event.type());
         switch (event.type()) {
             case "FUNDING_START" -> {
                 try {
