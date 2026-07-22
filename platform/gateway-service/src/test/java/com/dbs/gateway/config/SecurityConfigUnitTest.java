@@ -36,11 +36,13 @@ class SecurityConfigUnitTest {
     @DisplayName("jwtDecoder 빈은 Eureka에서 조회한 인스턴스 주소로 NimbusJwtDecoder를 만들어 논블로킹 어댑터로 감싼다")
     void JWT디코더_빈_생성() {
         DiscoveryClient discoveryClient = mock(DiscoveryClient.class);
+        AuthBlacklistClient authBlacklistClient = mock(AuthBlacklistClient.class);
         ServiceInstance instance = mock(ServiceInstance.class);
         given(instance.getUri()).willReturn(URI.create("http://localhost:8081"));
         given(discoveryClient.getInstances("auth-service")).willReturn(List.of(instance));
 
-        ReactiveJwtDecoder decoder = securityConfig.jwtDecoder(discoveryClient, "auth-service", "/oauth2/jwks", 1, 0);
+        ReactiveJwtDecoder decoder = securityConfig.jwtDecoder(
+            discoveryClient, authBlacklistClient, "auth-service", "/oauth2/jwks", 1, 0);
 
         assertInstanceOf(BlockingJwtDecoderAdapter.class, decoder);
     }
@@ -49,10 +51,11 @@ class SecurityConfigUnitTest {
     @DisplayName("Eureka에 auth-service 인스턴스가 없으면 재시도 후 예외를 던진다")
     void JWT디코더_빈_생성_인스턴스없음() {
         DiscoveryClient discoveryClient = mock(DiscoveryClient.class);
+        AuthBlacklistClient authBlacklistClient = mock(AuthBlacklistClient.class);
         given(discoveryClient.getInstances("auth-service")).willReturn(List.of());
 
         assertThrows(IllegalStateException.class,
-            () -> securityConfig.jwtDecoder(discoveryClient, "auth-service", "/oauth2/jwks", 2, 0));
+            () -> securityConfig.jwtDecoder(discoveryClient, authBlacklistClient, "auth-service", "/oauth2/jwks", 2, 0));
     }
 
     @Test

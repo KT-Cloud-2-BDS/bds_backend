@@ -45,7 +45,7 @@ eureka:
       defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/
 
 auth-service:
-  internal-uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+  internal-uri: lb://auth-service
 
 internal:
   gateway-secret: ${INTERNAL_GATEWAY_SECRET}
