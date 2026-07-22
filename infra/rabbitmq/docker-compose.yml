@@ -16,6 +16,7 @@ services:
       NOTIFICATION_HASH: ${NOTIFICATION_HASH:?NOTIFICATION_HASH is required}
       ORDER_HASH: ${ORDER_HASH:?ORDER_HASH is required}
       PAYMENT_HASH: ${PAYMENT_HASH:?PAYMENT_HASH is required}
+      NOTIFICATION_HASH: ${NOTIFICATION_HASH:?NOTIFICATION_HASH is required}
     command: >
       sh -c 'sed
       -e "s|__ADMIN_HASH__|$$ADMIN_HASH|g"

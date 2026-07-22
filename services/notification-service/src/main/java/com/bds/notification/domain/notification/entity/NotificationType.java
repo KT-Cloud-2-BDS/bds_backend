@@ -6,5 +6,7 @@ public enum NotificationType {
   FUNDING_FAIL,
   PROMOTION,
   PAID,
-  REFUNDED
+  REFUNDED,
+  // 문의 채팅 전달용
+  CHATTING
 }
