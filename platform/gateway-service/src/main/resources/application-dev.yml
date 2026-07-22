@@ -30,7 +30,7 @@ spring:
                 - Path=/api/notifications/**
 
             - id: order-service
-              uri: lb://order
+              uri: lb://order-service
               predicates:
                 - Path=/api/orders/**
 
