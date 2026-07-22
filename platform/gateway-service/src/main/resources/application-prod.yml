@@ -1,0 +1,41 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+              predicates:
+                - Path=/api/auths/**
+
+            - id: member-service
+              uri: http://${MEMBER_SERVICE_HOST}:${MEMBER_SERVICE_PORT}
+              predicates:
+                - Path=/api/members/**
+
+            - id: chat-service
+              uri: http://${CHAT_SERVICE_HOST}:${CHAT_SERVICE_PORT}
+              predicates:
+                - Path=/api/chat/**
+
+            - id: notification-service
+              uri: http://${NOTIFICATION_SERVICE_HOST}:${NOTIFICATION_SERVICE_PORT}
+              predicates:
+                - Path=/api/notifications/**
+
+            - id: order-service
+              uri: http://${ORDER_SERVICE_HOST}:${ORDER_SERVICE_PORT}
+              predicates:
+                - Path=/api/orders/**
+
+            - id: payment-service
+              uri: http://${PAYMENT_SERVICE_HOST}:${PAYMENT_SERVICE_PORT}
+              predicates:
+                - Path=/api/payments/**
+
+jwt:
+  jwks-uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}/oauth2/jwks
+
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET}
