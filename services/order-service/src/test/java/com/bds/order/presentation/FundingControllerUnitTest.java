@@ -10,6 +10,7 @@ import com.bds.support.MockMvcTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -17,8 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -31,6 +31,9 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
     private static final LocalDateTime NOW = LocalDateTime.of(2025, 7, 1, 12, 0);
     @MockitoBean
     private FundingService fundingService;
+
+    @Value("${internal.gateway-secret}")
+    private String gatewaySecret;
 
     @Nested
     @DisplayName("펀딩 목록 조회 API")
@@ -47,7 +50,8 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
             given(fundingService.getFundings(null)).willReturn(List.of(dto));
 
             mockMvc.perform(get("/api/fundings")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].title").value("테스트 펀딩"))
@@ -67,6 +71,7 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
 
             mockMvc.perform(get("/api/fundings")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .param("status", "SCHEDULED"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].status").value("SCHEDULED"));
@@ -93,7 +98,8 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
             given(fundingService.getFundingDetail(1L)).willReturn(dto);
 
             mockMvc.perform(get("/api/fundings/1")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.title").value("테스트 펀딩"))
@@ -119,11 +125,12 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
                     1L, "새 펀딩", "SCHEDULED", "INSTANT", NOW, NOW.plusDays(30), NOW
             );
 
-            given(fundingService.createFunding(eq(1L), eq("MAKER"), any())).willReturn(response);
+            given(fundingService.createFunding(eq(1L), anyBoolean(), any())).willReturn(response);
 
             mockMvc.perform(post("/api/fundings")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "MAKER")
+                            .header("X-User-Role", List.of("MAKER"))
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
