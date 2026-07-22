@@ -2,6 +2,7 @@ package com.dbs.gateway.security;
 
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -24,10 +25,11 @@ public class AuthBlacklistClient {
     private final String internalGatewaySecret;
 
     public AuthBlacklistClient(
+        @LoadBalanced WebClient.Builder webClientBuilder,
         @Value("${auth-service.internal-uri}") String authServiceInternalUri,
         @Value("${internal.gateway-secret}") String internalGatewaySecret
     ) {
-        this.webClient = WebClient.builder().baseUrl(authServiceInternalUri).build();
+        this.webClient = webClientBuilder.baseUrl(authServiceInternalUri).build();
         this.internalGatewaySecret = internalGatewaySecret;
     }
 

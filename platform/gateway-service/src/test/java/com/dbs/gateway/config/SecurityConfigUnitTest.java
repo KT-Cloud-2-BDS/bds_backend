@@ -2,13 +2,18 @@ package com.dbs.gateway.config;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 import com.dbs.gateway.security.AuthBlacklistClient;
 import com.dbs.gateway.security.BlockingJwtDecoderAdapter;
+import java.net.URI;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -28,12 +33,29 @@ class SecurityConfigUnitTest {
     private final SecurityConfig securityConfig = new SecurityConfig();
 
     @Test
-    @DisplayName("jwtDecoder 빈은 NimbusJwtDecoder를 논블로킹 어댑터로 감싸 반환한다")
+    @DisplayName("jwtDecoder 빈은 Eureka에서 조회한 인스턴스 주소로 NimbusJwtDecoder를 만들어 논블로킹 어댑터로 감싼다")
     void JWT디코더_빈_생성() {
+        DiscoveryClient discoveryClient = mock(DiscoveryClient.class);
         AuthBlacklistClient authBlacklistClient = mock(AuthBlacklistClient.class);
-        ReactiveJwtDecoder decoder = securityConfig.jwtDecoder("http://localhost:8081/oauth2/jwks", authBlacklistClient);
+        ServiceInstance instance = mock(ServiceInstance.class);
+        given(instance.getUri()).willReturn(URI.create("http://localhost:8081"));
+        given(discoveryClient.getInstances("auth-service")).willReturn(List.of(instance));
+
+        ReactiveJwtDecoder decoder = securityConfig.jwtDecoder(
+            discoveryClient, authBlacklistClient, "auth-service", "/oauth2/jwks", 1, 0);
 
         assertInstanceOf(BlockingJwtDecoderAdapter.class, decoder);
+    }
+
+    @Test
+    @DisplayName("Eureka에 auth-service 인스턴스가 없으면 재시도 후 예외를 던진다")
+    void JWT디코더_빈_생성_인스턴스없음() {
+        DiscoveryClient discoveryClient = mock(DiscoveryClient.class);
+        AuthBlacklistClient authBlacklistClient = mock(AuthBlacklistClient.class);
+        given(discoveryClient.getInstances("auth-service")).willReturn(List.of());
+
+        assertThrows(IllegalStateException.class,
+            () -> securityConfig.jwtDecoder(discoveryClient, authBlacklistClient, "auth-service", "/oauth2/jwks", 2, 0));
     }
 
     @Test

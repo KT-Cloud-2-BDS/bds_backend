@@ -9,5 +9,8 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-web'
     api 'org.springframework.boot:spring-boot-starter-validation'
 
+    //유레카
+    api 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
