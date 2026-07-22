@@ -45,25 +45,23 @@ jobs:
       ssm-path-prefix: /platform
     secrets: inherit
 
-  # gateway-service 구현 완료 후 주석 해제
-  # (CI - platform의 서비스 목록에도 gateway-service 추가 필요)
-  # deploy-gateway:
-  #   needs: [detect-artifacts, deploy-discovery]
-  #   if: >-
-  #     always() &&
-  #     needs.detect-artifacts.result == 'success' &&
-  #     needs.detect-artifacts.outputs.has_gateway == 'true' &&
-  #     needs.deploy-discovery.result != 'failure' &&
-  #     needs.deploy-discovery.result != 'cancelled'
-  #   permissions:
-  #     id-token: write
-  #     contents: read
-  #     actions: read
-  #   uses: ./.github/workflows/cd-common.yml
-  #   with:
-  #     service: gateway-service
-  #     port: "8080"
-  #     ci-run-id: ${{ github.event.workflow_run.id }}
-  #     image-tag: ${{ github.event.workflow_run.head_sha }}
-  #     ssm-path-prefix: /platform
-  #   secrets: inherit
+  deploy-gateway:
+    needs: [detect-artifacts, deploy-discovery]
+    if: >-
+      always() &&
+      needs.detect-artifacts.result == 'success' &&
+      needs.detect-artifacts.outputs.has_gateway == 'true' &&
+      needs.deploy-discovery.result != 'failure' &&
+      needs.deploy-discovery.result != 'cancelled'
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    uses: ./.github/workflows/cd-common.yml
+    with:
+      service: gateway-service
+      port: "8080"
+      ci-run-id: ${{ github.event.workflow_run.id }}
+      image-tag: ${{ github.event.workflow_run.head_sha }}
+      ssm-path-prefix: /platform
+    secrets: inherit
