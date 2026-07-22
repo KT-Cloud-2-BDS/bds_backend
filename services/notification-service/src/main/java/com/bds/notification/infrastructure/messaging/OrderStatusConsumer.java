@@ -1,5 +1,6 @@
 package com.bds.notification.infrastructure.messaging;
 
+import com.bds.common.events.order.OrderStatusChangedEvent;
 import com.bds.notification.application.NotificationService;
 import com.bds.notification.application.dto.OrderNotificationMessageDto;
 import com.bds.notification.common.exception.BusinessException;
@@ -16,10 +17,11 @@ public class OrderStatusConsumer {
   private final NotificationService notificationService;
 
   @RabbitListener(queues = RabbitTopologyConfig.ORDER_STATUS_QUEUE)
-  public void handle(
-      OrderNotificationMessageDto eventDto) { // TODO: 공용 메시지 이벤트로 변경해야함. 지금은 임시로 내부 DTO로 처리
+  public void handle(OrderStatusChangedEvent eventDto) {
     try {
-      notificationService.createOrderNotification(eventDto);
+      notificationService.createOrderNotification(
+          new OrderNotificationMessageDto(eventDto.type(), eventDto.memberId(), eventDto.fundingTitle(), eventDto.orderNo())
+      );
     } catch (BusinessException e) {
       // 재시도해도 해결되지 않는 검증 실패 → 로그만 남기고 ack (DLQ 불필요)
       log.error("주문 상태 알림 처리 실패 (비재시도): {}", e.getMessage());

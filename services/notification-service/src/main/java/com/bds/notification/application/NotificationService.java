@@ -128,47 +128,56 @@ public class NotificationService {
   // 주문 상태 알림 생성
   @Transactional
   public void createOrderNotification(OrderNotificationMessageDto command) {
-    String title = switch (command.type()) {
+    NotificationType type = parseNotificationType(command.type());
+    String title = switch (type) {
       case PAID -> "주문이 완료됐어요";
       case REFUNDED -> "환불이 완료됐어요";
       default -> throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
     };
-    String body = switch (command.type()) {
+    String body = switch (type) {
       case PAID -> "[" + command.fundingTitle() + "] 주문이 완료됐습니다";
       case REFUNDED -> "[" + command.fundingTitle() + "] 환불이 완료됐습니다";
       default -> throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
     };
 
-    createNotification(command.memberId(), command.type(), command.orderNo(), title, body,
+    createNotification(command.memberId(), type, command.orderNo(), title, body,
         NotificationChannel.SSE);
   }
 
   @Transactional
   public void createFundingNotification(FundingNotificationCommandDto command) {
+    NotificationType type = parseNotificationType(command.type());
     List<Long> memberIds = notificationSubscriptionRepository.findSubscribedMemberIds(
         SubscriptionTargetType.valueOf(command.targetType()),
-        Long.parseLong(command.targetId())
+        command.targetId()
     );
 
-    String title = switch (command.type()) {
+    String title = switch (type) {
       case FUNDING_START -> "펀딩이 시작되었어요";
       case FUNDING_SUCCESS -> "펀딩에 성공하셨어요";
       case FUNDING_FAIL -> "펀딩에 실패하셨어요";
       default -> throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
     };
 
-    // TODO: TargetName을 구독 시 생성하여 NotificationSubscription에서 읽어와서 각자 생성시킬예정임. 람다 함수 쓰면 되지 않을까
-    String body = switch (command.type()) {
+    // TODO: TargetName을 구독 시 생성하여 NotificationSubscription에서 읽어와서 각자 생성시킬예정임.
+    String body = switch (type) {
       case FUNDING_START -> "[상품 #" + command.targetId() + "] 펀딩이 시작되었습니다.";
       case FUNDING_SUCCESS -> "[상품 #" + command.targetId() + "] 펀딩에 성공하셨습니다.";
       case FUNDING_FAIL -> "[상품 #" + command.targetId() + "] 펀딩에 실패하셨습니다.";
       default -> throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
     };
 
-    memberIds.forEach(memberId -> {
-      createNotification(memberId, command.type(), command.targetId(), title, body,
-          NotificationChannel.SSE);
-    });
+    memberIds.forEach(memberId ->
+        createNotification(memberId, type, String.valueOf(command.targetId()), title, body, NotificationChannel.SSE)
+    );
+  }
+
+  private NotificationType parseNotificationType(String type) {
+    try {
+      return NotificationType.valueOf(type);
+    } catch (IllegalArgumentException e) {
+      throw new BusinessException(ErrorCode.INVALID_NOTIFICATION_TYPE);
+    }
   }
 
   // TODO: 트랜잭션이 발생하지 않아서 event로 전달하지 못했음. 이건 추후 고민이 필요해보임. 그런데 fallback구조까지 다 들어나서 별로 안좋은 코드처럼 보임
