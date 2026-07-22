@@ -10,14 +10,20 @@ services:
       - definitions:/output
     environment:
       ADMIN_HASH: ${ADMIN_HASH:?ADMIN_HASH is required}
-      ORDER_HASH: ${ORDER_HASH:?ORDER_HASH is required}
+      AUTH_HASH: ${AUTH_HASH:?AUTH_HASH is required}
       CHAT_HASH: ${CHAT_HASH:?CHAT_HASH is required}
+      MEMBER_HASH: ${MEMBER_HASH:?MEMBER_HASH is required}
+      NOTIFICATION_HASH: ${NOTIFICATION_HASH:?NOTIFICATION_HASH is required}
+      ORDER_HASH: ${ORDER_HASH:?ORDER_HASH is required}
       PAYMENT_HASH: ${PAYMENT_HASH:?PAYMENT_HASH is required}
     command: >
       sh -c 'sed
       -e "s|__ADMIN_HASH__|$$ADMIN_HASH|g"
-      -e "s|__ORDER_HASH__|$$ORDER_HASH|g"
+      -e "s|__AUTH_HASH__|$$AUTH_HASH|g"
       -e "s|__CHAT_HASH__|$$CHAT_HASH|g"
+      -e "s|__MEMBER_HASH__|$$MEMBER_HASH|g"
+      -e "s|__NOTIFICATION_HASH__|$$NOTIFICATION_HASH|g"
+      -e "s|__ORDER_HASH__|$$ORDER_HASH|g"
       -e "s|__PAYMENT_HASH__|$$PAYMENT_HASH|g"
       /input/definitions.json > /output/definitions.json'
 
