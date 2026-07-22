@@ -86,7 +86,7 @@ class FundingServiceIntegrationExceptionTest {
         void 존재하지_않는_거래를_환불하면_예외를_던진다() {
             // given
             RefundRequestDto dto = new RefundRequestDto(
-                    UuidCreator.getTimeOrderedEpoch(), 999L, 1L, 10000L, "USER_CANCEL"
+                    UuidCreator.getTimeOrderedEpoch(), 999L, 1L, 1L, 10000L, "USER_CANCEL"
             );
 
             // when & then
@@ -103,12 +103,12 @@ class FundingServiceIntegrationExceptionTest {
             walletJpaRepository.save(WalletJpaEntity.builder().memberId(memberId).balance(30000L).build());
             fundingService.funding(new FundingPaymentRequestDto(1L, memberId, 100L, 10000L, PaymentType.INSTANT));
             fundingService.refund(new RefundRequestDto(
-                    UuidCreator.getTimeOrderedEpoch(), 1L, memberId, 10000L, "USER_CANCEL"
+                    UuidCreator.getTimeOrderedEpoch(), 1L, memberId, 1L, 10000L, "USER_CANCEL"
             ));
 
             // when & then
             RefundRequestDto secondRefund = new RefundRequestDto(
-                    UuidCreator.getTimeOrderedEpoch(), 1L, memberId, 10000L, "USER_CANCEL"
+                    UuidCreator.getTimeOrderedEpoch(), 1L, memberId, 1L, 10000L, "USER_CANCEL"
             );
             assertThatThrownBy(() -> fundingService.refund(secondRefund))
                     .isInstanceOfSatisfying(BusinessException.class, ex -> {
@@ -127,7 +127,7 @@ class FundingServiceIntegrationExceptionTest {
 
             // when & then
             RefundRequestDto invalidRefund = new RefundRequestDto(
-                    UuidCreator.getTimeOrderedEpoch(), 1L, otherId, 10000L, "USER_CANCEL"
+                    UuidCreator.getTimeOrderedEpoch(), 1L, otherId, 1L, 10000L, "USER_CANCEL"
             );
             assertThatThrownBy(() -> fundingService.refund(invalidRefund))
                     .isInstanceOfSatisfying(BusinessException.class, ex -> {

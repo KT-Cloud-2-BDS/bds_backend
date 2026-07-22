@@ -1,6 +1,6 @@
 package com.bds.payment.payment.application.funding.consumer;
 
-import com.bds.payment.payment.presentation.request.RefundRequestEvent;
+import com.bds.common.events.order.OrderProcessRefundEvent;
 import com.bds.messaging.idempotency.ProcessedEventStore;
 import com.bds.payment.payment.application.funding.FundingService;
 import com.bds.payment.payment.global.exception.BusinessException;
@@ -29,10 +29,11 @@ class RefundRequestListenerUnitTest {
 
     @InjectMocks private RefundRequestListener listener;
 
-    private RefundRequestEvent createEvent() {
-        return new RefundRequestEvent(
+    private OrderProcessRefundEvent createEvent() {
+        return new OrderProcessRefundEvent(
                 UuidCreator.getTimeOrderedEpoch(),
                 101L,
+                1L,
                 1L,
                 10000L,
                 "USER_CANCEL"
@@ -42,7 +43,7 @@ class RefundRequestListenerUnitTest {
     @Test
     void 이벤트를_수신하면_FundingService_refund를_호출한다() {
         // given
-        RefundRequestEvent event = createEvent();
+        OrderProcessRefundEvent event = createEvent();
         given(processedEventStore.markProcessed(event.requestId())).willReturn(true);
 
         // when
@@ -55,7 +56,7 @@ class RefundRequestListenerUnitTest {
     @Test
     void 중복_이벤트는_FundingService_호출없이_스킵한다() {
         // given
-        RefundRequestEvent event = createEvent();
+        OrderProcessRefundEvent event = createEvent();
         given(processedEventStore.markProcessed(event.requestId())).willReturn(false);
 
         // when
@@ -68,7 +69,7 @@ class RefundRequestListenerUnitTest {
     @Test
     void FUNDING_ALREADY_REFUNDED_예외는_스킵한다() {
         // given
-        RefundRequestEvent event = createEvent();
+        OrderProcessRefundEvent event = createEvent();
         given(processedEventStore.markProcessed(event.requestId())).willReturn(true);
         doThrow(new BusinessException(ErrorCode.FUNDING_ALREADY_REFUNDED))
                 .when(fundingService).refund(any());
@@ -80,7 +81,7 @@ class RefundRequestListenerUnitTest {
     @Test
     void 다른_BusinessException은_전파한다() {
         // given
-        RefundRequestEvent event = createEvent();
+        OrderProcessRefundEvent event = createEvent();
         given(processedEventStore.markProcessed(event.requestId())).willReturn(true);
         doThrow(new BusinessException(ErrorCode.WALLET_NOT_FOUND))
                 .when(fundingService).refund(any());
@@ -92,7 +93,7 @@ class RefundRequestListenerUnitTest {
     @Test
     void RuntimeException은_전파한다() {
         // given
-        RefundRequestEvent event = createEvent();
+        OrderProcessRefundEvent event = createEvent();
         given(processedEventStore.markProcessed(event.requestId())).willReturn(true);
         doThrow(new RuntimeException("DB 오류"))
                 .when(fundingService).refund(any());
@@ -105,9 +106,10 @@ class RefundRequestListenerUnitTest {
     void 이벤트_필드가_DTO에_정확히_전달된다() {
         // given
         UUID requestId = UuidCreator.getTimeOrderedEpoch();
-        RefundRequestEvent event = new RefundRequestEvent(
+        OrderProcessRefundEvent event = new OrderProcessRefundEvent(
                 requestId,
                 101L,
+                1L,
                 1L,
                 10000L,
                 "USER_CANCEL"
