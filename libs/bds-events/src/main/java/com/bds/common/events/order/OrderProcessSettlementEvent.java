@@ -5,7 +5,7 @@ import org.springframework.modulith.events.Externalized;
 import java.util.List;
 import java.util.UUID;
 
-@Externalized("order.exchange::payment.process.settlement")
+@Externalized("order.exchange::order.settle.requested")
 public record OrderProcessSettlementEvent(
         UUID batchId,
         String type,

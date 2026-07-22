@@ -91,7 +91,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "order.process.cancel",
+                "payment.refunded",
                 new PaymentCancelledMessage(nonExistentOrderId, "PAYMENT_CANCELLED")
         );
 
@@ -107,7 +107,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "order.process.paid",
+                "payment.paid",
                 new PaymentPaidMessage(nonExistentOrderId)
         );
 
@@ -124,7 +124,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "order.process.cancel",
+                "payment.refunded",
                 new PaymentCancelledMessage(order.getId(), "PAYMENT_CANCELLED")
         );
 
@@ -141,7 +141,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "order.process.paid",
+                "payment.paid",
                 new PaymentPaidMessage(order.getId())
         );
 
@@ -158,7 +158,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "order.process",
+                "payment.settled",
                 new PaymentProcessedMessage(List.of(order.getId()), PaymentProcessedMessage.ResultType.CONFIRMED)
         );
 
@@ -176,7 +176,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "order.process",
+                "payment.settled",
                 new PaymentProcessedMessage(
                         List.of(validOrder.getId(), nonExistentOrderId),
                         PaymentProcessedMessage.ResultType.CONFIRMED)
@@ -196,7 +196,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "order.process",
+                "payment.settled",
                 new PaymentProcessedMessage(
                         List.of(validOrder.getId(), invalidOrder.getId()),
                         PaymentProcessedMessage.ResultType.CONFIRMED)

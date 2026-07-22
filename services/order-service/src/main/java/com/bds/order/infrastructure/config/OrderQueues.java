@@ -10,23 +10,23 @@ public class OrderQueues {
 
     public static final String PAYMENT_EXCHANGE = "payment.exchange";
 
-    public static final String ORDER_PROCESS_QUEUE = "order.process";
-    public static final String ORDER_PROCESS_PAID_QUEUE = "order.process.paid";
-    public static final String ORDER_PROCESS_CANCEL_QUEUE = "order.process.cancel";
+    public static final String ORDER_PROCESS_SETTLE_QUEUE = "order.payment-settled.queue";
+    public static final String ORDER_PROCESS_PAID_QUEUE = "order.payment-paid.queue";
+    public static final String ORDER_PROCESS_REFUND_QUEUE = "order.payment-refunded.queue";
 
     @Bean
-    public Declarables orderProcessQueue() {
-        return BdsQueues.workQueue(ORDER_PROCESS_QUEUE, PAYMENT_EXCHANGE, "order.process");
+    public Declarables orderProcessSettlementQueue() {
+        return BdsQueues.workQueue(ORDER_PROCESS_SETTLE_QUEUE, PAYMENT_EXCHANGE, "payment.settled");
     }
 
     @Bean
     public Declarables orderProcessPaidQueue() {
-        return BdsQueues.workQueue(ORDER_PROCESS_PAID_QUEUE, PAYMENT_EXCHANGE, "order.process.paid");
+        return BdsQueues.workQueue(ORDER_PROCESS_PAID_QUEUE, PAYMENT_EXCHANGE, "payment.paid");
     }
 
     @Bean
-    public Declarables orderProcessCancelQueue() {
-        return BdsQueues.workQueue(ORDER_PROCESS_CANCEL_QUEUE, PAYMENT_EXCHANGE, "order.process.cancel");
+    public Declarables orderProcessRefundQueue() {
+        return BdsQueues.workQueue(ORDER_PROCESS_REFUND_QUEUE, PAYMENT_EXCHANGE, "payment.refunded");
     }
 }
 

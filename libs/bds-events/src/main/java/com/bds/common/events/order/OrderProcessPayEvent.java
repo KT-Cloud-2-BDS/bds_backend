@@ -4,7 +4,7 @@ import org.springframework.modulith.events.Externalized;
 
 import java.util.UUID;
 
-@Externalized("order.exchange::payment.process.pay")
+@Externalized("order.exchange::order.pay.requested")
 public record OrderProcessPayEvent(
         UUID requestId,
         Long orderId,

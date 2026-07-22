@@ -17,7 +17,7 @@ public class OrderMessageConsumer {
 
     private final OrderMessageHandler orderMessageHandler;
 
-    @RabbitListener(queues = OrderQueues.ORDER_PROCESS_QUEUE)
+    @RabbitListener(queues = OrderQueues.ORDER_PROCESS_SETTLE_QUEUE)
     public void handleBulkResult(PaymentProcessedMessage message) {
         log.info("Received bulk message: type={}, count={}", message.type(), message.orderIds().size());
         orderMessageHandler.processBulk(message);
@@ -29,7 +29,7 @@ public class OrderMessageConsumer {
         orderMessageHandler.processPaid(message.orderId());
     }
 
-    @RabbitListener(queues = OrderQueues.ORDER_PROCESS_CANCEL_QUEUE)
+    @RabbitListener(queues = OrderQueues.ORDER_PROCESS_REFUND_QUEUE)
     public void handleCancelResult(PaymentCancelledMessage message) {
         log.info("Received cancel message: orderId={}", message.orderId());
         orderMessageHandler.processCancelled(message.orderId(), message.cancelReason());
