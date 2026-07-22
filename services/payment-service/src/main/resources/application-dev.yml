@@ -3,6 +3,10 @@ spring:
     activate:
       on-profile: dev
 
+  autoconfigure:
+    exclude:
+      - org.springframework.modulith.events.amqp.RabbitJackson2Configuration
+
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${DB_USERNAME}
@@ -19,6 +23,31 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: ${RABBITMQ_VHOST:msa}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  modulith:
+    events:
+      externalization:
+        enabled: true
+      republish-outstanding-events-on-restart: false
+      staleness:
+        published: 1m
+        processing: 5m
+        resubmitted: 2m
+bds:
+  messaging:
+    events:
+      republish-delay: 30s
+      republish-min-age: 1m
+      retention: 7d
+
 logging:
   level:
     com.bds.payment: DEBUG
@@ -27,3 +56,11 @@ logging:
 bank:
   api:
     base-url: ${BANK_URL}
+
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/

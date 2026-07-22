@@ -29,6 +29,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -40,11 +41,19 @@ public class NotificationServiceIntegrationTest {
   public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(
       "postgres:18");
 
+  @Container
+  static RabbitMQContainer rabbitMQ = new RabbitMQContainer("rabbitmq:4-management");
+
   @DynamicPropertySource
   static void postgresProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
     registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
     registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
+    registry.add("spring.rabbitmq.host", rabbitMQ::getHost);
+    registry.add("spring.rabbitmq.port", rabbitMQ::getAmqpPort);
+    registry.add("spring.rabbitmq.virtual-host", () -> "/");
+    registry.add("spring.rabbitmq.username", rabbitMQ::getAdminUsername);
+    registry.add("spring.rabbitmq.password", rabbitMQ::getAdminPassword);
   }
 
   @BeforeAll
@@ -218,7 +227,7 @@ public class NotificationServiceIntegrationTest {
       notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
 
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "123", "PRODUCT"
+          "FUNDING_START", "PRODUCT", 123L
       );
       // when
       notificationService.createFundingNotification(command);
@@ -235,7 +244,7 @@ public class NotificationServiceIntegrationTest {
       notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
 
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_SUCCESS, "123", "PRODUCT"
+          "FUNDING_SUCCESS", "PRODUCT", 123L
       );
       // when
       notificationService.createFundingNotification(command);
@@ -252,7 +261,7 @@ public class NotificationServiceIntegrationTest {
       notificationService.subscribe(3L, SubscriptionTargetType.PRODUCT, 123L);
 
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_FAIL, "123", "PRODUCT"
+          "FUNDING_FAIL", "PRODUCT", 123L
       );
       // when
       notificationService.createFundingNotification(command);
@@ -265,7 +274,7 @@ public class NotificationServiceIntegrationTest {
     public void 펀딩_알림_구독자없음_저장안됨() {
       // given
       FundingNotificationCommandDto command = new FundingNotificationCommandDto(
-          NotificationType.FUNDING_START, "123", "PRODUCT"
+          "FUNDING_START", "PRODUCT", 123L
       );
       // when
       notificationService.createFundingNotification(command);
@@ -283,7 +292,7 @@ public class NotificationServiceIntegrationTest {
     public void 주문완료_알림_DB_저장() {
       // given
       OrderNotificationMessageDto command = new OrderNotificationMessageDto(
-          NotificationType.PAID, 1L, "여름맞이 물총 장난감", "order-1234-1234"
+          "PAID", 1L, "여름맞이 물총 장난감", "order-1234-1234"
       );
       // when
       notificationService.createOrderNotification(command);

@@ -19,6 +19,20 @@ services:
     volumes:
       - notification-redis-local-data:/data
 
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: notification-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-notification}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-notification1234}
+      RABBITMQ_DEFAULT_VHOST: msa
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+    volumes:
+      - notification-rabbitmq-local-data:/var/lib/rabbitmq
+
 volumes:
   notification-postgres-local-data:
   notification-redis-local-data:
+  notification-rabbitmq-local-data:

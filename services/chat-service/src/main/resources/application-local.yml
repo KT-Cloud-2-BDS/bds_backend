@@ -40,7 +40,7 @@ app:
   cors:
     allowed-origins: "http://localhost:3000"
   auth:
-    jwks-uri: ${AUTH_JWKS_URI:http://localhost:8080/oauth2/jwks}
+    jwks-uri: ${AUTH_JWKS_URI:http://auth-service/oauth2/jwks}
     issuer: ${AUTH_ISSUER:}
     renew-before: PT2M
     renew-grace: PT1M
@@ -56,3 +56,6 @@ server:
     threads:
       max: 200
       min-spare: 10
+
+internal:
+  gateway-secret: "test-internal-secret"

@@ -26,6 +26,8 @@ public enum ErrorCode {
     SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "서비스 일시적 사용 불가"),
     DEPENDENCY_FAILURE(HttpStatus.SERVICE_UNAVAILABLE, "외부 서비스 호출 실패"),
 
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다"),
+
     // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 주문입니다"),
     ORDER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "본인의 주문만 접근할 수 있습니다"),
@@ -37,6 +39,9 @@ public enum ErrorCode {
     REWARD_STOCK_INSUFFICIENT(HttpStatus.CONFLICT, "리워드 재고가 부족합니다"),
 
     // Funding
+    INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일은 현재 시각 이후여야 합니다"),
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "종료일은 시작일 이후여야 합니다"),
+    INVALID_PAY_DATE(HttpStatus.BAD_REQUEST, "결제 예정일은 펀딩 종료일 이후여야 합니다"),
     FUNDING_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 펀딩을 찾을 수 없습니다"),
     FUNDING_NOT_AVAILABLE(HttpStatus.FORBIDDEN, "현재 펀딩 가능한 기간이 아닙니다");
 

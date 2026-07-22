@@ -1,0 +1,51 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auths/**
+
+            - id: auth-service-oauth2
+              uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+              predicates:
+                - Path=/oauth2/**,/login/oauth2/**
+
+            - id: member-service
+              uri: lb://member-service
+              predicates:
+                - Path=/api/members/**
+
+            - id: chat-service
+              uri: lb://chat-service
+              predicates:
+                - Path=/api/chat/**
+
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/notifications/**
+
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/orders/**
+
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/
+
+auth-service:
+  internal-uri: lb://auth-service
+
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET}

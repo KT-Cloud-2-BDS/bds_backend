@@ -1,6 +1,7 @@
 package com.bds.chat.infrastructure.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -13,6 +14,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
   @EnableWebSecurity
@@ -48,9 +50,18 @@ import org.springframework.security.web.SecurityFilterChain;
     }
 
     @Bean
+    @LoadBalanced
+    public RestTemplate lbRestTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
     public JwtDecoder jwtDecoder(@Value("${app.auth.jwks-uri}") String jwksUri,
-                                 @Value("${app.auth.issuer:}") String issuer) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwksUri).build();
+                                 @Value("${app.auth.issuer:}") String issuer,
+                                 RestTemplate lbRestTemplate) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwksUri)
+                .restOperations(lbRestTemplate)
+                .build();
         if (!issuer.isBlank()) {
             decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuer));
         }

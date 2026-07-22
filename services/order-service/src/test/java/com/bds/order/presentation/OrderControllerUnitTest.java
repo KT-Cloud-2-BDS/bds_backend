@@ -10,6 +10,7 @@ import com.bds.support.MockMvcTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,6 +31,9 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
     @MockitoBean
     private OrderService orderService;
 
+    @Value("${internal.gateway-secret}")
+    private String gatewaySecret;
+
     @Nested
     @DisplayName("주문 목록 조회 API")
     class ListOrdersTest {
@@ -47,6 +51,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
 
             mockMvc.perform(get("/api/orders")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .param("page", "0")
                             .param("size", "20"))
                     .andExpect(status().isOk())
@@ -66,16 +71,17 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
             LocalDateTime now = LocalDateTime.now();
             RewardItemDto rewardItem = new RewardItemDto(1L, 2, "리워드A", 20000L, BadgeType.ULTRA_EARLY_BIRD, 3000L);
             OrderDetailResponseDto dto = new OrderDetailResponseDto(
-                    1L, "ORD-001", OrderStatus.PAID, now,
+                    1L, "ORD-001", OrderStatus.PAID, 1L, now,
                     "테스트 펀딩", 100L, false,
                     now, false,
-                    List.of(rewardItem),33000L, 3000L, 36000L, null
+                    List.of(rewardItem), 33000L, 3000L, 36000L, null
             );
 
             given(orderService.getOrderDetail(1L, 1L)).willReturn(dto);
 
             mockMvc.perform(get("/api/orders/1")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.orderNo").value("ORD-001"))
                     .andExpect(jsonPath("$.orderStatus").value("PAID"))
@@ -104,6 +110,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders/billing")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isOk())
@@ -126,10 +133,13 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
                     "ORD-001", OrderStatus.CANCELLED, cancelledAt, "REFUND_REQUESTED"
             );
 
-            given(orderService.cancelOrder(1L, 1L)).willReturn(dto);
+            given(orderService.cancelOrder(1L, 1L, new OrderCancelRequestDto(1L))).willReturn(dto);
 
             mockMvc.perform(patch("/api/orders/1/cancel")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"fundingId\":1}"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.orderNo").value("ORD-001"))
                     .andExpect(jsonPath("$.status").value("CANCELLED"))
@@ -152,6 +162,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
 
             mockMvc.perform(post("/api/orders")
                             .header("X-User-Id", "1")
+                            .header("X-Internal-Secret", gatewaySecret)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(reqDto)))
                     .andExpect(status().isOk())

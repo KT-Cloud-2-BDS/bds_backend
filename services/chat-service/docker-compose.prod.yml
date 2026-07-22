@@ -44,9 +44,9 @@ services:
       definitions-init:
         condition: service_completed_successfully
     ports:
-      - "127.0.0.1:5672:5672"    # AMQP
-      - "127.0.0.1:15672:15672"  # Management UI
-      - "127.0.0.1:61613:61613"  # STOMP
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+      - "61613:61613"  # STOMP
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro

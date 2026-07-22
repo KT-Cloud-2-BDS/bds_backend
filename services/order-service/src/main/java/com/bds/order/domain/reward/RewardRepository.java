@@ -8,4 +8,6 @@ public interface RewardRepository {
     void increaseRemainQty(Long rewardId, int qty);
 
     int decreaseStock(Long id, int qty);
+
+    List<Reward> findByFundingId(Long fundingId);
 }

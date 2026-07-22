@@ -4,6 +4,8 @@ plugins {
 
 dependencies {
     implementation project(':modules:common')
+    implementation project(':libs:bds-events')
+    implementation project(':modules:messaging')
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'com.mysql:mysql-connector-j'
@@ -12,6 +14,16 @@ dependencies {
     implementation 'org.flywaydb:flyway-mysql'
 
     implementation 'com.github.f4b6a3:uuid-creator:6.1.1'
+
+    implementation 'org.springframework.modulith:spring-modulith-starter-core'
+    implementation 'org.springframework.modulith:spring-modulith-events-amqp'
+    implementation 'org.springframework.modulith:spring-modulith-events-jpa'
+    implementation 'org.springframework.modulith:spring-modulith-events-jackson'
+    implementation 'org.springframework.modulith:spring-modulith-events-api'
+
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 }
 
 tasks.named('test') {

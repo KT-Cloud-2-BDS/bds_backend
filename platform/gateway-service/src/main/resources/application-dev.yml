@@ -1,0 +1,53 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auths/**
+
+            - id: auth-service-oauth2
+              uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
+              predicates:
+                - Path=/oauth2/**,/login/oauth2/**
+
+            - id: member-service
+              uri: lb://member-service
+              predicates:
+                - Path=/api/members/**
+
+            - id: chat-service
+              uri: lb://chat-service
+              predicates:
+                - Path=/api/chat/**
+
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/notifications/**
+
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/orders/**
+
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
+
+auth-service:
+  internal-uri: lb://auth-service
+
+internal:
+  # 게이트웨이와 다운스트림 서비스가 공유하는 내부 시크릿(로컬 개발 전용 기본값).
+  # 운영 환경(application-prod.yml)에서는 반드시 INTERNAL_GATEWAY_SECRET 환경변수로 주입한다.
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}

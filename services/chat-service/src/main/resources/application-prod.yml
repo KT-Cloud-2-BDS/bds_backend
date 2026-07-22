@@ -39,7 +39,7 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
   auth:
-    jwks-uri: ${AUTH_JWKS_URI}
+    jwks-uri: ${AUTH_JWKS_URI:http://auth-service/oauth2/jwks}
     issuer: ${AUTH_ISSUER}
     renew-before: PT2M
     renew-grace: PT1M
@@ -51,6 +51,14 @@ server:
       max: 200
       min-spare: 10
 
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET}
+
 logging:
   level:
     com.bds.chat: INFO
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/

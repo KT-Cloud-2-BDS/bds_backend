@@ -8,6 +8,7 @@ import com.bds.member.global.exception.ErrorCode;
 import com.bds.member.infrastructure.persistence.feignClient.AuthFeignClient;
 import com.bds.member.presentation.dto.AuthCreateRequestDto;
 import com.bds.member.presentation.dto.MemberInfoRequestDto;
+import com.bds.member.presentation.dto.MemberResponseDto;
 import com.bds.member.presentation.dto.MemberSignupRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,22 @@ public class MemberService {
     }
 
     @Transactional
+    public void completeSocialSignup(Long authId, String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (memberRepository.existsByAuthId(authId)) {
+            throw new BusinessException(ErrorCode.ALREADY_REGISTERED_MEMBER);
+        }
+        if (memberRepository.existsByNickname(nickname)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+
+        Member newMember = Member.create(authId, nickname);
+        memberRepository.save(newMember);
+    }
+
+    @Transactional
     public void updateNickname(Long authId, MemberInfoRequestDto requestDto) {
         if (requestDto.nickname() == null || requestDto.nickname().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
@@ -84,5 +101,13 @@ public class MemberService {
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new BusinessException(ErrorCode.AUTH_SERVICE_ERROR);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public MemberResponseDto getInfo(Long authId) {
+        Member member = memberRepository.findByAuthId(authId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        return new MemberResponseDto(member.getNickname());
     }
 }

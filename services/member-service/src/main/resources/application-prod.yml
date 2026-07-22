@@ -10,3 +10,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/

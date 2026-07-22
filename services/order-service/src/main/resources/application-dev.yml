@@ -13,6 +13,41 @@ spring:
       ddl-auto: validate
     show-sql: false
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: msa
+    username: ${RABBITMQ_USER:order-service}
+    password: ${RABBITMQ_PASSWORD:order1234}
+    # 발행 서비스 필수 — confirm 콜백이 동작하기 위한 설정
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  modulith:
+    events:
+      externalization:
+        enabled: true
+      republish-outstanding-events-on-restart: false   # 재발행은 messaging 모듈 스케줄러가 담당
+      staleness: #Fail 기준
+        published: 1m
+        processing: 5m
+        resubmitted: 2m
+
+bds:
+  messaging:
+    events:
+      republish-delay: 30s
+      republish-min-age: 1m
+      retention: 7d
+
+internal:
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
+
 logging:
   level:
     com.bds: DEBUG

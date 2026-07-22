@@ -9,12 +9,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 
-@FeignClient(name = "auth-client", url = "http://localhost:8081")
+@FeignClient(name = "auth-service", url = "${client.auth-service.url:}")
 public interface AuthFeignClient {
 
-    @PostMapping("/api/auths/account")
+    @PostMapping("/internal/auths/account")
     ResponseEntity<Long> createAuthAccount(@RequestBody AuthCreateRequestDto requestDto);
 
-    @DeleteMapping("/api/auths/{authId}")
+    @DeleteMapping("/internal/auths/{authId}")
     ResponseEntity<Void> deleteAuth(@PathVariable("authId") Long authId);
 }

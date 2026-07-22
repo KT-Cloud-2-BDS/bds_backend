@@ -10,8 +10,8 @@
       "tags": ["administrator"]
     },
     {
-      "name": "order-service",
-      "password_hash": "__ORDER_HASH__",
+      "name": "auth-service",
+      "password_hash": "__AUTH_HASH__",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
       "tags": []
     },
@@ -20,12 +20,40 @@
       "password_hash": "__CHAT_HASH__",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
       "tags": []
+    },
+    {
+      "name": "member-service",
+      "password_hash": "__MEMBER_HASH__",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": []
+    },
+    {
+      "name": "notification-service",
+      "password_hash": "__NOTIFICATION_HASH__",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": []
+    },
+    {
+      "name": "order-service",
+      "password_hash": "__ORDER_HASH__",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": []
+    },
+    {
+      "name": "payment-service",
+      "password_hash": "__PAYMENT_HASH__",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": []
     }
   ],
   "permissions": [
-    { "user": "admin",           "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" },
-    { "user": "order-service",   "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" },
-    { "user": "chat-service",    "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" }
+    { "user": "admin",                "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "auth-service",         "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "chat-service",         "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "member-service",       "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "notification-service", "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "order-service",        "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" },
+    { "user": "payment-service",      "vhost": "msa", "configure": ".*", "write": ".*", "read": ".*" }
   ],
   "queues": [],
   "exchanges": [],

@@ -1,0 +1,7 @@
+eureka:
+  client:
+    # 단일 인스턴스 로컬 서버 — 자기 자신을 클라이언트로 등록/조회할 필요 없음
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://localhost:${server.port}/eureka/

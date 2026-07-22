@@ -18,3 +18,10 @@ spring:
 client:
   auth-service:
     url: http://localhost:8081
+
+internal:
+  gateway-secret: "test-internal-secret"
+
+eureka:
+  client:
+    enabled: false
