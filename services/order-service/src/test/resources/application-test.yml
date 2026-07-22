@@ -10,6 +10,9 @@ spring:
   flyway:
     enabled: true
 
+internal:
+  gateway-secret: "test-internal-secret"
+  
 logging:
   level:
     com.bds: DEBUG
