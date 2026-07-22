@@ -72,6 +72,7 @@ public abstract class ChatE2ETestBase {
         registry.add("app.auth.jwks-uri", () -> "http://localhost:" + WIRE_MOCK.port() + "/oauth2/jwks");
         registry.add("app.auth.renew-before", () -> "PT5S");
         registry.add("app.auth.renew-grace", () -> "PT5S");
+        registry.add("spring.cloud.loadbalancer.enabled", () -> "false");
     }
 
     @LocalServerPort
