@@ -49,14 +49,17 @@ class OrderUnitExceptionTest {
 
         @ParameterizedTest(name = "{0} → {1} 전이 불가")
         @CsvSource({
+                "PENDING, PENDING",
                 "PENDING, PAID",
                 "PENDING, CANCELLED",
+                "PENDING, CONFIRMED",
                 "PAYING, REFUNDED",
                 "PAID, PAYING",
-                "PENDING, PENDING",
                 "PAID, RESERVED",
                 "CANCELLED, PAYING",
-                "REFUNDED, PAYING"
+                "CANCELLED, CONFIRMED",
+                "REFUNDED, PAYING",
+                "REFUNDED, CONFIRMED"
         })
         void 허용되지_않은_상태_전이는_예외를_던진다(OrderStatus from, OrderStatus to) {
             Order order = OrderFixture.createOrder(from);
@@ -74,7 +77,7 @@ class OrderUnitExceptionTest {
         void PENDING_상태에서_취소하면_예외를_던진다() {
             Order order = OrderFixture.createOrder(OrderStatus.PENDING);
 
-            assertThatThrownBy(() -> order.cancelOrder(CancelReason.USER_CANCEL))
+            assertThatThrownBy(() -> order.cancelOrder(CancelReason.USER_CANCEL.name()))
                     .isInstanceOf(IllegalStateException.class);
         }
     }

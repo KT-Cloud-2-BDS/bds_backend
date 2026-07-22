@@ -12,6 +12,7 @@ public class FundingMapper {
                 entity.getTitle(),
                 entity.getCreatorId(),
                 entity.getStatus(),
+                entity.getType(),
                 entity.getStartAt(),
                 entity.getHoldTo(),
                 entity.getPayAt(),
@@ -22,5 +23,22 @@ public class FundingMapper {
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
+    }
+
+    public FundingJpaEntity toJpaEntity(Funding entity) {
+        return FundingJpaEntity.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .creatorId(entity.getCreatorId())
+                .status(entity.getStatus())
+                .type(entity.getType())
+                .startAt(entity.getStartAt())
+                .holdTo(entity.getHoldTo())
+                .payAt(entity.getPayAt())
+                .participationCnt(entity.getParticipationCnt())
+                .goalAmount(entity.getGoalAmount())
+                .currentAmount(entity.getCurrentAmount())
+                .isSuccess(entity.getIsSuccess())
+                .build();
     }
 }

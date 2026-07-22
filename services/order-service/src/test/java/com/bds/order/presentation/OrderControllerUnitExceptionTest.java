@@ -5,6 +5,7 @@ import com.bds.order.global.exception.BusinessException;
 import com.bds.order.global.exception.ErrorCode;
 import com.bds.order.presentation.controller.OrderController;
 import com.bds.order.presentation.dto.BillingRequestDto;
+import com.bds.order.presentation.dto.OrderCancelRequestDto;
 import com.bds.order.presentation.dto.OrderCreateRequestDto;
 import com.bds.order.presentation.dto.RewardQuantityDto;
 import com.bds.support.MockMvcTestSupport;
@@ -173,33 +174,40 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 존재하지_않는_주문이면_404를_응답한다() throws Exception {
-            given(orderService.cancelOrder(1L, 999L))
+            OrderCancelRequestDto reqDto = new OrderCancelRequestDto(1L);
+            given(orderService.cancelOrder(eq(1L), eq(999L), any(OrderCancelRequestDto.class)))
                     .willThrow(new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
             mockMvc.perform(patch("/api/orders/999/cancel")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"fundingId\":1}"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"));
         }
 
         @Test
         void 본인의_주문이_아니면_403을_응답한다() throws Exception {
-            given(orderService.cancelOrder(1L, 1L))
+            given(orderService.cancelOrder(eq(1L), eq(1L), any(OrderCancelRequestDto.class)))
                     .willThrow(new BusinessException(ErrorCode.ORDER_ACCESS_DENIED));
 
             mockMvc.perform(patch("/api/orders/1/cancel")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"fundingId\":1}"))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.code").value("ORDER_ACCESS_DENIED"));
         }
 
         @Test
         void 취소_불가_상태이면_400을_응답한다() throws Exception {
-            given(orderService.cancelOrder(1L, 1L))
+            given(orderService.cancelOrder(eq(1L), eq(1L), any(OrderCancelRequestDto.class)))
                     .willThrow(new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED));
 
             mockMvc.perform(patch("/api/orders/1/cancel")
-                            .header("X-User-Id", "1"))
+                            .header("X-User-Id", "1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"fundingId\":1}"))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("ORDER_STATUS_CHANGE_NOT_ALLOWED"));
         }

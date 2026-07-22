@@ -56,10 +56,11 @@ public class OrderController {
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<OrderCancelResponseDto> cancelOrder(
             @LoginUser CurrentUser user,
-            @PathVariable Long orderId
+            @PathVariable Long orderId,
+            @Valid @RequestBody OrderCancelRequestDto reqDto
     ) {
         Long memberId = user.id();
-        return ResponseEntity.ok(orderService.cancelOrder(memberId, orderId));
+        return ResponseEntity.ok(orderService.cancelOrder(memberId, orderId, reqDto));
     }
 
     @PostMapping
