@@ -56,3 +56,6 @@ server:
     threads:
       max: 200
       min-spare: 10
+
+internal:
+  gateway-secret: "test-internal-secret"
