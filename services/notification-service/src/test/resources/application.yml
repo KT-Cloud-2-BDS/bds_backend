@@ -5,7 +5,6 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.modulith.events.amqp.RabbitJackson2Configuration
-      - com.bds.messaging.BdsEventPublicationAutoConfig
 
   jpa:
     hibernate:
