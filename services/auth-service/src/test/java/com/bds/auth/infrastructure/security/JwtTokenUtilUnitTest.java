@@ -2,11 +2,13 @@ package com.bds.auth.infrastructure.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.support.TestRsaKeyGenerator;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import java.security.PublicKey;
@@ -68,6 +70,26 @@ class JwtTokenUtilUnitTest {
     @DisplayName("getPublicKey는 JwtKeyProvider의 공개키를 그대로 반환한다")
     void 공개키_조회_위임() {
         assertEquals(jwtKeyProvider.getPublicKey(), jwtTokenUtil.getPublicKey());
+    }
+
+    @Test
+    @DisplayName("parseClaims는 유효한 토큰의 서명을 검증하고 클레임을 반환한다")
+    void 클레임파싱_성공() {
+        String token = jwtTokenUtil.createRefreshToken(1L);
+
+        Claims claims = jwtTokenUtil.parseClaims(token);
+
+        assertEquals("1", claims.getSubject());
+        assertEquals(1, claims.get("authId", Integer.class));
+    }
+
+    @Test
+    @DisplayName("parseClaims는 만료된 토큰이면 ExpiredJwtException을 던진다")
+    void 클레임파싱_만료토큰_예외() {
+        JwtTokenUtil expiredTokenUtil = new JwtTokenUtil(jwtKeyProvider, ACCESS_EXPIRATION_MS, -1_000L);
+        String expiredToken = expiredTokenUtil.createRefreshToken(1L);
+
+        assertThrows(ExpiredJwtException.class, () -> jwtTokenUtil.parseClaims(expiredToken));
     }
 
     private Jws<Claims> parse(String token, PublicKey publicKey) {

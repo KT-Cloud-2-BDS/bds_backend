@@ -2,23 +2,29 @@ package com.bds.auth.application;
 
 import com.bds.auth.domain.entity.Auth;
 import com.bds.auth.domain.entity.AuthLocal;
+import com.bds.auth.domain.entity.AuthSocial;
 import com.bds.auth.domain.entity.enums.Role;
 import com.bds.auth.domain.entity.enums.Status;
 import com.bds.auth.domain.repository.AuthRepository;
 import com.bds.auth.domain.repository.AuthLocalRepository;
+import com.bds.auth.domain.repository.AuthSocialRepository;
 import com.bds.auth.domain.repository.TokenCacheRepository;
 import com.bds.auth.global.exception.BusinessException;
 import com.bds.auth.global.exception.ErrorCode;
 import com.bds.auth.infrastructure.security.JwtTokenUtil;
 import com.bds.auth.presentation.dto.AuthLoginResponseDto;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import java.security.SecureRandom;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,6 +33,7 @@ public class AuthService {
 
     private final AuthRepository authRepository;
     private final AuthLocalRepository authLocalRepository;
+    private final AuthSocialRepository authSocialRepository;
     private final TokenCacheRepository tokenCacheRepository;
 
     private final EmailService emailService;
@@ -35,7 +42,7 @@ public class AuthService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @Transactional
+    @Transactional(readOnly = true)
     public void sendSignUpVerificationCode(String email) {
 
         Optional<Auth> existingAuth = authRepository.findByEmail(email);
@@ -50,7 +57,6 @@ public class AuthService {
         emailService.sendVerificationEmail(email, verificationCode);
     }
 
-    @Transactional
     public void verifyCode(String email, String code) {
         String redisCode = tokenCacheRepository.get("verify:" + email);
 
@@ -100,7 +106,68 @@ public class AuthService {
         return savedAuth.getId();
     }
 
+    @Transactional(readOnly = true)
+    public void sendPasswordResetVerificationCode(String email) {
+        Auth auth = authRepository.findByEmail(email)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        if (auth.getStatus() != Status.ACTIVE) {
+            throw new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        String verificationCode = String.valueOf(SECURE_RANDOM.nextInt(900_000) + 100_000);
+
+        tokenCacheRepository.put("pw-reset:" + email, verificationCode, 3);
+        emailService.sendPasswordResetVerificationEmail(email, verificationCode);
+    }
+
+    public void verifyPasswordResetCode(String email, String code) {
+        String redisCode = tokenCacheRepository.get("pw-reset:" + email);
+
+        if (redisCode == null) {
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_EXPIRED);
+        }
+        if (!code.equals(redisCode)) {
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_MISMATCH);
+        }
+
+        tokenCacheRepository.delete("pw-reset:" + email);
+        tokenCacheRepository.put("pw-reset-verified:" + email, "true", 3);
+    }
+
     @Transactional
+    public void resetPassword(String email, String newPassword) {
+        String ticket = tokenCacheRepository.get("pw-reset-verified:" + email);
+        if (!"true".equals(ticket)) {
+            throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
+        }
+
+        Auth auth = authRepository.findByEmail(email)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        AuthLocal authLocal = authLocalRepository.findByAuthId(auth.getId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        authLocal.changePassword(passwordEncoder.encode(newPassword));
+        authLocalRepository.save(authLocal);
+
+        tokenCacheRepository.delete("pw-reset-verified:" + email);
+    }
+
+    @Transactional
+    public void changePassword(Long authId, String currentPassword, String newPassword) {
+        AuthLocal authLocal = authLocalRepository.findByAuthId(authId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PASSWORD));
+
+        if (!passwordEncoder.matches(currentPassword, authLocal.getPassword())) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        authLocal.changePassword(passwordEncoder.encode(newPassword));
+        authLocalRepository.save(authLocal);
+    }
+
+    @Transactional(readOnly = true)
     public AuthLoginResponseDto login(String email, String password) {
         Auth auth = authRepository.findByEmail(email)
             .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN_CREDENTIALS));
@@ -126,6 +193,85 @@ public class AuthService {
     }
 
     @Transactional
+    public AuthLoginResponseDto processSocialLogin(String provider, String providerId, String email) {
+        Auth auth = authSocialRepository.findByProviderAndProviderId(provider, providerId)
+            .map(existingSocial -> authRepository.findById(existingSocial.getAuthId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND)))
+            .orElseGet(() -> registerNewSocialAccount(provider, providerId, email));
+
+        if (auth.getStatus() != Status.ACTIVE) {
+            auth.changeStatus(Status.ACTIVE);
+            auth = authRepository.save(auth);
+        }
+
+        String accessToken = jwtTokenUtil.createAccessToken(auth.getId(), auth.getEmail(), auth.getRole());
+        String refreshToken = jwtTokenUtil.createRefreshToken(auth.getId());
+
+        tokenCacheRepository.save("refresh:" + auth.getId(), refreshToken, 7, TimeUnit.DAYS);
+
+        return new AuthLoginResponseDto(accessToken, refreshToken);
+    }
+
+    private Auth registerNewSocialAccount(String provider, String providerId, String email) {
+        Auth savedAuth = authRepository.findByEmail(email)
+            .orElseGet(() -> authRepository.save(Auth.create(email, Status.ACTIVE, Role.SUPPORTER)));
+
+        AuthSocial newAuthSocial = AuthSocial.create(providerId, provider, email, savedAuth.getId());
+        authSocialRepository.save(newAuthSocial);
+
+        return savedAuth;
+    }
+
+    @Transactional(readOnly = true)
+    public AuthLoginResponseDto reissueToken(String refreshToken) {
+        Long authId;
+        try {
+            Claims claims = jwtTokenUtil.parseClaims(refreshToken);
+            authId = Long.valueOf(claims.getSubject());
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String redisKey = "refresh:" + authId;
+        String storedRefreshToken = tokenCacheRepository.get(redisKey);
+
+        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        Auth auth = authRepository.findById(authId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        tokenCacheRepository.delete(redisKey);
+
+        String newAccessToken = jwtTokenUtil.createAccessToken(auth.getId(), auth.getEmail(), auth.getRole());
+        String newRefreshToken = jwtTokenUtil.createRefreshToken(auth.getId());
+
+        tokenCacheRepository.save("refresh:" + auth.getId(), newRefreshToken, 7, TimeUnit.DAYS);
+
+        return new AuthLoginResponseDto(newAccessToken, newRefreshToken);
+    }
+
+    public void logout(Long authId, String accessToken) {
+        tokenCacheRepository.delete("refresh:" + authId);
+
+        try {
+            Claims claims = jwtTokenUtil.parseClaims(accessToken);
+            long remainingMillis = claims.getExpiration().getTime() - System.currentTimeMillis();
+
+            if (remainingMillis > 0) {
+                tokenCacheRepository.save("blacklist:" + accessToken, "true", remainingMillis, TimeUnit.MILLISECONDS);
+            }
+        } catch (JwtException | IllegalArgumentException e) {
+            log.debug("로그아웃 처리 중 access token 파싱 실패로 블랙리스트 등록을 생략합니다. authId={}", authId, e);
+        }
+    }
+
+    public boolean isBlacklisted(String accessToken) {
+        return tokenCacheRepository.get("blacklist:" + accessToken) != null;
+    }
+
+    @Transactional
     public Role switchRole(Long authId) {
         Auth auth = authRepository.findById(authId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
@@ -138,11 +284,10 @@ public class AuthService {
 
     @Transactional
     public void deleteAuth(Long authId) {
-        Auth auth = authRepository.findById(authId)
+        authRepository.findById(authId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        auth.changeStatus(Status.DELETED);
-        authRepository.save(auth);
+        authRepository.softDelete(authId);
 
         authLocalRepository.deleteByAuthId(authId);
         tokenCacheRepository.delete("refresh:" + authId);
