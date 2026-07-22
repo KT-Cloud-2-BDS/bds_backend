@@ -1,0 +1,43 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
+              predicates:
+                - Path=/api/auths/**
+
+            - id: member-service
+              uri: http://${MEMBER_SERVICE_HOST:localhost}:${MEMBER_SERVICE_PORT:8086}
+              predicates:
+                - Path=/api/members/**
+
+            - id: chat-service
+              uri: http://${CHAT_SERVICE_HOST:localhost}:${CHAT_SERVICE_PORT:8082}
+              predicates:
+                - Path=/api/chat/**
+
+            - id: notification-service
+              uri: http://${NOTIFICATION_SERVICE_HOST:localhost}:${NOTIFICATION_SERVICE_PORT:8083}
+              predicates:
+                - Path=/api/notifications/**
+
+            - id: order-service
+              uri: http://${ORDER_SERVICE_HOST:localhost}:${ORDER_SERVICE_PORT:8084}
+              predicates:
+                - Path=/api/orders/**
+
+            - id: payment-service
+              uri: http://${PAYMENT_SERVICE_HOST:localhost}:${PAYMENT_SERVICE_PORT:8085}
+              predicates:
+                - Path=/api/payments/**
+
+jwt:
+  jwks-uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}/oauth2/jwks
+
+internal:
+  # 게이트웨이와 다운스트림 서비스가 공유하는 내부 시크릿(로컬 개발 전용 기본값).
+  # 운영 환경(application-prod.yml)에서는 반드시 INTERNAL_GATEWAY_SECRET 환경변수로 주입한다.
+  gateway-secret: ${INTERNAL_GATEWAY_SECRET:local-dev-internal-secret}

@@ -21,3 +21,6 @@ mail:
   port: 465
   username: test-user
   password: test-password
+
+internal:
+  gateway-secret: "test-internal-secret"
