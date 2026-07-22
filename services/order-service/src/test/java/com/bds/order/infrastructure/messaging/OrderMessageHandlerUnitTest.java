@@ -1,9 +1,9 @@
 package com.bds.order.infrastructure.messaging;
 
+import com.bds.common.events.payment.OrderProcessEvent;
 import com.bds.order.application.OrderMessageHandler;
 import com.bds.order.application.OrderService;
 import com.bds.order.domain.order.OrderStatus;
-import com.bds.order.infrastructure.messaging.dto.PaymentProcessedMessage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class OrderMessageHandlerUnitTest {
 
         @Test
         void CONFIRMED_타입이면_각_주문을_CONFIRMED로_업데이트한다() {
-            PaymentProcessedMessage message = new PaymentProcessedMessage(List.of(1L, 2L), PaymentProcessedMessage.ResultType.CONFIRMED);
+            OrderProcessEvent message = OrderProcessEvent.confirmed(List.of(1L, 2L));
 
             orderMessageHandler.processBulk(message);
 
@@ -41,7 +41,7 @@ class OrderMessageHandlerUnitTest {
 
         @Test
         void REFUNDED_타입이면_각_주문을_REFUNDED로_업데이트한다() {
-            PaymentProcessedMessage message = new PaymentProcessedMessage(List.of(3L, 4L), PaymentProcessedMessage.ResultType.REFUNDED);
+            OrderProcessEvent message = OrderProcessEvent.refunded(List.of(3L, 4L));
 
             orderMessageHandler.processBulk(message);
 
