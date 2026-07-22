@@ -5,7 +5,7 @@ spring:
         webflux:
           routes:
             - id: auth-service
-              uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+              uri: lb://auth-service
               predicates:
                 - Path=/api/auths/**
 
@@ -15,35 +15,37 @@ spring:
                 - Path=/oauth2/**,/login/oauth2/**
 
             - id: member-service
-              uri: http://${MEMBER_SERVICE_HOST}:${MEMBER_SERVICE_PORT}
+              uri: lb://member-service
               predicates:
                 - Path=/api/members/**
 
             - id: chat-service
-              uri: http://${CHAT_SERVICE_HOST}:${CHAT_SERVICE_PORT}
+              uri: lb://chat-service
               predicates:
                 - Path=/api/chat/**
 
             - id: notification-service
-              uri: http://${NOTIFICATION_SERVICE_HOST}:${NOTIFICATION_SERVICE_PORT}
+              uri: lb://notification-service
               predicates:
                 - Path=/api/notifications/**
 
             - id: order-service
-              uri: http://${ORDER_SERVICE_HOST}:${ORDER_SERVICE_PORT}
+              uri: lb://order-service
               predicates:
                 - Path=/api/orders/**
 
             - id: payment-service
-              uri: http://${PAYMENT_SERVICE_HOST}:${PAYMENT_SERVICE_PORT}
+              uri: lb://payment-service
               predicates:
                 - Path=/api/payments/**
 
-jwt:
-  jwks-uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}/oauth2/jwks
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/
 
 auth-service:
-  internal-uri: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+  internal-uri: lb://auth-service
 
 internal:
   gateway-secret: ${INTERNAL_GATEWAY_SECRET}
