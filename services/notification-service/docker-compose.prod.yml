@@ -1,4 +1,5 @@
 # 프로덕션 인프라 (PostgreSQL, Redis)
+# RabbitMQ는 별도 공용 인스턴스 사용 (여기서 띄우지 않음)
 # 실행: docker compose -f docker-compose.prod.yml --env-file .env up -d
 
 services:
@@ -37,27 +38,6 @@ services:
       timeout: 5s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:4-management
-    container_name: notification-rabbitmq-prod
-    env_file: .env
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-      RABBITMQ_DEFAULT_VHOST: msa
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
-    volumes:
-      - notification-rabbitmq-prod-data:/var/lib/rabbitmq
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 volumes:
   notification-postgres-prod-data:
   notification-redis-prod-data:
-  notification-rabbitmq-prod-data:
