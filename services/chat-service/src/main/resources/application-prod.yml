@@ -30,7 +30,7 @@ spring:
 bds:
   msa-broker:
     host: ${MSA_RABBITMQ_HOST}
-    port: ${MSA_RABBITMQ_PORT:5672}
+    port: ${MSA_RABBITMQ_PORT}
     virtual-host: msa
     username: ${MSA_RABBITMQ_USERNAME}
     password: ${MSA_RABBITMQ_PASSWORD}
@@ -46,10 +46,15 @@ app:
     max-anonymous-sessions: 1000
 
 server:
+  port: 8080
   tomcat:
     threads:
       max: 200
       min-spare: 10
+
+management:
+  server:
+    port: 8080
 
 internal:
   gateway-secret: ${INTERNAL_GATEWAY_SECRET}
