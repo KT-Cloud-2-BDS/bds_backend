@@ -29,7 +29,7 @@ public class OrderMessageConsumer {
         orderMessageHandler.processPaid(message.orderId());
     }
 
-    @RabbitListener(queues = OrderQueues.ORDER_PROCESS_REFUND_QUEUE)
+    @RabbitListener(queues = OrderQueues.ORDER_PROCESS_CANCEL_QUEUE)
     public void handleCancelResult(OrderCancelledEvent message) {
         log.info("Received cancel message: orderId={}", message.orderId());
         orderMessageHandler.processCancelled(message.orderId(), message.cancelReason());
