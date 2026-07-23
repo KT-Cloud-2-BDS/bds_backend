@@ -16,5 +16,16 @@ spring:
       ddl-auto: validate
     show-sql: false
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    virtual-host: msa
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/
+
 internal:
   gateway-secret: ${INTERNAL_GATEWAY_SECRET}
