@@ -14,6 +14,12 @@ on:
       - develop
     paths:
       - 'platform/**'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: '빌드할 서비스 (discovery-service / config-service / 둘 다 비우면 전체)'
+        required: false
+        default: ''
 
 jobs:
   # platform/ 하위에서 실제로 변경된 서비스만 추출해 JSON 배열로 출력한다.
@@ -38,23 +44,34 @@ jobs:
 
       - id: changed
         run: |
-          # PR 이벤트: base branch 전체 기준으로 diff (PR 내 커밋 전체 반영)
-          # push 이벤트: 직전 커밋 기준 diff (첫 커밋 대비 안전 처리 포함)
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          # workflow_dispatch: 입력값으로 서비스 지정, 없으면 전체 빌드
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            INPUT="${{ github.event.inputs.service }}"
+            SERVICES=()
+            for service in config-service discovery-service; do
+              if [ -z "$INPUT" ] || [ "$INPUT" = "$service" ]; then
+                SERVICES+=("\"$service\"")
+              fi
+            done
           else
-            CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
-          fi
-
-          SERVICES=()
-
-          # platform/ 하위 서비스 목록
-          for service in config-service discovery-service
-          do
-            if echo "$CHANGED" | grep -q "^platform/$service/"; then
-              SERVICES+=("\"$service\"")
+            # PR 이벤트: base branch 전체 기준으로 diff (PR 내 커밋 전체 반영)
+            # push 이벤트: 직전 커밋 기준 diff (첫 커밋 대비 안전 처리 포함)
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+            else
+              CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
             fi
-          done
+
+            SERVICES=()
+
+            # platform/ 하위 서비스 목록
+            for service in config-service discovery-service
+            do
+              if echo "$CHANGED" | grep -q "^platform/$service/"; then
+                SERVICES+=("\"$service\"")
+              fi
+            done
+          fi
 
           # 후속 Job에서 matrix로 사용할 수 있도록 JSON 배열 형태로 출력
           JSON="[$(IFS=,; echo "${SERVICES[*]}")]"
