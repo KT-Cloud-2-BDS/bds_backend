@@ -14,7 +14,7 @@ on:
       - "CI - order-service"
       - "CI - notification-service"
     types: [completed]
-    branches: [main]
+    branches: [main,develop]
 
 jobs:
   # "CI - chat-service" → "chat-service" 추출

@@ -12,7 +12,7 @@ public class OrderQueues {
 
     public static final String ORDER_PROCESS_SETTLE_QUEUE = "order.payment-settled.queue";
     public static final String ORDER_PROCESS_PAID_QUEUE = "order.payment-paid.queue";
-    public static final String ORDER_PROCESS_REFUND_QUEUE = "order.payment-refunded.queue";
+    public static final String ORDER_PROCESS_CANCEL_QUEUE = "order.payment-cancelled.queue";
 
     @Bean
     public Declarables orderProcessSettlementQueue() {
@@ -26,7 +26,7 @@ public class OrderQueues {
 
     @Bean
     public Declarables orderProcessRefundQueue() {
-        return BdsQueues.workQueue(ORDER_PROCESS_REFUND_QUEUE, PAYMENT_EXCHANGE, "payment.refunded");
+        return BdsQueues.workQueue(ORDER_PROCESS_CANCEL_QUEUE, PAYMENT_EXCHANGE, "payment.cancelled");
     }
 }
 
