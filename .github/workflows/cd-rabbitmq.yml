@@ -5,10 +5,10 @@ name: CD - rabbitmq
 # (앱 서비스와 달리 이미지 빌드가 없어 cd-common을 쓰지 않음)
 on:
   push:
-    branches: [main]
+    branches: [ main,develop ]
     paths:
       - 'infra/rabbitmq/**'
-  workflow_dispatch: {}   # 최초 세팅 등 수동 실행용
+  workflow_dispatch: { }   # 최초 세팅 등 수동 실행용
 
 env:
   AWS_REGION: ap-northeast-2
@@ -44,8 +44,11 @@ jobs:
               "aws s3 sync s3://${{ secrets.ARTIFACTS_BUCKET }}/rabbitmq /opt/rabbitmq --delete",
               "aws ssm get-parameter --region ap-northeast-2 --name /infra/rabbitmq/env --with-decryption --query Parameter.Value --output text > /opt/rabbitmq/.env",
               "chmod 600 /opt/rabbitmq/.env",
-              "cd /opt/rabbitmq && docker compose --env-file .env up -d --force-recreate",
-              "for i in \$(seq 1 30); do sleep 2; if docker exec rabbitmq-prod rabbitmq-diagnostics -q ping >/dev/null 2>&1; then echo 'RabbitMQ OK'; exit 0; fi; done; echo 'RabbitMQ FAILED'; cd /opt/rabbitmq && docker compose logs --tail 100; exit 1"
+              "cd /opt/rabbitmq && docker compose --env-file .env up -d",
+              "for i in \$(seq 1 30); do sleep 2; if docker exec rabbitmq-prod rabbitmq-diagnostics -q ping >/dev/null 2>&1; then echo 'RabbitMQ ready'; break; fi; done",
+              "cd /opt/rabbitmq && docker compose --env-file .env run --rm definitions-init",
+              "if ! docker exec rabbitmq-prod rabbitmqctl eval '{ok, Bin} = file:read_file(\"/etc/rabbitmq/generated/definitions.json\"), rabbit_definitions:import_raw(Bin).'; then echo '❌ Definitions import failed!'; exit 1; fi",
+              "echo '✅ Definitions successfully overwritten via Erlang eval'"
             ],
             "workingDirectory": ["/opt/rabbitmq"]
           }

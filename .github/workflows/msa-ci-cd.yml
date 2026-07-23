@@ -9,11 +9,19 @@ on:
       - develop
     paths:
       - 'platform/**'
+      - 'infra/**'
   pull_request:
     branches:
       - develop
     paths:
       - 'platform/**'
+      - 'infra/**'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: '빌드할 서비스 (discovery-service / config-service / 둘 다 비우면 전체)'
+        required: false
+        default: ''
 
 jobs:
   # platform/ 하위에서 실제로 변경된 서비스만 추출해 JSON 배열로 출력한다.
@@ -38,23 +46,34 @@ jobs:
 
       - id: changed
         run: |
-          # PR 이벤트: base branch 전체 기준으로 diff (PR 내 커밋 전체 반영)
-          # push 이벤트: 직전 커밋 기준 diff (첫 커밋 대비 안전 처리 포함)
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          # workflow_dispatch: 입력값으로 서비스 지정, 없으면 전체 빌드
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            INPUT="${{ github.event.inputs.service }}"
+            SERVICES=()
+            for service in config-service discovery-service; do
+              if [ -z "$INPUT" ] || [ "$INPUT" = "$service" ]; then
+                SERVICES+=("\"$service\"")
+              fi
+            done
           else
-            CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
-          fi
-
-          SERVICES=()
-
-          # platform/ 하위 서비스 목록
-          for service in config-service discovery-service
-          do
-            if echo "$CHANGED" | grep -q "^platform/$service/"; then
-              SERVICES+=("\"$service\"")
+            # PR 이벤트: base branch 전체 기준으로 diff (PR 내 커밋 전체 반영)
+            # push 이벤트: 직전 커밋 기준 diff (첫 커밋 대비 안전 처리 포함)
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+            else
+              CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
             fi
-          done
+
+            SERVICES=()
+
+            # platform/ 하위 서비스 목록
+            for service in config-service discovery-service
+            do
+              if echo "$CHANGED" | grep -q "^platform/$service/"; then
+                SERVICES+=("\"$service\"")
+              fi
+            done
+          fi
 
           # 후속 Job에서 matrix로 사용할 수 있도록 JSON 배열 형태로 출력
           JSON="[$(IFS=,; echo "${SERVICES[*]}")]"
@@ -63,9 +82,8 @@ jobs:
           # 변경된 서비스가 하나라도 있는지 여부 (후속 Job의 실행 조건으로 사용)
           echo "has_changes=$( [ ${#SERVICES[@]} -gt 0 ] && echo 'true' || echo 'false' )" >> $GITHUB_OUTPUT
 
-  build-and-test:
+  build-matrix:
     needs: detect-changes
-    # 변경된 서비스가 없으면 이 Job 자체를 건너뜀
     if: needs.detect-changes.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
 
@@ -109,3 +127,22 @@ jobs:
         with:
           name: ${{ matrix.service }}
           path: platform/${{ matrix.service }}/build/libs/*[!plain].jar
+
+  # ruleset required status check 용 — 변경 없을 때도 항상 결과를 반환
+  build-and-test:
+    needs: [detect-changes, build-matrix]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check result
+        run: |
+          if [[ "${{ needs.detect-changes.outputs.has_changes }}" == "false" ]]; then
+            echo "플랫폼 변경 없음 — 빌드 스킵"
+            exit 0
+          fi
+          if [[ "${{ needs.build-matrix.result }}" == "success" ]]; then
+            echo "빌드 성공"
+            exit 0
+          fi
+          echo "빌드 실패: ${{ needs.build-matrix.result }}"
+          exit 1
