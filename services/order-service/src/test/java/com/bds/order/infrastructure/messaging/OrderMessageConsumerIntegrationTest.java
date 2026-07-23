@@ -50,7 +50,7 @@ class OrderMessageConsumerIntegrationTest extends AbstractRabbitMQIntegrationTes
     void order_process_cancel_큐에_메시지를_보내면_handleCancelResult가_처리한다() throws InterruptedException {
         OrderCancelledEvent message = OrderCancelledEvent.of(1L, "USER_CANCEL");
 
-        rabbitTemplate.convertAndSend(OrderQueues.PAYMENT_EXCHANGE, "payment.refunded", message);
+        rabbitTemplate.convertAndSend(OrderQueues.PAYMENT_EXCHANGE, "payment.cancelled", message);
 
         Thread.sleep(1000);
         verify(orderMessageHandler).processCancelled(1L, "USER_CANCEL");

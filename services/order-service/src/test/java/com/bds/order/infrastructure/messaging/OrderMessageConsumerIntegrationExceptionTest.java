@@ -91,7 +91,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "payment.refunded",
+                "payment.cancelled",
                 OrderCancelledEvent.of(nonExistentOrderId, "PAYMENT_CANCELLED")
         );
 
@@ -124,7 +124,7 @@ class OrderMessageConsumerIntegrationExceptionTest extends AbstractRabbitMQInteg
 
         rabbitTemplate.convertAndSend(
                 OrderQueues.PAYMENT_EXCHANGE,
-                "payment.refunded",
+                "payment.cancelled",
                 OrderCancelledEvent.of(order.getId(), "PAYMENT_CANCELLED")
         );
 
