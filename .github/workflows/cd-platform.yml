@@ -7,7 +7,7 @@ on:
   workflow_run:
     workflows: ["CI - platform"]
     types: [completed]
-    branches: [main]
+    branches: [main,develop]
 
 jobs:
   # CI가 올린 artifact 목록으로 실제 변경(빌드)된 서비스만 추출

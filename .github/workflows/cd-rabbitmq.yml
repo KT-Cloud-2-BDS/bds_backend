@@ -5,7 +5,7 @@ name: CD - rabbitmq
 # (앱 서비스와 달리 이미지 빌드가 없어 cd-common을 쓰지 않음)
 on:
   push:
-    branches: [main]
+    branches: [main,develop]
     paths:
       - 'infra/rabbitmq/**'
   workflow_dispatch: {}   # 최초 세팅 등 수동 실행용
