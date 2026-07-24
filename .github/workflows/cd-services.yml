@@ -4,6 +4,10 @@ run-name: "CD - ${{ github.event.workflow_run.name }}"
 # 서비스 6개의 CD를 하나로 통합한 워크플로우
 # 어떤 CI가 트리거했는지(workflow_run.name)에서 서비스명을 추출해 cd-common에 위임
 # 새 서비스 추가 시: 아래 workflows 목록에 "CI - <서비스명>" 한 줄만 추가
+#
+# notification-service는 커스텀 브릿지 네트워크(--network) 검증을 위해
+# cd-notification-common.yml로 임시 분리됨. 검증 끝나면 cd-common.yml에
+# --network 옵션을 반영하고 이 목록에 다시 추가 후 cd-notification-common.yml 삭제.
 on:
   workflow_run:
     workflows:
@@ -12,7 +16,6 @@ on:
       - "CI - chat-service"
       - "CI - payment-service"
       - "CI - order-service"
-      - "CI - notification-service"
     types: [completed]
     branches: [main,develop]
 
