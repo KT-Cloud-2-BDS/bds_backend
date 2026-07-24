@@ -9,6 +9,7 @@ dependencies {
     // 회원 서비스 전용 의존성 주입
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.postgresql:postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // OpenFeign (eureka-client는 modules:common에서 공통 제공)
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
