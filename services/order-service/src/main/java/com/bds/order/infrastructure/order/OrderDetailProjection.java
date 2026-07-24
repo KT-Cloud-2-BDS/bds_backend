@@ -15,9 +15,10 @@ public record OrderDetailProjection(
         String fundingTitle,
         Long hostId,
         LocalDateTime holdTo,
-        boolean isSuccess,
+        Boolean isSuccess,
         LocalDateTime cancelledAt,
         String cancelReason,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        LocalDateTime expiresAt
 ) {
 }

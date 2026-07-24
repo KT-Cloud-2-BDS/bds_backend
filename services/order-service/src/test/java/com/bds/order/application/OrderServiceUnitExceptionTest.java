@@ -14,6 +14,7 @@ import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.fixture.OrderFixture;
 import com.bds.order.global.exception.BusinessException;
+import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.order.presentation.dto.BillingRequestDto;
 import com.bds.order.presentation.dto.OrderCancelRequestDto;
 import com.bds.order.presentation.dto.OrderCreateRequestDto;
@@ -51,6 +52,9 @@ class OrderServiceUnitExceptionTest {
 
     @Mock
     private RewardRepository rewardRepository;
+
+    @Mock
+    private PaymentEventPublisher paymentEventPublisher;
 
     @InjectMocks
     private OrderService orderService;
@@ -181,16 +185,6 @@ class OrderServiceUnitExceptionTest {
         @Test
         void 본인의_주문이_아니면_예외를_던진다() {
             Order order = OrderFixture.createOrder(2L, OrderStatus.PAID);
-
-            given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
-
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L, new OrderCancelRequestDto(1L)))
-                    .isInstanceOf(BusinessException.class);
-        }
-
-        @Test
-        void 취소_불가_상태이면_예외를_던진다() {
-            Order order = OrderFixture.createOrder(1L, OrderStatus.PENDING);
 
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
 

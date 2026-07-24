@@ -1,6 +1,5 @@
 package com.bds.order.domain;
 
-import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.fixture.OrderFixture;
@@ -49,17 +48,22 @@ class OrderUnitExceptionTest {
 
         @ParameterizedTest(name = "{0} → {1} 전이 불가")
         @CsvSource({
-                "PENDING, PENDING",
                 "PENDING, PAID",
-                "PENDING, CANCELLED",
                 "PENDING, CONFIRMED",
+                "PENDING, REFUNDED",
+                "RESERVED, PAID",
+                "RESERVED, REFUNDED",
+                "PAYING, CONFIRMED",
                 "PAYING, REFUNDED",
                 "PAID, PAYING",
-                "PAID, RESERVED",
+                "PAID, REFUNDED",
+                "CONFIRMED, PAYING",
+                "CONFIRMED, REFUNDED",
                 "CANCELLED, PAYING",
                 "CANCELLED, CONFIRMED",
                 "REFUNDED, PAYING",
-                "REFUNDED, CONFIRMED"
+                "REFUNDED, CONFIRMED",
+                "REFUNDED, CANCELLED",
         })
         void 허용되지_않은_상태_전이는_예외를_던진다(OrderStatus from, OrderStatus to) {
             Order order = OrderFixture.createOrder(from);
@@ -69,16 +73,4 @@ class OrderUnitExceptionTest {
         }
     }
 
-    @Nested
-    @DisplayName("주문 취소 예외")
-    class CancelOrderExceptionTest {
-
-        @Test
-        void PENDING_상태에서_취소하면_예외를_던진다() {
-            Order order = OrderFixture.createOrder(OrderStatus.PENDING);
-
-            assertThatThrownBy(() -> order.cancelOrder(CancelReason.USER_CANCEL.name()))
-                    .isInstanceOf(IllegalStateException.class);
-        }
-    }
 }

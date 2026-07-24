@@ -74,7 +74,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
                     1L, "ORD-001", OrderStatus.PAID, 1L, now,
                     "테스트 펀딩", 100L, false,
                     now, false,
-                    List.of(rewardItem), 33000L, 3000L, 36000L, null
+                    List.of(rewardItem), 33000L, 3000L, 36000L, null, null
             );
 
             given(orderService.getOrderDetail(1L, 1L)).willReturn(dto);

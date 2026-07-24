@@ -15,7 +15,7 @@ public record OrderResponseDto(
         boolean isEnded,
         Long billingAmount,
         LocalDateTime updatedAt,
-        boolean isFundingSucceeded
+        Boolean isFundingSucceeded
 ) {
     public static OrderResponseDto from(OrderListProjection order) {
         return new OrderResponseDto(

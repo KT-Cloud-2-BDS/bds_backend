@@ -262,18 +262,6 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
                     .isInstanceOf(BusinessException.class);
         }
 
-        // PENDING 상태 주문 취소 → 상태 전이 불가 예외
-        @Test
-        void PENDING_상태에서는_취소할_수_없다() {
-            BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-            BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
-
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L)))
-                    .isInstanceOf(BusinessException.class);
-        }
-
         // 이미 취소된 주문 재취소 → 예외
         @Test
         void 이미_취소된_주문은_다시_취소할_수_없다() {

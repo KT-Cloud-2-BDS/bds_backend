@@ -56,14 +56,14 @@ class OrderUnitTest {
         @CsvSource({
                 "PENDING, PAYING",
                 "RESERVED, PAYING",
+                "RESERVED, CONFIRMED",
+                "RESERVED, CANCELLED",
                 "PAYING, PAID",
                 "PAYING, CANCELLED",
-                "PAYING, CONFIRMED",
-                "RESERVED, CANCELLED",
                 "PAID, CANCELLED",
                 "PAID, CONFIRMED",
+                "CONFIRMED, CANCELLED",
                 "CANCELLED, REFUNDED",
-                "RESERVED, REFUNDED",
         })
         void 허용된_상태_전이는_성공한다(OrderStatus from, OrderStatus to) {
             Order order = OrderFixture.createOrder(from);

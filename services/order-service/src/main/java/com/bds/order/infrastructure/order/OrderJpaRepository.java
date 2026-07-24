@@ -24,13 +24,14 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
             "JOIN o.orderRewards orw " +
             "JOIN orw.reward r " +
             "JOIN r.funding f " +
-            "WHERE o.memberId = :memberId")
+            "WHERE o.memberId = :memberId " +
+            "ORDER BY o.createdAt DESC")
     Page<OrderListProjection> findOrderListWithFunding(@Param("memberId") Long memberId, Pageable pageable);
 
     @Query("SELECT DISTINCT new com.bds.order.infrastructure.order.OrderDetailProjection(" +
             "o.id, o.orderNo, o.status, o.totalRewardAmount, o.totalShippingCharge, o.createdAt, " +
             "f.id, f.title, f.creatorId, f.holdTo, f.isSuccess," +
-            "o.cancelledAt, o.cancelReason, o.updatedAt) " +
+            "o.cancelledAt, o.cancelReason, o.updatedAt, o.expiresAt) " +
             "FROM OrderJpaEntity o " +
             "JOIN o.orderRewards orw " +
             "JOIN orw.reward r " +

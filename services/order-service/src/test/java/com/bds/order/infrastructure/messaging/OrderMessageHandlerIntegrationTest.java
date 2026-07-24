@@ -92,6 +92,14 @@ class OrderMessageHandlerIntegrationTest extends AbstractIntegrationTest {
         return orderRepository.save(order).getId();
     }
 
+    private Long createReservedOrder() {
+        BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), true, List.of(
+                new RewardQuantityDto(savedReward.getId(), 1)
+        ));
+        BillingResponseDto billing = orderService.createBilling(1L, reqDto);
+        return billing.orderId();
+    }
+
     @Nested
     @DisplayName("processPaid")
     class ProcessPaid {
@@ -129,7 +137,7 @@ class OrderMessageHandlerIntegrationTest extends AbstractIntegrationTest {
 
         @Test
         void CONFIRMED_타입이면_주문을_CONFIRMED로_변경한다() {
-            Long orderId = createPayingOrder();
+            Long orderId = createReservedOrder();
             OrderProcessEvent message = OrderProcessEvent.confirmed(List.of(orderId));
 
             orderMessageHandler.processBulk(message);

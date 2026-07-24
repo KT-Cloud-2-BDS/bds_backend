@@ -1,6 +1,7 @@
 package com.bds.order.presentation.dto;
 
 import com.bds.order.domain.funding.Funding;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.reward.Reward;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ public record FundingDetailResponseDto(
         String title,
         Long creatorId,
         String status,
+        FundingType type,
         Long goalAmount,
         Long currentAmount,
         int participationCnt,
@@ -29,7 +31,7 @@ public record FundingDetailResponseDto(
 
         return new FundingDetailResponseDto(
                 funding.getId(), funding.getTitle(), funding.getCreatorId(),
-                funding.getStatus().name(), funding.getGoalAmount(), funding.getCurrentAmount(),
+                funding.getStatus().name(), funding.getType(), funding.getGoalAmount(), funding.getCurrentAmount(),
                 funding.getParticipationCnt(), funding.getStartAt(), funding.getHoldTo(),
                 funding.getPayAt(), funding.getIsSuccess(),
                 funding.getCreatedAt(), funding.getUpdatedAt(),

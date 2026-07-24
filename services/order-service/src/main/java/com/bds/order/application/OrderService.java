@@ -111,7 +111,9 @@ public class OrderService {
         }
 
         try {
-            order.startPayment();
+            if (order.getStatus() != OrderStatus.RESERVED) {
+                order.startPayment();
+            }
         } catch (IllegalStateException e) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
         }
@@ -122,7 +124,9 @@ public class OrderService {
             }
         });
 
-        paymentEventPublisher.publishPay(OrderProcessPayEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount()));
+        if (order.getStatus() != OrderStatus.RESERVED) {
+            paymentEventPublisher.publishPay(OrderProcessPayEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount()));
+        }
 
         orderRepository.save(order);
         return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), order.getStatus(), LocalDateTime.now());
