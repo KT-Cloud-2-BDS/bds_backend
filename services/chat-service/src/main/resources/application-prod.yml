@@ -69,4 +69,4 @@ eureka:
       defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/
   instance:
     prefer-ip-address: true
-    ip-address: ${EUREKA_INSTANCE_IP_ADDRESS:}
+    ip-address: ${EUREKA_INSTANCE_IP_ADDRESS}
