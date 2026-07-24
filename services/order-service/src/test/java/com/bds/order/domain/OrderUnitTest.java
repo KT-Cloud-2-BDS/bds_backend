@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -120,8 +121,12 @@ class OrderUnitTest {
 
         @Test
         void 즉시주문_결제_시작_시_PAYING가_되고_expiresAt이_null이_된다() {
-            Order order = OrderFixture.createOrder(OrderStatus.PENDING);
-
+            LocalDateTime now = LocalDateTime.now();
+            Order order = Order.reconstitute(
+                    1L, "ORD-001", 1L, OrderStatus.PENDING,
+                    33000L, 3000L, List.of(),
+                    null, now, now, null, now
+            );
             order.startPayment(FundingType.INSTANT);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);

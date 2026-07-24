@@ -36,6 +36,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.bds.common.events.order.OrderProcessSettlementEvent.SettlementItem;
+import static com.bds.order.domain.order.OrderStatus.PAID;
+import static com.bds.order.domain.order.OrderStatus.PAYING;
 
 @Slf4j
 @Service
@@ -140,18 +142,25 @@ public class OrderService {
             throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
         }
 
+        boolean shouldRestock = order.canRestock();
+        boolean shouldRefund = order.canRefund();
+
         try {
             order.cancelOrder(CancelReason.USER_CANCEL.name());
         } catch (IllegalStateException e) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED, e.getMessage());
         }
 
-        order.getOrderRewards().forEach(orw -> {
-            rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty());
-        });
+        if (shouldRestock) {
+            order.getOrderRewards().forEach(orw -> {
+                rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty());
+            });
+        }
 
-        paymentEventPublisher.publishRefund(
-                OrderProcessRefundEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount(), CancelReason.USER_CANCEL.name()));
+        if (shouldRefund) {
+            paymentEventPublisher.publishRefund(
+                    OrderProcessRefundEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount(), CancelReason.USER_CANCEL.name()));
+        }
 
         orderRepository.save(order);
         return new OrderCancelResponseDto(order.getOrderNo(), order.getStatus(), order.getCancelledAt(), "REFUND_REQUESTED");
@@ -195,7 +204,7 @@ public class OrderService {
                 order.updateStatus(targetStatus);
                 orderRepository.save(order);
 
-                if (targetStatus == OrderStatus.PAID || targetStatus == OrderStatus.REFUNDED) {
+                if (targetStatus == PAID || targetStatus == OrderStatus.REFUNDED) {
                     String fundingTitle = orderRepository.findFundingTitleByOrderId(orderId)
                             .orElseThrow(() -> new IllegalStateException(
                                     "[OrderService] FundingInfo not found: orderId=" + orderId));
@@ -249,7 +258,7 @@ public class OrderService {
 
         Order order = orderOpt.get();
         try {
-            order.updateStatus(OrderStatus.PAYING);
+            order.updateStatus(PAYING);
             orderRepository.save(order);
 
             return Optional.of(new SettlementItem(

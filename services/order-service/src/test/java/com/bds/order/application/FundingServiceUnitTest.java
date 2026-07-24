@@ -54,7 +54,10 @@ class FundingServiceUnitTest {
             Funding funding1 = FundingFixture.createActiveFunding(1L, 500000L, 1000000L);
             Funding funding2 = FundingFixture.createScheduledFunding(2L, now.plusDays(1), now.plusDays(30));
 
-            Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.ASC, "startAt"));
+            Pageable pageable = PageRequest.of(0, 9, Sort.by(
+                    Sort.Order.asc("startAt"),
+                    Sort.Order.asc("id")
+            ));
             Page<Funding> fundingPage = new PageImpl<>(List.of(funding1, funding2), pageable, 2);
 
             given(fundingRepository.findByTypeAndStatusIn(
@@ -72,7 +75,10 @@ class FundingServiceUnitTest {
         void status_지정하면_해당_상태만_반환한다() {
             Funding funding = FundingFixture.createActiveFunding(1L, 500000L, 1000000L);
 
-            Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.ASC, "holdTo"));
+            Pageable pageable = PageRequest.of(0, 9, Sort.by(
+                    Sort.Order.asc("holdTo"),
+                    Sort.Order.asc("id")
+            ));
             Page<Funding> fundingPage = new PageImpl<>(List.of(funding), pageable, 1);
 
             given(fundingRepository.findByTypeAndStatusIn(

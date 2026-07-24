@@ -38,8 +38,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ExtendWith(OutputCaptureExtension.class)
 class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
 
-    private static Long REWARD_PRICE = 10000L;
-    private static Long REWARD_SHIPPING_CHARGE = 3000L;
+    private static final Long REWARD_PRICE = 10000L;
+    private static final Long REWARD_SHIPPING_CHARGE = 3000L;
     @Autowired
     private OrderService orderService;
     @Autowired

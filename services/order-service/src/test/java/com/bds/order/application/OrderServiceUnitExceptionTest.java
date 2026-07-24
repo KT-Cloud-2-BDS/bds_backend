@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -277,12 +277,9 @@ class OrderServiceUnitExceptionTest {
         }
 
         @Transactional
-        @ParameterizedTest(name = "{0} → {1}")
-        @CsvSource({
-                "PAYING, PAID",
-                "CANCELLED, REFUNDED",
-        })
-        void 펀딩정보_조회_실패시_알림이_발행되지_않는다() {
+        @ParameterizedTest
+        @EnumSource(value = OrderStatus.class, names = {"PAID", "REFUNDED",})
+        void 펀딩정보_조회_실패시_알림이_발행되지_않는다(OrderStatus status) {
             Order mockOrder = mock(Order.class);
             when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
             doNothing().when(mockOrder).updateStatus(any(OrderStatus.class));
@@ -290,7 +287,7 @@ class OrderServiceUnitExceptionTest {
 
             when(orderRepository.findFundingTitleByOrderId(1L)).thenReturn(Optional.empty());
 
-            orderService.processStatusUpdate(1L, OrderStatus.PAID);
+            orderService.processStatusUpdate(1L, status);
 
             verify(notificationEventPublisher, never()).publishStatusChanged(any(OrderStatusChangedEvent.class));
         }

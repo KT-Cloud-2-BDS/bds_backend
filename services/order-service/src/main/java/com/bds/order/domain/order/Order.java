@@ -99,4 +99,11 @@ public class Order {
         this.orderRewards = orderRewards;
     }
 
+    public boolean canRestock() {
+        return this.status != OrderStatus.PENDING;
+    }
+
+    public boolean canRefund() {
+        return this.status == OrderStatus.PAYING || this.status == OrderStatus.PAID || this.status == OrderStatus.CONFIRMED;
+    }
 }

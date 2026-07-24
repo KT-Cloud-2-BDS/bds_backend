@@ -44,19 +44,31 @@ public class FundingService {
         switch (status) {
             case "SCHEDULED" -> {
                 statuses = List.of(FundingStatus.SCHEDULED);
-                pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "startAt"));
+                pageable = PageRequest.of(page, size, Sort.by(
+                        Sort.Order.asc("startAt"),
+                        Sort.Order.asc("id")
+                ));
             }
             case "ACTIVE" -> {
                 statuses = List.of(FundingStatus.ACTIVE);
-                pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "holdTo"));
+                pageable = PageRequest.of(page, size, Sort.by(
+                        Sort.Order.asc("holdTo"),
+                        Sort.Order.asc("id")
+                ));
             }
             case "CLOSED" -> {
                 statuses = List.of(FundingStatus.SUCCESS, FundingStatus.FAILED);
-                pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "holdTo"));
+                pageable = PageRequest.of(page, size, Sort.by(
+                        Sort.Order.desc("holdTo"),
+                        Sort.Order.asc("id")
+                ));
             }
             default -> {
                 statuses = List.of(FundingStatus.SCHEDULED, FundingStatus.ACTIVE, FundingStatus.SUCCESS, FundingStatus.FAILED);
-                pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "startAt"));
+                pageable = PageRequest.of(page, size, Sort.by(
+                        Sort.Order.asc("startAt"),
+                        Sort.Order.asc("id")
+                ));
             }
         }
 
