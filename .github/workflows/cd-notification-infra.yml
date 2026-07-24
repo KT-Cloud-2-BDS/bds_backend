@@ -1,0 +1,81 @@
+name: CD - notification-service infra
+
+# notification-service의 docker-compose.prod.yml(postgres/redis) 변경 시에만 실행.
+# 앱(cd-notification-common)과 배포 주기가 다른 인프라이므로 분리: 코드 변경 시마다
+# DB가 재기동되면 안 되고, compose 설정이 바뀔 때만 반영되어야 한다.
+# 파일이 하나뿐이라 S3 없이 SSM 명령어에 base64로 직접 심는다.
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/notification-service/docker-compose.prod.yml'
+  workflow_dispatch: { }   # 최초 세팅 등 수동 실행용
+
+env:
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            services/notification-service/docker-compose.prod.yml
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Apply infra on EC2 via SSM
+        run: |
+          COMPOSE_B64=$(base64 -w0 services/notification-service/docker-compose.prod.yml)
+
+          cat > params.json << EOF
+          {
+            "commands": [
+              "mkdir -p /opt/notification-infra",
+              "echo $COMPOSE_B64 | base64 -d > /opt/notification-infra/docker-compose.prod.yml",
+              "docker network create notification-net || true",
+              "aws ssm get-parameter --region $AWS_REGION --name /services/notification-service/env --with-decryption --query Parameter.Value --output text > /opt/notification-infra/.env",
+              "chmod 600 /opt/notification-infra/.env",
+              "cd /opt/notification-infra && docker compose -f docker-compose.prod.yml --env-file .env up -d",
+              "rm -f /opt/notification-infra/.env",
+              "echo '✅ notification infra 반영 완료'"
+            ]
+          }
+          EOF
+
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Service,Values=notification-service" \
+            --comment "Apply notification infra ${GITHUB_SHA::7}" \
+            --timeout-seconds 300 \
+            --parameters file://params.json \
+            --query "Command.CommandId" --output text)
+          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
+
+      - name: Wait for result
+        run: |
+          for i in $(seq 1 30); do
+            sleep 5
+            STATUSES=$(aws ssm list-command-invocations \
+              --command-id "$COMMAND_ID" \
+              --query "CommandInvocations[].Status" --output text)
+            echo "[$i/30] 상태: ${STATUSES:-대기 중...}"
+            if echo "$STATUSES" | grep -qE "Failed|Cancelled|TimedOut"; then
+              echo "❌ 적용 실패 - SSM Run Command 콘솔에서 로그 확인"
+              exit 1
+            fi
+            if [ -n "$STATUSES" ] && [ -z "$(echo "$STATUSES" | tr '\t' '\n' | grep -v '^Success$')" ]; then
+              echo "✅ 적용 완료"
+              exit 0
+            fi
+          done
+          echo "⏰ 타임아웃"
+          exit 1
