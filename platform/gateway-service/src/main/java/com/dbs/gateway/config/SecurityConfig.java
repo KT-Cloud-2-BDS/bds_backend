@@ -15,6 +15,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
@@ -26,9 +29,25 @@ public class SecurityConfig {
 
         return http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeExchange(exchange -> exchange.anyExchange().permitAll())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtDecoder(jwtDecoder)))
             .build();
+    }
+
+    // 프론트 도메인이 아직 확정되지 않아 임시로 전체 허용. Authorization 헤더(Bearer 토큰) 방식이라
+    // 쿠키 자격증명이 필요 없어 allowCredentials 없이 와일드카드로 열어도 안전함.
+    // 프론트 도메인 확정되면 allowedOriginPatterns를 특정 도메인으로 좁힐 것.
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     // WebClient.Builder에 @LoadBalanced를 붙이면 Spring Cloud LoadBalancer가 로드밸런싱 필터를

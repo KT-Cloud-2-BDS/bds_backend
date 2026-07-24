@@ -5,7 +5,7 @@ name: CD - platform
 # → 현재 배포 대상은 discovery-service 하나
 on:
   workflow_run:
-    workflows: ["CI - platform"]
+    workflows: ["CI - platform", "CI - gateway-service"]
     types: [completed]
     branches: [main,develop]
 
