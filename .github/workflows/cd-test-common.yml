@@ -1,0 +1,140 @@
+name: CD-TEST - common
+
+# cd-common.yml의 실험용 사본. 컨테이너 간 통신을 커스텀 브릿지 네트워크로 묶는 방식을
+# notification-service 대상으로만 검증하기 위한 임시 워크플로우.
+# 검증 끝나면 cd-common.yml에 반영하고 이 파일은 삭제한다.
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        required: true
+        type: string
+      port:
+        required: true
+        type: string
+      ci-run-id:
+        required: true
+        type: string
+      image-tag:
+        required: true
+        type: string
+      ssm-path-prefix:
+        required: false
+        type: string
+        default: '/services'
+      network:
+        description: '컨테이너가 붙을 커스텀 브릿지 네트워크 이름'
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: 'ap-northeast-2'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ inputs.aws-region }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            infra/docker/Dockerfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.service }}
+          run-id: ${{ inputs.ci-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: build-jar
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ inputs.service }}
+        run: |
+          JAR=$(ls build-jar/*.jar | head -n 1)
+          docker build \
+            -f infra/docker/Dockerfile \
+            --build-arg JAR_FILE="$JAR" \
+            --build-arg SERVER_PORT="${{ inputs.port }}" \
+            -t "$IMAGE:${{ inputs.image-tag }}" \
+            -t "$IMAGE:latest" \
+            .
+          docker push --all-tags "$IMAGE"
+
+      # cd-common.yml과의 차이점: 커스텀 브릿지 네트워크(--network)에 앱 컨테이너를 붙여
+      # 같은 네트워크의 postgres/redis 컨테이너를 이름으로 조회 가능하게 함
+      - name: Deploy to EC2 via SSM
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          SERVICE: ${{ inputs.service }}
+          TAG: ${{ inputs.image-tag }}
+          PORT: ${{ inputs.port }}
+          NETWORK: ${{ inputs.network }}
+          SSM_ENV_PATH: ${{ inputs.ssm-path-prefix }}/${{ inputs.service }}/env
+        run: |
+          cat > params.json << EOF
+          {
+            "commands": [
+              "aws ssm get-parameter --region $AWS_REGION --name /shared/env --with-decryption --query Parameter.Value --output text > /tmp/$SERVICE.env 2>/dev/null || : > /tmp/$SERVICE.env",
+              "aws ssm get-parameter --region $AWS_REGION --name $SSM_ENV_PATH --with-decryption --query Parameter.Value --output text >> /tmp/$SERVICE.env 2>/dev/null || true",
+              "chmod 600 /tmp/$SERVICE.env",
+              "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY",
+              "docker network create $NETWORK || true",
+              "docker pull $REGISTRY/$SERVICE:$TAG",
+              "docker stop $SERVICE || true",
+              "docker rm $SERVICE || true",
+              "docker run -d --name $SERVICE --restart unless-stopped --network $NETWORK -p $PORT:$PORT --env-file /tmp/$SERVICE.env -e SPRING_PROFILES_ACTIVE=prod $REGISTRY/$SERVICE:$TAG",
+              "rm -f /tmp/$SERVICE.env",
+              "for i in \$(seq 1 30); do sleep 5; if curl -sf http://localhost:$PORT/actuator/health | grep -q '\"status\":\"UP\"'; then echo 'Health check OK'; docker image prune -f; exit 0; fi; done; echo 'Health check FAILED'; docker logs --tail 100 $SERVICE; exit 1"
+            ]
+          }
+          EOF
+
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Service,Values=$SERVICE" \
+            --comment "CD-TEST Deploy $SERVICE:$TAG" \
+            --timeout-seconds 900 \
+            --max-concurrency 1 \
+            --max-errors 0 \
+            --parameters file://params.json \
+            --query "Command.CommandId" --output text)
+
+          echo "SSM Command ID: $COMMAND_ID"
+          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
+
+      - name: Wait for deployment result
+        run: |
+          for i in $(seq 1 120); do
+            sleep 10
+            STATUSES=$(aws ssm list-command-invocations \
+              --command-id "$COMMAND_ID" \
+              --query "CommandInvocations[].Status" --output text)
+
+            echo "[$i/120] 인스턴스 상태: ${STATUSES:-대기 중...}"
+
+            if echo "$STATUSES" | grep -qE "Failed|Cancelled|TimedOut"; then
+              echo "❌ 배포 실패 - AWS 콘솔의 SSM Run Command에서 상세 로그 확인"
+              exit 1
+            fi
+
+            if [ -n "$STATUSES" ] && [ -z "$(echo "$STATUSES" | tr '\t' '\n' | grep -v '^Success$')" ]; then
+              echo "✅ 모든 인스턴스 배포 완료"
+              exit 0
+            fi
+          done
+          echo "⏰ 배포 대기 타임아웃"
+          exit 1

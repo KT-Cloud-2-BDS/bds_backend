@@ -3,13 +3,15 @@ name: CI - notification-service
 # notification-service 디렉토리 변경 시에만 실행
 on:
   push:
-    branches: [main, develop]
+    branches: [cd-test]
     paths:
       - 'services/notification-service/**'
+      - '!services/notification-service/docker-compose*.yml'
   pull_request:
     branches: [develop, main]
     paths:
       - 'services/notification-service/**'
+      - '!services/notification-service/docker-compose*.yml'
 
 jobs:
   build-and-test:

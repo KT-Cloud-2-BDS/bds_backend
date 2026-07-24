@@ -1,0 +1,29 @@
+name: CD-TEST - notification-service
+run-name: "CD-TEST - notification-service"
+
+# notification-service 커스텀 브릿지 네트워크 검증 전용.
+# cd-test 브랜치에서만 동작하며, 검증 끝나면 이 파일과 cd-test-common.yml을 삭제하고
+# cd-services.yml / cd-common.yml에 정식 반영한다.
+on:
+  workflow_run:
+    workflows:
+      - "CI - notification-service"
+    types: [completed]
+    branches: [cd-test]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    uses: ./.github/workflows/cd-test-common.yml
+    with:
+      service: notification-service
+      port: "8080"
+      ci-run-id: ${{ github.event.workflow_run.id }}
+      image-tag: ${{ github.event.workflow_run.head_sha }}
+      ssm-path-prefix: /services
+      network: notification-net
+    secrets: inherit
