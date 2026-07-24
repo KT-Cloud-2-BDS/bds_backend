@@ -8,15 +8,20 @@ import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(MockitoExtension.class)
 class RewardMapperUnitTest {
 
-    private final RewardMapper rewardMapper = new RewardMapper();
+    @InjectMocks
+    private RewardMapper rewardMapper;
 
     @Nested
     @DisplayName("JpaEntity에서 도메인으로 변환")

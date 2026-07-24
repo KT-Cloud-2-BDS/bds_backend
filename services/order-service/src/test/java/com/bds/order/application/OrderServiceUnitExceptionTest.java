@@ -1,6 +1,7 @@
 package com.bds.order.application;
 
 
+import com.bds.common.events.order.OrderStatusChangedEvent;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
@@ -12,26 +13,34 @@ import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.domain.orderReward.OrderReward;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
-import com.bds.order.fixture.OrderFixture;
 import com.bds.order.global.exception.BusinessException;
+import com.bds.order.infrastructure.messaging.publisher.NotificationEventPublisher;
+import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.order.presentation.dto.BillingRequestDto;
 import com.bds.order.presentation.dto.OrderCancelRequestDto;
 import com.bds.order.presentation.dto.OrderCreateRequestDto;
-import com.bds.order.presentation.dto.RewardQuantityDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static com.bds.order.fixture.BillingFixture.createBillingRequest;
+import static com.bds.order.fixture.BillingFixture.rq;
+import static com.bds.order.fixture.FundingFixture.createActiveFunding;
+import static com.bds.order.fixture.OrderFixture.createOrder;
+import static com.bds.order.fixture.RewardFixture.createReward;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +60,12 @@ class OrderServiceUnitExceptionTest {
 
     @Mock
     private RewardRepository rewardRepository;
+
+    @Mock
+    private PaymentEventPublisher paymentEventPublisher;
+
+    @Mock
+    private NotificationEventPublisher notificationEventPublisher;
 
     @InjectMocks
     private OrderService orderService;
@@ -75,9 +90,7 @@ class OrderServiceUnitExceptionTest {
 
         @Test
         void 펀딩이_존재하지_않으면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(999L, false, List.of(
-                    new RewardQuantityDto(1L, 1)
-            ));
+            BillingRequestDto reqDto = createBillingRequest(999L, rq(1L, 1));
 
             given(fundingRepository.findById(999L)).willReturn(Optional.empty());
 
@@ -88,9 +101,7 @@ class OrderServiceUnitExceptionTest {
         @Test
         void 펀딩_기간이_아니면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
-            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
-                    new RewardQuantityDto(1L, 1)
-            ));
+            BillingRequestDto reqDto = createBillingRequest(1L, rq(1L, 1));
 
             Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
                     now.minusDays(30), now.minusDays(1), now.plusDays(60),
@@ -104,18 +115,9 @@ class OrderServiceUnitExceptionTest {
 
         @Test
         void 리워드가_존재하지_않으면_예외를_던진다() {
-            LocalDateTime now = LocalDateTime.now();
-            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
-                    new RewardQuantityDto(1L, 1),
-                    new RewardQuantityDto(2L, 1)
-            ));
-
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                    0, 1000000L, 500000L, false, now, now);
-
-            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 50,
-                    null, 10000L, now.plusDays(60), 3000L);
+            BillingRequestDto reqDto = createBillingRequest(1L, rq(1L, 1), rq(2L, 1));
+            Funding funding = createActiveFunding(1L, 500000L, 1000000L);
+            Reward reward = mock(Reward.class);
 
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(rewardRepository.findAllByIdAndFundingId(any(), eq(1L)))
@@ -127,15 +129,8 @@ class OrderServiceUnitExceptionTest {
 
         @Test
         void 동일한_리워드를_중복_선택하면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
-                    new RewardQuantityDto(1L, 1),
-                    new RewardQuantityDto(1L, 2)
-            ));
-
-            LocalDateTime now = LocalDateTime.now();
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                    0, 1000000L, 500000L, false, now, now);
+            BillingRequestDto reqDto = createBillingRequest(1L, rq(1L, 1), rq(1L, 2));
+            Funding funding = createActiveFunding(1L, 500000L, 1000000L);
 
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
 
@@ -145,17 +140,9 @@ class OrderServiceUnitExceptionTest {
 
         @Test
         void 리워드_재고가_부족하면_예외를_던진다() {
-            LocalDateTime now = LocalDateTime.now();
-            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
-                    new RewardQuantityDto(1L, 100)
-            ));
-
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                    0, 1000000L, 500000L, false, now, now);
-
-            Reward reward = Reward.of(1L, 1L, "리워드A", "설명", 100, 3,
-                    null, 10000L, now.plusDays(60), 3000L);
+            BillingRequestDto reqDto = createBillingRequest(1L, rq(1L, 1000));
+            Funding funding = createActiveFunding(1L, 500000L, 1000000L);
+            Reward reward = createReward(1L, 1L, 10000L);
 
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(rewardRepository.findAllByIdAndFundingId(any(), eq(1L)))
@@ -180,17 +167,7 @@ class OrderServiceUnitExceptionTest {
 
         @Test
         void 본인의_주문이_아니면_예외를_던진다() {
-            Order order = OrderFixture.createOrder(2L, OrderStatus.PAID);
-
-            given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
-
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L, new OrderCancelRequestDto(1L)))
-                    .isInstanceOf(BusinessException.class);
-        }
-
-        @Test
-        void 취소_불가_상태이면_예외를_던진다() {
-            Order order = OrderFixture.createOrder(1L, OrderStatus.PENDING);
+            Order order = createOrder(2L, OrderStatus.PAID);
 
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
 
@@ -205,12 +182,8 @@ class OrderServiceUnitExceptionTest {
 
         @Test
         void 주문이_존재하지_않으면_예외를_던진다() {
-            LocalDateTime now = LocalDateTime.now();
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(999L, 1L, true);
-
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                    0, 1000000L, 500000L, false, now, now);
+            Funding funding = createActiveFunding(1L, 500000L, 1000000L);
 
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(orderRepository.findByIdForUpdate(999L)).willReturn(Optional.empty());
@@ -221,14 +194,9 @@ class OrderServiceUnitExceptionTest {
 
         @Test
         void 본인의_주문이_아니면_예외를_던진다() {
-            LocalDateTime now = LocalDateTime.now();
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
-
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                    0, 1000000L, 500000L, false, now, now);
-
-            Order order = OrderFixture.createOrder(2L, OrderStatus.PENDING);
+            Funding funding = createActiveFunding(1L, 500000L, 1000000L);
+            Order order = createOrder(2L, OrderStatus.PENDING);
 
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
@@ -239,14 +207,9 @@ class OrderServiceUnitExceptionTest {
 
         @Test
         void 상태_전이가_불가하면_예외를_던진다() {
-            LocalDateTime now = LocalDateTime.now();
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
-
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                    0, 1000000L, 500000L, false, now, now);
-
-            Order order = OrderFixture.createOrder(1L, OrderStatus.PAID);
+            Funding funding = createActiveFunding(1L, 500000L, 1000000L);
+            Order order = createOrder(1L, OrderStatus.PAID);
 
             given(fundingRepository.findById(1L)).willReturn(Optional.of(funding));
             given(orderRepository.findByIdForUpdate(1L)).willReturn(Optional.of(order));
@@ -259,10 +222,7 @@ class OrderServiceUnitExceptionTest {
         void 재고가_부족하면_예외를_던진다() {
             LocalDateTime now = LocalDateTime.now();
             OrderCreateRequestDto reqDto = new OrderCreateRequestDto(1L, 1L, true);
-
-            Funding funding = Funding.of(1L, "펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                    now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                    0, 1000000L, 500000L, false, now, now);
+            Funding funding = createActiveFunding(1L, 500000L, 1000000L);
 
             OrderReward orderReward = OrderReward.reconstitute(1L, 1L, 1L, 2, 3000L, 20000L);
             Order order = Order.reconstitute(1L, "ORD-001", 1L, OrderStatus.PENDING,
@@ -314,6 +274,22 @@ class OrderServiceUnitExceptionTest {
 
             assertThat(output.getOut()).contains("[OrderService] processStatusUpdate failed - unexpected: orderId=1");
             assertThat(output.getOut()).contains("RuntimeException");
+        }
+
+        @Transactional
+        @ParameterizedTest
+        @EnumSource(value = OrderStatus.class, names = {"PAID", "REFUNDED",})
+        void 펀딩정보_조회_실패시_알림이_발행되지_않는다(OrderStatus status) {
+            Order mockOrder = mock(Order.class);
+            when(orderRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockOrder));
+            doNothing().when(mockOrder).updateStatus(any(OrderStatus.class));
+            when(orderRepository.save(mockOrder)).thenReturn(mockOrder);
+
+            when(orderRepository.findFundingTitleByOrderId(1L)).thenReturn(Optional.empty());
+
+            orderService.processStatusUpdate(1L, status);
+
+            verify(notificationEventPublisher, never()).publishStatusChanged(any(OrderStatusChangedEvent.class));
         }
     }
 

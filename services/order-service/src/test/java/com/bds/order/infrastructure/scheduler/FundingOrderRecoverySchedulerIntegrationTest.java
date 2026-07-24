@@ -13,9 +13,6 @@ import com.bds.order.infrastructure.messaging.publisher.PaymentEventPublisher;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaRepository;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import com.bds.order.infrastructure.reward.RewardJpaRepository;
-import com.bds.order.presentation.dto.BillingRequestDto;
-import com.bds.order.presentation.dto.BillingResponseDto;
-import com.bds.order.presentation.dto.RewardQuantityDto;
 import com.bds.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,8 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
 
+import static com.bds.order.fixture.BillingFixture.createBillingRequest;
+import static com.bds.order.fixture.BillingFixture.rq;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
@@ -40,27 +38,22 @@ import static org.mockito.Mockito.*;
 @Transactional
 class FundingOrderRecoverySchedulerIntegrationTest extends AbstractIntegrationTest {
 
+    private static final Long REWARD_PRICE = 10000L;
+    private static final Long REWARD_SHIPPING_CHARGE = 3000L;
     @Autowired
     private FundingOrderRecoveryScheduler recoveryScheduler;
-
     @Autowired
     private OrderService orderService;
-
     @Autowired
     private OrderRepository orderRepository;
-
     @Autowired
     private FundingJpaRepository fundingJpaRepository;
-
     @Autowired
     private RewardJpaRepository rewardJpaRepository;
-
     @Autowired
     private OrderRewardJpaRepository orderRewardJpaRepository;
-
     @MockitoBean
     private PaymentEventPublisher paymentEventPublisher;
-
     private FundingJpaEntity savedFunding;
     private RewardJpaEntity savedReward;
 
@@ -81,17 +74,17 @@ class FundingOrderRecoverySchedulerIntegrationTest extends AbstractIntegrationTe
         ));
         savedReward = rewardJpaRepository.save(new RewardJpaEntity(
                 null, savedFunding, "리워드A", "설명A", 100, 10,
-                null, 10000L, now.plusDays(60), 3000L
+                null, REWARD_PRICE, now.plusDays(60), REWARD_SHIPPING_CHARGE
         ));
     }
 
     private Long createOrderWithStatus(OrderStatus targetStatus) {
-        boolean isReserved = (targetStatus == OrderStatus.RESERVED);
-        Long orderId = createBillingAndGetOrderId(isReserved);
+        Long orderId = orderService.createBilling(1L,
+                createBillingRequest(savedFunding.getId(), rq(savedReward.getId(), 1))).orderId();
         Order order = orderRepository.findByIdForUpdate(orderId).orElseThrow();
 
-        if (targetStatus == OrderStatus.PAYING) {
-            order.updateStatus(OrderStatus.PAYING);
+        if (targetStatus == OrderStatus.PAYING || targetStatus == OrderStatus.RESERVED) {
+            order.updateStatus(targetStatus);
         } else if (targetStatus == OrderStatus.PAID) {
             order.updateStatus(OrderStatus.PAYING);
             order.updateStatus(OrderStatus.PAID);
@@ -101,14 +94,6 @@ class FundingOrderRecoverySchedulerIntegrationTest extends AbstractIntegrationTe
         }
 
         return orderRepository.save(order).getId();
-    }
-
-    private Long createBillingAndGetOrderId(boolean isReserved) {
-        BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), isReserved, List.of(
-                new RewardQuantityDto(savedReward.getId(), 1)
-        ));
-        BillingResponseDto billing = orderService.createBilling(1L, reqDto);
-        return billing.orderId();
     }
 
     @Nested

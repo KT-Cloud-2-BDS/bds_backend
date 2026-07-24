@@ -1,14 +1,17 @@
 package com.bds.order.application;
 
 
-import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
 import com.bds.order.domain.order.OrderStatus;
 import com.bds.order.global.exception.BusinessException;
+import com.bds.order.global.exception.ErrorCode;
 import com.bds.order.infrastructure.funding.FundingJpaEntity;
 import com.bds.order.infrastructure.funding.FundingJpaRepository;
+import com.bds.order.infrastructure.funding.FundingMapper;
+import com.bds.order.infrastructure.order.OrderJpaRepository;
+import com.bds.order.infrastructure.order.OrderMapper;
 import com.bds.order.infrastructure.orderReward.OrderRewardJpaRepository;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
 import com.bds.order.infrastructure.reward.RewardJpaRepository;
@@ -22,54 +25,45 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
+import static com.bds.order.fixture.BillingFixture.createBillingRequest;
+import static com.bds.order.fixture.BillingFixture.rq;
+import static com.bds.order.fixture.FundingFixture.createFundingJpaEntity;
+import static com.bds.order.fixture.FundingFixture.createSuccessFunding;
+import static com.bds.order.fixture.RewardFixture.createRewardJpaEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(OutputCaptureExtension.class)
 class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
 
+    private static final Long REWARD_PRICE = 10000L;
+    private static final Long REWARD_SHIPPING_CHARGE = 3000L;
     @Autowired
     private OrderService orderService;
-
     @Autowired
     private OrderRepository orderRepository;
-
+    @Autowired
+    private OrderJpaRepository orderJpaRepository;
+    @Autowired
+    private OrderMapper orderMapper;
     @Autowired
     private FundingJpaRepository fundingJpaRepository;
-
     @Autowired
     private RewardJpaRepository rewardJpaRepository;
-
     @Autowired
     private OrderRewardJpaRepository orderRewardJpaRepository;
-
     private FundingJpaEntity savedFunding;
-    private FundingJpaEntity expiredFunding;
     private RewardJpaEntity savedReward;
+    @Autowired
+    private FundingMapper fundingMapper;
 
     @BeforeEach
     void setUp() {
-        LocalDateTime now = LocalDateTime.now();
-
-        savedFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                0, 1000000L, 500000L, false, new ArrayList<>()
-        ));
-
-        expiredFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "종료된 펀딩", 101L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                now.minusDays(30), now.minusDays(1), now.plusDays(30),
-                0, 1000000L, 500000L, false, new ArrayList<>()
-        ));
-
-        savedReward = rewardJpaRepository.save(new RewardJpaEntity(
-                null, savedFunding, "리워드A", "설명A", 100, 10,
-                null, 10000L, now.plusDays(60), 3000L
-        ));
+        savedFunding = fundingJpaRepository.save(createFundingJpaEntity(FundingType.INSTANT));
+        savedReward = rewardJpaRepository.save(
+                createRewardJpaEntity(savedFunding, REWARD_PRICE, REWARD_SHIPPING_CHARGE));
     }
 
     @AfterEach
@@ -80,16 +74,19 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         fundingJpaRepository.deleteAll();
     }
 
-    private Long createBillingAndGetOrderId(Long memberId, Long rewardId, int qty) {
-        BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                new RewardQuantityDto(rewardId, qty)
-        ));
-        BillingResponseDto billing = orderService.createBilling(memberId, reqDto);
-        return billing.orderId();
+
+    private BillingResponseDto createBilling(RewardQuantityDto... rewards) {
+        return orderService.createBilling(1L,
+                createBillingRequest(savedFunding.getId(), rewards));
+    }
+
+    private BillingResponseDto createBillingWithMemberId(Long MemberId, RewardQuantityDto... rewards) {
+        return orderService.createBilling(MemberId,
+                createBillingRequest(savedFunding.getId(), rewards));
     }
 
     private Long createCancelOrderAndGetOrderId() {
-        Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 1);
+        Long orderId = createBillingWithMemberId(1L, rq(savedReward.getId(), 1)).orderId();
 
         Order savedOrder = orderRepository.findByIdForUpdate(orderId).orElseThrow();
         savedOrder.updateStatus(OrderStatus.PAYING);
@@ -104,57 +101,68 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
         // 존재하지 않는 펀딩 ID → 예외
         @Test
         void 존재하지_않는_펀딩이면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(999L, false, List.of(
+            BillingRequestDto reqDto = new BillingRequestDto(999L, List.of(
                     new RewardQuantityDto(savedReward.getId(), 1)
             ));
 
             assertThatThrownBy(() -> orderService.createBilling(1L, reqDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.FUNDING_NOT_FOUND);
         }
 
         // 펀딩 기간 종료 → 예외
         @Test
         void 펀딩_기간이_종료되면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(expiredFunding.getId(), false, List.of(
+            FundingJpaEntity expiredFunding = fundingJpaRepository.save(fundingMapper.toJpaEntity(createSuccessFunding(null)));
+            BillingRequestDto reqDto = new BillingRequestDto(expiredFunding.getId(), List.of(
                     new RewardQuantityDto(savedReward.getId(), 1)
             ));
 
             assertThatThrownBy(() -> orderService.createBilling(1L, reqDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.FUNDING_NOT_AVAILABLE);
         }
 
         // 존재하지 않는 리워드 ID → 예외
         @Test
         void 존재하지_않는_리워드이면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
+            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), List.of(
                     new RewardQuantityDto(999L, 1)
             ));
 
             assertThatThrownBy(() -> orderService.createBilling(1L, reqDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.REWARD_NOT_FOUND);
         }
 
         // 재고 부족한 리워드 → 예외
         @Test
         void 빌링_생성_시_재고가_부족하면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
+            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), List.of(
                     new RewardQuantityDto(savedReward.getId(), 999)
             ));
 
             assertThatThrownBy(() -> orderService.createBilling(1L, reqDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.REWARD_STOCK_INSUFFICIENT);
         }
 
         // 동일 리워드 중복 선택 → 예외
         @Test
         void 동일_리워드를_중복_선택하면_예외를_던진다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
+            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), List.of(
                     new RewardQuantityDto(savedReward.getId(), 1),
                     new RewardQuantityDto(savedReward.getId(), 2)
             ));
 
             assertThatThrownBy(() -> orderService.createBilling(1L, reqDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.REWARD_DUPLICATED);
         }
     }
 
@@ -162,33 +170,30 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
     @DisplayName("주문 생성 예외 통합테스트")
     class CreateOrderExceptionIntegrationTest {
 
-
         // 본인 주문 아님 → 예외
         @Test
         void 본인의_주문이_아니면_예외를_던진다() {
-            Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 1);
-
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    orderId, savedFunding.getId(), true
-            );
+            Long orderId = createBilling(rq(savedReward.getId(), 1)).orderId();
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(orderId, savedFunding.getId(), true);
 
             assertThatThrownBy(() -> orderService.createOrder(999L, reqDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.ORDER_ACCESS_DENIED);
         }
 
         // 이미 PAYING 상태 → 상태 전이 불가 예외 (중복 결제 방지)
         @Test
         void 이미_PAYING_상태인_주문은_재결제할_수_없다() {
-            Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 1);
-
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    orderId, savedFunding.getId(), true
-            );
+            Long orderId = createBilling(rq(savedReward.getId(), 1)).orderId();
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(orderId, savedFunding.getId(), true);
 
             orderService.createOrder(1L, reqDto); // 첫 번째 성공
 
             assertThatThrownBy(() -> orderService.createOrder(1L, reqDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED);
         }
 
         // 재고 부족 → 예외 + 트랜잭션 롤백으로 이전 차감 없음 검증
@@ -201,22 +206,19 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             ));
 
             // 회원A: 빌링 생성 (2개 요청, 재고 2개이므로 통과)
-            Long orderIdA = createBillingAndGetOrderId(1L, rewardStock2.getId(), 2);
+            Long orderIdA = createBillingWithMemberId(1L, rq(rewardStock2.getId(), 2)).orderId();
 
             // 회원B: 빌링 생성 + 주문 생성 (1개 차감) → 잔여 재고 1개
-            Long orderIdB = createBillingAndGetOrderId(2L, rewardStock2.getId(), 1);
-            OrderCreateRequestDto reqDtoB = new OrderCreateRequestDto(
-                    orderIdB, savedFunding.getId(), true
-            );
+            Long orderIdB = createBillingWithMemberId(2L, rq(rewardStock2.getId(), 1)).orderId();
+            OrderCreateRequestDto reqDtoB = new OrderCreateRequestDto(orderIdB, savedFunding.getId(), true);
             orderService.createOrder(2L, reqDtoB);
 
             // 회원A: 주문 생성 시도 (2개 필요한데 잔여 1개 → 실패)
-            OrderCreateRequestDto reqDtoA = new OrderCreateRequestDto(
-                    orderIdA, savedFunding.getId(), true
-            );
-
+            OrderCreateRequestDto reqDtoA = new OrderCreateRequestDto(orderIdA, savedFunding.getId(), true);
             assertThatThrownBy(() -> orderService.createOrder(1L, reqDtoA))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.REWARD_STOCK_INSUFFICIENT);
 
             // 회원B의 차감만 반영, 회원A는 롤백되어 재고 1 유지
             RewardJpaEntity reward = rewardJpaRepository.findById(rewardStock2.getId()).orElseThrow();
@@ -231,7 +233,9 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             );
 
             assertThatThrownBy(() -> orderService.createOrder(1L, reqDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.ORDER_NOT_FOUND);
         }
     }
 
@@ -240,16 +244,9 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
     class CancelOrderExceptionIntegrationTest {
 
         private Long createAndStartOrder(Long memberId) {
-            BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-            BillingResponseDto billing = orderService.createBilling(memberId, billingReqDto);
-
-            OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
-                    billing.orderId(), savedFunding.getId(), true
-            );
+            BillingResponseDto billing = createBillingWithMemberId(memberId, rq(savedReward.getId(), 1));
+            OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(billing.orderId(), savedFunding.getId(), true);
             orderService.createOrder(memberId, createReqDto);
-
             return billing.orderId();
         }
 
@@ -259,43 +256,36 @@ class OrderServiceIntegrationExceptionTest extends AbstractIntegrationTest {
             Long orderId = createAndStartOrder(1L);
 
             assertThatThrownBy(() -> orderService.cancelOrder(999L, orderId, new OrderCancelRequestDto(1L)))
-                    .isInstanceOf(BusinessException.class);
-        }
-
-        // PENDING 상태 주문 취소 → 상태 전이 불가 예외
-        @Test
-        void PENDING_상태에서는_취소할_수_없다() {
-            BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-            BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
-
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L)))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.ORDER_ACCESS_DENIED);
         }
 
         // 이미 취소된 주문 재취소 → 예외
         @Test
         void 이미_취소된_주문은_다시_취소할_수_없다() {
             Long orderId = createAndStartOrder(1L);
-            orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(1L));
+            orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(savedFunding.getId()));
 
-            assertThatThrownBy(() -> orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(1L)))
-                    .isInstanceOf(BusinessException.class);
+            assertThatThrownBy(() -> orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(savedFunding.getId())))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.ORDER_STATUS_CHANGE_NOT_ALLOWED);
         }
 
         // 존재하지 않는 주문 상세 조회 → 예외
         @Test
         void 존재하지_않는_주문_상세_조회_시_예외를_던진다() {
             assertThatThrownBy(() -> orderService.getOrderDetail(1L, 999L))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.ORDER_NOT_FOUND);
         }
     }
 
     @Nested
     @DisplayName("processStatusUpdate 예외 통합테스트")
     class ProcessStatusUpdateExceptionIntegrationTest {
-
 
         @Test
         void 존재하지_않는_주문이면_예외_없이_warn_로그를_남긴다(CapturedOutput output) {

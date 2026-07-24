@@ -8,13 +8,16 @@ import com.bds.order.presentation.dto.FundingCreateResponseDto;
 import com.bds.order.presentation.dto.FundingDetailResponseDto;
 import com.bds.order.presentation.dto.FundingListResponseDto;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
+@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/fundings")
@@ -23,10 +26,13 @@ public class FundingController {
     private final FundingService fundingService;
 
     @GetMapping
-    public ResponseEntity<List<FundingListResponseDto>> listFundings(
-            @RequestParam(required = false) String status
+    public ResponseEntity<Page<FundingListResponseDto>> listFundings(
+            @RequestParam(defaultValue = "INSTANT") String type,
+            @RequestParam(defaultValue = "ALL") String status,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "9") @Min(1) @Max(100) int size
     ) {
-        return ResponseEntity.ok(fundingService.getFundings(status));
+        return ResponseEntity.ok(fundingService.getFundings(type, status, page, size));
     }
 
     @GetMapping("/{fundingId}")

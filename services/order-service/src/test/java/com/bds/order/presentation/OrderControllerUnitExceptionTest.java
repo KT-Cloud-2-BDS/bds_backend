@@ -7,7 +7,6 @@ import com.bds.order.presentation.controller.OrderController;
 import com.bds.order.presentation.dto.BillingRequestDto;
 import com.bds.order.presentation.dto.OrderCancelRequestDto;
 import com.bds.order.presentation.dto.OrderCreateRequestDto;
-import com.bds.order.presentation.dto.RewardQuantityDto;
 import com.bds.support.MockMvcTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,8 +16,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.util.List;
-
+import static com.bds.order.fixture.BillingFixture.createBillingRequest;
+import static com.bds.order.fixture.BillingFixture.rq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -90,9 +89,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 펀딩이_존재하지_않으면_404를_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(999L, false, List.of(
-                    new RewardQuantityDto(1L, 1)
-            ));
+            BillingRequestDto reqDto = createBillingRequest(999L, rq(1L, 1));
 
             given(orderService.createBilling(eq(1L), any()))
                     .willThrow(new BusinessException(ErrorCode.FUNDING_NOT_FOUND));
@@ -108,9 +105,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 펀딩_기간이_아니면_403을_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
-                    new RewardQuantityDto(1L, 1)
-            ));
+            BillingRequestDto reqDto = createBillingRequest(1L, rq(1L, 1));
 
             given(orderService.createBilling(eq(1L), any()))
                     .willThrow(new BusinessException(ErrorCode.FUNDING_NOT_AVAILABLE));
@@ -126,10 +121,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 동일한_리워드를_중복_선택하면_400을_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
-                    new RewardQuantityDto(1L, 1),
-                    new RewardQuantityDto(1L, 2)
-            ));
+            BillingRequestDto reqDto = createBillingRequest(1L, rq(1L, 1), rq(1L, 2));
 
             given(orderService.createBilling(eq(1L), any()))
                     .willThrow(new BusinessException(ErrorCode.REWARD_DUPLICATED));
@@ -145,9 +137,7 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 리워드_재고가_부족하면_409를_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
-                    new RewardQuantityDto(1L, 100)
-            ));
+            BillingRequestDto reqDto = createBillingRequest(1L, rq(1L, 100));
 
             given(orderService.createBilling(eq(1L), any()))
                     .willThrow(new BusinessException(ErrorCode.REWARD_STOCK_INSUFFICIENT));
@@ -185,7 +175,6 @@ class OrderControllerUnitExceptionTest extends MockMvcTestSupport {
 
         @Test
         void 존재하지_않는_주문이면_404를_응답한다() throws Exception {
-            OrderCancelRequestDto reqDto = new OrderCancelRequestDto(1L);
             given(orderService.cancelOrder(eq(1L), eq(999L), any(OrderCancelRequestDto.class)))
                     .willThrow(new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 

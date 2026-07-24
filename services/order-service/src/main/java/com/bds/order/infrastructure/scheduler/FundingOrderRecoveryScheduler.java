@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.bds.common.events.order.OrderProcessSettlementEvent.SettlementItem;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -91,7 +93,7 @@ public class FundingOrderRecoveryScheduler {
             List<Long> orderIds = orderRepository.findOrderIdsByFundingIdAndStatus(fundingId, status, lastOrderId, CHUNK_SIZE);
             if (orderIds.isEmpty()) break;
 
-            List<OrderProcessSettlementEvent.SettlementItem> items = new ArrayList<>();
+            List<SettlementItem> items = new ArrayList<>();
             for (Long orderId : orderIds) {
                 try {
                     orderService.createSettlementItem(orderId).ifPresent(items::add);

@@ -17,12 +17,13 @@ public record OrderDetailResponseDto(
         Long hostId,
         boolean isEnded,
         LocalDateTime updatedAt,
-        boolean isFundingSucceeded,
+        Boolean isFundingSucceeded,
         List<RewardItemDto> rewards,
         Long rewardAmount,
         Long totalShippingCharge,
         Long totalBillingAmount,
-        LocalDateTime canceledAt
+        LocalDateTime canceledAt,
+        LocalDateTime expiresAt
 ) {
     public static OrderDetailResponseDto from(Long memberId, OrderDetailProjection order, List<OrderRewardDetailProjection> orderRewards) {
         return new OrderDetailResponseDto(
@@ -40,7 +41,8 @@ public record OrderDetailResponseDto(
                 order.totalRewardAmount(),
                 order.totalShippingCharge(),
                 order.totalRewardAmount() + order.totalShippingCharge(),
-                order.cancelledAt()
+                order.cancelledAt(),
+                order.expiresAt()
         );
     }
 }

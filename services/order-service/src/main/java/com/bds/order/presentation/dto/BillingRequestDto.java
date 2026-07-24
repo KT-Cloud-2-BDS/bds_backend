@@ -9,7 +9,6 @@ import java.util.List;
 
 public record BillingRequestDto(
         @NotNull Long fundingId,
-        boolean isReservedOrder,
         @NotEmpty List<@Valid RewardQuantityDto> rewards
 ) {
 }

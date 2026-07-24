@@ -74,7 +74,7 @@ class FundingServiceIntegrationTest extends AbstractIntegrationTest {
         // status 없이 전체 조회 시 모든 펀딩을 반환한다
         @Test
         void 전체_펀딩_목록을_반환한다() {
-            List<FundingListResponseDto> result = fundingService.getFundings(null);
+            List<FundingListResponseDto> result = fundingService.getFundings("INSTANT", "ALL", 0, 9).getContent();
 
             assertThat(result).hasSize(2);
         }
@@ -82,7 +82,7 @@ class FundingServiceIntegrationTest extends AbstractIntegrationTest {
         // ACTIVE status 필터 시 해당 상태만 반환한다
         @Test
         void ACTIVE_상태만_필터링하여_반환한다() {
-            List<FundingListResponseDto> result = fundingService.getFundings("ACTIVE");
+            List<FundingListResponseDto> result = fundingService.getFundings("INSTANT", "ACTIVE", 0, 9).getContent();
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).title()).isEqualTo("활성 펀딩");

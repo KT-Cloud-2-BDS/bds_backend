@@ -1,5 +1,6 @@
 package com.bds.order.domain.order;
 
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.orderReward.OrderReward;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -72,19 +73,24 @@ public class Order {
         this.cancelReason = cancelReason;
     }
 
-    public void startPayment() {
-        updateStatus(OrderStatus.PAYING);
+    public void startPayment(FundingType fundingType) {
+        switch (fundingType) {
+            case INSTANT -> updateStatus(OrderStatus.PAYING);
+            case RESERVED -> updateStatus(OrderStatus.RESERVED);
+        }
         this.expiresAt = null;
     }
 
     private boolean canTransitTo(OrderStatus newStatus) {
         return switch (newStatus) {
             case PAYING -> this.status == OrderStatus.PENDING || this.status == OrderStatus.RESERVED;
+            case RESERVED -> this.status == OrderStatus.PENDING;
             case PAID -> this.status == OrderStatus.PAYING;
-            case CANCELLED ->
-                    this.status == OrderStatus.PAYING || this.status == OrderStatus.RESERVED || this.status == OrderStatus.PAID;
-            case REFUNDED -> this.status == OrderStatus.CANCELLED || this.status == OrderStatus.RESERVED;
-            case CONFIRMED -> this.status == OrderStatus.PAYING || this.status == OrderStatus.PAID;
+            case CANCELLED -> this.status == OrderStatus.PENDING || this.status == OrderStatus.PAYING
+                    || this.status == OrderStatus.RESERVED || this.status == OrderStatus.PAID
+                    || this.status == OrderStatus.CONFIRMED;
+            case REFUNDED -> this.status == OrderStatus.CANCELLED;
+            case CONFIRMED -> this.status == OrderStatus.PAID || this.status == OrderStatus.PAYING;
             default -> false;
         };
     }
@@ -93,4 +99,11 @@ public class Order {
         this.orderRewards = orderRewards;
     }
 
+    public boolean canRestock() {
+        return this.status != OrderStatus.PENDING;
+    }
+
+    public boolean canRefund() {
+        return this.status == OrderStatus.PAYING || this.status == OrderStatus.PAID || this.status == OrderStatus.CONFIRMED;
+    }
 }
