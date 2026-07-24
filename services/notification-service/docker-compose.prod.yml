@@ -2,6 +2,11 @@
 # RabbitMQ는 별도 공용 인스턴스 사용 (여기서 띄우지 않음)
 # 실행: docker compose -f docker-compose.prod.yml --env-file .env up -d
 
+networks:
+  notification-net:
+    name: notification-net
+    external: true
+
 services:
   postgres:
     image: postgres:18
@@ -15,6 +20,8 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - notification-postgres-prod-data:/var/lib/postgresql
+    networks:
+      - notification-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
@@ -31,6 +38,8 @@ services:
       - "127.0.0.1:6379:6379"
     volumes:
       - notification-redis-prod-data:/data
+    networks:
+      - notification-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
