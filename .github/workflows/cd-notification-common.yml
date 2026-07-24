@@ -1,8 +1,11 @@
 name: CD - notification-service (app)
 
 # notification-service 전용 앱 배포 워크플로우. cd-common.yml(전 서비스 공용)과 별개.
-# 차이점: docker run에 --network notification-net을 추가해 앱 컨테이너가
-# docker-compose.prod.yml로 띄운 postgres/redis를 컨테이너 이름으로 찾을 수 있게 함.
+# 차이점: docker run에 --network host를 추가해 앱 컨테이너가 EC2 호스트와
+# 네트워크를 공유하게 함. docker-compose.prod.yml이 postgres/redis를
+# 127.0.0.1:PORT로 호스트에 노출하고 있어, host 네트워크면 컨테이너 안의
+# 127.0.0.1이 EC2 호스트의 127.0.0.1과 동일해져 별도 커스텀 네트워크나
+# 컨테이너 이름 DNS 없이 바로 연결됨.
 # 다른 서비스 CD(cd-common.yml)에는 영향 없음.
 
 on:
@@ -67,7 +70,6 @@ jobs:
           SERVICE: notification-service
           TAG: ${{ github.event.workflow_run.head_sha }}
           PORT: "8080"
-          NETWORK: notification-net
           SSM_ENV_PATH: /services/notification-service/env
         run: |
           cat > params.json << EOF
@@ -77,11 +79,10 @@ jobs:
               "aws ssm get-parameter --region $AWS_REGION --name $SSM_ENV_PATH --with-decryption --query Parameter.Value --output text >> /tmp/$SERVICE.env 2>/dev/null || true",
               "chmod 600 /tmp/$SERVICE.env",
               "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY",
-              "docker network create $NETWORK || true",
               "docker pull $REGISTRY/$SERVICE:$TAG",
               "docker stop $SERVICE || true",
               "docker rm $SERVICE || true",
-              "docker run -d --name $SERVICE --restart unless-stopped --network $NETWORK -p $PORT:$PORT --env-file /tmp/$SERVICE.env -e SPRING_PROFILES_ACTIVE=prod $REGISTRY/$SERVICE:$TAG",
+              "docker run -d --name $SERVICE --restart unless-stopped --network host --env-file /tmp/$SERVICE.env -e SPRING_PROFILES_ACTIVE=prod $REGISTRY/$SERVICE:$TAG",
               "rm -f /tmp/$SERVICE.env",
               "for i in \$(seq 1 30); do sleep 5; if curl -sf http://localhost:$PORT/actuator/health | grep -q '\"status\":\"UP\"'; then echo 'Health check OK'; docker image prune -f; exit 0; fi; done; echo 'Health check FAILED'; docker logs --tail 100 $SERVICE; exit 1"
             ]
