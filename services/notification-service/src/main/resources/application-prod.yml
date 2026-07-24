@@ -27,6 +27,9 @@ eureka:
   client:
     service-url:
       defaultZone: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka/
+  instance:
+    prefer-ip-address: true
+    ip-address: ${EUREKA_INSTANCE_IP_ADDRESS}
 
 internal:
   gateway-secret: ${INTERNAL_GATEWAY_SECRET}
