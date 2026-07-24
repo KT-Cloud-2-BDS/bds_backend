@@ -91,9 +91,12 @@ jobs:
         run: |
           # EC2에서 실행될 배포 스크립트 (워크플로우 시점에 $변수 치환, \$변수는 EC2 실행 시점 평가)
           # Parameter Store의 KEY=VALUE 목록을 임시 env 파일로 받아 컨테이너에 주입 후 즉시 삭제
+          # EUREKA_INSTANCE_IP: EC2 자신의 프라이빗 IP를 IMDSv2로 조회 → Eureka에 컨테이너ID 대신 실제 IP로 등록
           cat > params.json << EOF
           {
             "commands": [
+              "TOKEN=\$(curl -sX PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')",
+              "EC2_IP=\$(curl -sH \"X-aws-ec2-metadata-token: \$TOKEN\" http://169.254.169.254/latest/meta-data/local-ipv4)",
               "aws ssm get-parameter --region $AWS_REGION --name /shared/env --with-decryption --query Parameter.Value --output text > /tmp/$SERVICE.env 2>/dev/null || : > /tmp/$SERVICE.env",
               "aws ssm get-parameter --region $AWS_REGION --name $SSM_ENV_PATH --with-decryption --query Parameter.Value --output text >> /tmp/$SERVICE.env 2>/dev/null || true",
               "chmod 600 /tmp/$SERVICE.env",
@@ -101,7 +104,7 @@ jobs:
               "docker pull $REGISTRY/$SERVICE:$TAG",
               "docker stop $SERVICE || true",
               "docker rm $SERVICE || true",
-              "docker run -d --name $SERVICE --restart unless-stopped -p $PORT:$PORT --env-file /tmp/$SERVICE.env -e SPRING_PROFILES_ACTIVE=prod $REGISTRY/$SERVICE:$TAG",
+              "docker run -d --name $SERVICE --restart unless-stopped -p $PORT:$PORT --env-file /tmp/$SERVICE.env -e SPRING_PROFILES_ACTIVE=prod -e EUREKA_INSTANCE_IP_ADDRESS=\$EC2_IP $REGISTRY/$SERVICE:$TAG",
               "rm -f /tmp/$SERVICE.env",
               "for i in \$(seq 1 30); do sleep 5; if curl -sf http://localhost:$PORT/actuator/health | grep -q '\"status\":\"UP\"'; then echo 'Health check OK'; docker image prune -f; exit 0; fi; done; echo 'Health check FAILED'; docker logs --tail 100 $SERVICE; exit 1"
             ]
