@@ -8,6 +8,7 @@ run-name: "CD - ${{ github.event.workflow_run.name }}"
 # notification-service는 커스텀 브릿지 네트워크(--network) 검증을 위해
 # cd-notification-common.yml로 임시 분리됨. 검증 끝나면 cd-common.yml에
 # --network 옵션을 반영하고 이 목록에 다시 추가 후 cd-notification-common.yml 삭제.
+
 on:
   workflow_run:
     workflows:
