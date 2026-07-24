@@ -1,6 +1,7 @@
 package com.bds.order.domain;
 
 
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.order.CancelReason;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderStatus;
@@ -56,10 +57,10 @@ class OrderUnitTest {
         @CsvSource({
                 "PENDING, PAYING",
                 "RESERVED, PAYING",
-                "RESERVED, CONFIRMED",
                 "RESERVED, CANCELLED",
                 "PAYING, PAID",
                 "PAYING, CANCELLED",
+                "PAYING, CONFIRMED",
                 "PAID, CANCELLED",
                 "PAID, CONFIRMED",
                 "CONFIRMED, CANCELLED",
@@ -108,10 +109,20 @@ class OrderUnitTest {
     class StartPaymentTest {
 
         @Test
-        void 결제_시작_시_expiresAt이_null이_된다() {
+        void 예약주문_결제_시작_시_RESERVED상태가_되고_expiresAt이_null이_된다() {
             Order order = OrderFixture.createOrder(OrderStatus.PENDING);
 
-            order.startPayment();
+            order.startPayment(FundingType.RESERVED);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.RESERVED);
+            assertThat(order.getExpiresAt()).isNull();
+        }
+
+        @Test
+        void 즉시주문_결제_시작_시_PAYING가_되고_expiresAt이_null이_된다() {
+            Order order = OrderFixture.createOrder(OrderStatus.PENDING);
+
+            order.startPayment(FundingType.INSTANT);
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYING);
             assertThat(order.getExpiresAt()).isNull();

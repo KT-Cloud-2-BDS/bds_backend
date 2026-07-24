@@ -53,7 +53,6 @@ class OrderUnitExceptionTest {
                 "PENDING, REFUNDED",
                 "RESERVED, PAID",
                 "RESERVED, REFUNDED",
-                "PAYING, CONFIRMED",
                 "PAYING, REFUNDED",
                 "PAID, PAYING",
                 "PAID, REFUNDED",

@@ -18,6 +18,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.bds.order.fixture.BillingFixture.createBillingRequest;
+import static com.bds.order.fixture.BillingFixture.rq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -97,9 +99,7 @@ class OrderControllerUnitTest extends MockMvcTestSupport {
 
         @Test
         void 빌링을_정상_응답한다() throws Exception {
-            BillingRequestDto reqDto = new BillingRequestDto(1L, false, List.of(
-                    new RewardQuantityDto(1L, 2)
-            ));
+            BillingRequestDto reqDto = createBillingRequest(1L, rq(1L, 2));
 
             RewardItemDto rewardDto = new RewardItemDto(
                     1L, 2, "리워드A", 20000L, BadgeType.ULTRA_EARLY_BIRD, 3000L

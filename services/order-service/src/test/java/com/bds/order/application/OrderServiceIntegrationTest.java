@@ -1,7 +1,6 @@
 package com.bds.order.application;
 
 
-import com.bds.order.domain.funding.FundingStatus;
 import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.order.Order;
 import com.bds.order.domain.order.OrderRepository;
@@ -33,58 +32,44 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.bds.common.events.order.OrderProcessSettlementEvent.SettlementItem;
+import static com.bds.order.fixture.BillingFixture.createBillingRequest;
+import static com.bds.order.fixture.BillingFixture.rq;
+import static com.bds.order.fixture.FundingFixture.createFundingJpaEntity;
+import static com.bds.order.fixture.RewardFixture.createRewardJpaEntity;
+import static com.bds.order.fixture.RewardFixture.createRewardJpaEntityWithStock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OrderServiceIntegrationTest extends AbstractIntegrationTest {
 
+    private static final Long REWARD_PRICE = 10000L;
+    private static final Long REWARD_SHIPPING_CHARGE = 3000L;
     @Autowired
     private OrderService orderService;
-
     @Autowired
     private OrderRepository orderRepository;
-
     @Autowired
     private OrderJpaRepository orderJpaRepository;
-
     @Autowired
     private OrderMapper orderMapper;
-
     @Autowired
     private FundingJpaRepository fundingJpaRepository;
-
     @Autowired
     private RewardJpaRepository rewardJpaRepository;
-
     @Autowired
     private OrderRewardJpaRepository orderRewardJpaRepository;
 
     @Autowired
     private EntityManager entityManager;
-
     private FundingJpaEntity savedFunding;
     private RewardJpaEntity savedReward;
-    private RewardJpaEntity savedReward2;
 
     @BeforeEach
     void setUp() {
-        LocalDateTime now = LocalDateTime.now();
-
-        savedFunding = fundingJpaRepository.save(new FundingJpaEntity(
-                null, "테스트 펀딩", 100L, FundingStatus.ACTIVE, FundingType.INSTANT,
-                now.minusDays(10), now.plusDays(30), now.plusDays(60),
-                0, 1000000L, 500000L, false, new ArrayList<>()
-        ));
-
-        savedReward = rewardJpaRepository.save(new RewardJpaEntity(
-                null, savedFunding, "리워드A", "설명A", 100, 10,
-                null, 10000L, now.plusDays(60), 3000L
-        ));
-
-        savedReward2 = rewardJpaRepository.save(new RewardJpaEntity(
-                null, savedFunding, "리워드B", "설명B", 50, 5,
-                null, 20000L, now.plusDays(60), 5000L
-        ));
+        savedFunding = fundingJpaRepository.save(createFundingJpaEntity(FundingType.INSTANT));
+        savedReward = rewardJpaRepository.save(
+                createRewardJpaEntity(savedFunding, REWARD_PRICE, REWARD_SHIPPING_CHARGE));
     }
 
     @AfterEach
@@ -95,23 +80,41 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         fundingJpaRepository.deleteAll();
     }
 
-    private Order createOrderWithStatus(OrderStatus status) {
+    private BillingResponseDto createBilling(RewardQuantityDto... rewards) {
+        return orderService.createBilling(1L,
+                createBillingRequest(savedFunding.getId(), rewards));
+    }
+
+    private BillingResponseDto createBillingWithMemberId(Long MemberId, RewardQuantityDto... rewards) {
+        return orderService.createBilling(MemberId,
+                createBillingRequest(savedFunding.getId(), rewards));
+    }
+
+    private BillingResponseDto createBillingWithReservedFunding(RewardQuantityDto... rewards) {
+        savedFunding = fundingJpaRepository.save(createFundingJpaEntity(FundingType.RESERVED));
+        savedReward = rewardJpaRepository.save(
+                createRewardJpaEntity(savedFunding, REWARD_PRICE, REWARD_SHIPPING_CHARGE));
+        return orderService.createBilling(1L,
+                createBillingRequest(savedFunding.getId(), rewards));
+    }
+
+    private Long createOrderWithStatus(OrderStatus status) {
         OrderJpaEntity orderEntity = OrderJpaEntity.builder()
                 .orderNo("ORD-TEST-" + System.nanoTime())
                 .memberId(1L)
                 .status(status)
-                .totalRewardAmount(10000L)
-                .totalShippingCharge(3000L)
+                .totalRewardAmount(REWARD_PRICE)
+                .totalShippingCharge(REWARD_SHIPPING_CHARGE)
                 .build();
 
         OrderRewardJpaEntity orderRewardEntity = new OrderRewardJpaEntity(
-                null, orderEntity, savedReward, 1, 10000L, 3000L
+                null, orderEntity, savedReward, 1, REWARD_PRICE, REWARD_SHIPPING_CHARGE
         );
         orderEntity.getOrderRewards().add(orderRewardEntity);
 
-        OrderJpaEntity saved = orderJpaRepository.saveAndFlush(orderEntity);
-        return orderMapper.toDomain(saved);
+        return orderMapper.toDomain(orderJpaRepository.saveAndFlush(orderEntity)).getId();
     }
+
 
     @Nested
     @DisplayName("빌링 생성 통합테스트")
@@ -120,70 +123,36 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         // 리워드 1개 선택 → 빌링 생성 → Order/OrderReward 저장 + 금액 정합성 검증
         @Test
         void 리워드_1개로_빌링_생성_시_금액이_정확히_저장된다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 2)
-            ));
-
-            BillingResponseDto result = orderService.createBilling(1L, reqDto);
+            BillingResponseDto result = createBilling(rq(savedReward.getId(), 2));
 
             assertThat(result.orderId()).isNotNull();
             assertThat(result.memberId()).isEqualTo(1L);
             assertThat(result.rewards()).hasSize(1);
-            assertThat(result.rewardAmount()).isEqualTo(20000L); // 10000 * 2
-            assertThat(result.totalShippingCharge()).isEqualTo(3000L);
-            assertThat(result.totalBillingAmount()).isEqualTo(23000L);
+            assertThat(result.rewardAmount()).isEqualTo(REWARD_PRICE * 2);
+            assertThat(result.totalShippingCharge()).isEqualTo(REWARD_SHIPPING_CHARGE);
+            assertThat(result.totalBillingAmount()).isEqualTo(REWARD_PRICE * 2 + REWARD_SHIPPING_CHARGE);
         }
 
         // 리워드 2개 선택 → 각 OrderReward 금액 합산 = Order 총금액 검증
         @Test
         void 리워드_2개로_빌링_생성_시_금액_합산이_정확하다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 2),
-                    new RewardQuantityDto(savedReward2.getId(), 1)
-            ));
+            Long reward2Price = 25000L;
+            Long reward2ShippingCharge = 750L;
+            RewardJpaEntity savedReward2 = rewardJpaRepository.save(
+                    createRewardJpaEntity(savedFunding, reward2Price, reward2ShippingCharge));
 
-            BillingResponseDto result = orderService.createBilling(1L, reqDto);
+            BillingResponseDto result = createBilling(rq(savedReward.getId(), 1), rq(savedReward2.getId(), 1));
 
             assertThat(result.rewards()).hasSize(2);
-            assertThat(result.rewardAmount()).isEqualTo(40000L); // 10000*2 + 20000*1
-            assertThat(result.totalShippingCharge()).isEqualTo(8000L); // 3000 + 5000
-            assertThat(result.totalBillingAmount()).isEqualTo(48000L);
-        }
-
-        // isReservedOrder=true → RESERVED 상태로 저장
-        @Test
-        void 예약_주문_빌링은_RESERVED_상태로_저장된다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), true, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-
-            orderService.createBilling(1L, reqDto);
-
-            List<OrderResponseDto> orders = orderService.getAllOrders(1L, PageRequest.of(0, 20));
-            assertThat(orders.get(0).orderStatus()).isEqualTo(OrderStatus.RESERVED);
-        }
-
-        // isReservedOrder=false → PENDING 상태로 저장
-        @Test
-        void 일반_주문_빌링은_PENDING_상태로_저장된다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-
-            orderService.createBilling(1L, reqDto);
-
-            List<OrderResponseDto> orders = orderService.getAllOrders(1L, PageRequest.of(0, 20));
-            assertThat(orders.get(0).orderStatus()).isEqualTo(OrderStatus.PENDING);
+            assertThat(result.rewardAmount()).isEqualTo(REWARD_PRICE + reward2Price);
+            assertThat(result.totalShippingCharge()).isEqualTo(REWARD_SHIPPING_CHARGE + reward2ShippingCharge);
+            assertThat(result.totalBillingAmount()).isEqualTo(REWARD_PRICE + reward2Price + REWARD_SHIPPING_CHARGE + reward2ShippingCharge);
         }
 
         // 빌링 생성 시 expiresAt이 설정되는지 검증
         @Test
         void 빌링_생성_시_expiresAt이_설정된다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-
-            BillingResponseDto result = orderService.createBilling(1L, reqDto);
+            BillingResponseDto result = createBilling(rq(savedReward.getId(), 1));
 
             assertThat(result.expiresAt()).isNotNull();
             assertThat(result.expiresAt()).isAfter(LocalDateTime.now().plusMinutes(14));
@@ -194,30 +163,36 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("주문 생성 통합테스트")
     class CreateOrderIntegrationTest {
 
-        private Long createBillingAndGetOrderId(Long memberId, Long rewardId, int qty) {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(rewardId, qty)
-            ));
-            BillingResponseDto billing = orderService.createBilling(memberId, reqDto);
-            return billing.orderId();
-        }
-
         // 정상 빌링 → 결제하기 → 상태 PAYING + 재고 차감 검증
         @Test
-        void 주문_생성_시_상태_PAYING으로_변경되고_재고가_차감된다() {
-            Long orderId = createBillingAndGetOrderId(1L, savedReward.getId(), 2);
-
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    orderId, savedFunding.getId(), true
-            );
-
-            OrderCreateResponseDto result = orderService.createOrder(1L, reqDto);
+        void 즉시주문_생성_시_상태_PAYING으로_변경되고_재고가_차감된다() {
+            BillingResponseDto billing = createBilling(rq(savedReward.getId(), 1));
+            OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(billing.orderId(), savedFunding.getId(), true);
+            OrderCreateResponseDto result = orderService.createOrder(1L, createReqDto);
 
             assertThat(result.orderNo()).isNotNull();
-            assertThat(result.totalBillingAmount()).isEqualTo(23000L); // 10000*2 + 3000
+            assertThat(result.orderStatus()).isEqualTo(OrderStatus.PAYING);
+            assertThat(result.totalBillingAmount()).isEqualTo(REWARD_PRICE + REWARD_SHIPPING_CHARGE);
 
             RewardJpaEntity updatedReward = rewardJpaRepository.findById(savedReward.getId()).orElseThrow();
-            assertThat(updatedReward.getRemainQty()).isEqualTo(8); // 10 - 2
+            assertThat(updatedReward.getRemainQty()).isEqualTo(9); // 10 - 1
+        }
+
+        @Test
+        void 예약주문_생성_시_상태_RESERVED로_변경되고_재고가_차감된다() {
+            FundingJpaEntity reservedFunding = fundingJpaRepository.save(createFundingJpaEntity(FundingType.RESERVED));
+            RewardJpaEntity reservedReward = rewardJpaRepository.save(
+                    createRewardJpaEntity(reservedFunding, REWARD_PRICE, REWARD_SHIPPING_CHARGE));
+
+            BillingResponseDto billing = orderService.createBilling(1L, createBillingRequest(reservedFunding.getId(), rq(reservedReward.getId(), 1)));
+            OrderCreateResponseDto result = orderService.createOrder(1L, new OrderCreateRequestDto(billing.orderId(), reservedFunding.getId(), false));
+
+            assertThat(result.orderNo()).isNotNull();
+            assertThat(result.orderStatus()).isEqualTo(OrderStatus.RESERVED);
+            assertThat(result.totalBillingAmount()).isEqualTo(REWARD_PRICE + REWARD_SHIPPING_CHARGE);
+
+            RewardJpaEntity updatedReward = rewardJpaRepository.findById(reservedReward.getId()).orElseThrow();
+            assertThat(updatedReward.getRemainQty()).isEqualTo(9); // 10 - 2
         }
 
     }
@@ -226,24 +201,12 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("주문 취소 통합테스트")
     class CancelOrderIntegrationTest {
 
-        private Long createAndStartOrder(Long memberId, int qty) {
-            BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), qty)
-            ));
-            BillingResponseDto billing = orderService.createBilling(memberId, billingReqDto);
-
-            OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
-                    billing.orderId(), savedFunding.getId(), true
-            );
-            orderService.createOrder(memberId, createReqDto);
-
-            return billing.orderId();
-        }
-
         // PAYING 상태 주문 취소 → CANCELLED + 재고 복구 검증
         @Test
         void 주문_취소_시_CANCELLED_상태로_변경되고_재고가_복구된다() {
-            Long orderId = createAndStartOrder(1L, 3);
+            Long orderId = createBilling(rq(savedReward.getId(), 3)).orderId();
+            OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(orderId, savedFunding.getId(), true);
+            orderService.createOrder(1L, createReqDto);
 
             OrderCancelResponseDto result = orderService.cancelOrder(1L, orderId, new OrderCancelRequestDto(1L));
 
@@ -259,18 +222,21 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("주문 조회 통합테스트")
     class GetOrdersIntegrationTest {
 
+        private Long reward2Price = 25000L;
+        private Long reward2ShippingCharge = 750L;
+
+        private RewardJpaEntity getRewardEntity() {
+            return rewardJpaRepository.save(
+                    createRewardJpaEntity(savedFunding, reward2Price, reward2ShippingCharge));
+        }
+
         // 회원 주문 목록 조회 → 본인 주문만 반환
         @Test
         void 본인의_주문_목록만_조회된다() {
-            BillingRequestDto reqDto1 = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-            BillingRequestDto reqDto2 = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward2.getId(), 1)
-            ));
-            orderService.createBilling(1L, reqDto1);
-            orderService.createBilling(1L, reqDto2);
-            orderService.createBilling(2L, reqDto1); // 다른 회원
+            RewardJpaEntity savedReward2 = getRewardEntity();
+            createBillingWithMemberId(1L, rq(savedReward.getId(), 1));
+            createBillingWithMemberId(1L, rq(savedReward2.getId(), 1));
+            createBillingWithMemberId(2L, rq(savedReward.getId(), 1)); // 다른 회원
 
             List<OrderResponseDto> result = orderService.getAllOrders(1L, PageRequest.of(0, 20));
 
@@ -281,10 +247,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         @Test
         void 페이징이_정상_동작한다() {
             for (int i = 0; i < 5; i++) {
-                BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                        new RewardQuantityDto(savedReward.getId(), 1)
-                ));
-                orderService.createBilling(1L, reqDto);
+                createBilling(rq(savedReward.getId(), 1));
             }
 
             List<OrderResponseDto> page1 = orderService.getAllOrders(1L, PageRequest.of(0, 3));
@@ -297,19 +260,15 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         // 주문 상세 조회 → 금액/리워드 정보 일치
         @Test
         void 주문_상세_조회_시_금액과_리워드_정보가_일치한다() {
-            BillingRequestDto reqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 2),
-                    new RewardQuantityDto(savedReward2.getId(), 1)
-            ));
-            BillingResponseDto billing = orderService.createBilling(1L, reqDto);
-
+            RewardJpaEntity savedReward2 = getRewardEntity();
+            BillingResponseDto billing = createBilling(rq(savedReward.getId(), 2), rq(savedReward2.getId(), 1));
             OrderDetailResponseDto result = orderService.getOrderDetail(1L, billing.orderId());
 
             assertThat(result.orderNo()).isNotNull();
             assertThat(result.rewards()).hasSize(2);
-            assertThat(result.rewardAmount()).isEqualTo(40000L);
-            assertThat(result.totalShippingCharge()).isEqualTo(8000L);
-            assertThat(result.totalBillingAmount()).isEqualTo(48000L);
+            assertThat(result.rewardAmount()).isEqualTo(REWARD_PRICE * 2 + reward2Price);
+            assertThat(result.totalShippingCharge()).isEqualTo(REWARD_SHIPPING_CHARGE + reward2ShippingCharge);
+            assertThat(result.totalBillingAmount()).isEqualTo(REWARD_PRICE * 2 + reward2Price + REWARD_SHIPPING_CHARGE + reward2ShippingCharge);
         }
     }
 
@@ -327,14 +286,8 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         // 동일 유저가 동일 주문에 10번 동시 결제 요청 → Lock(NOWAIT)에 의해 1번만 성공 (더블클릭 시나리오)
         @Test
         void 동일_유저가_동일_주문에_동시_요청_시_1건만_성공한다() throws InterruptedException {
-            BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-            BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
-
-            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                    billing.orderId(), savedFunding.getId(), true
-            );
+            BillingResponseDto billing = createBilling(rq(savedReward.getId(), 1));
+            OrderCreateRequestDto reqDto = new OrderCreateRequestDto(billing.orderId(), savedFunding.getId(), true);
 
             int threadCount = 10;
             ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -365,18 +318,14 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         // 재고 1개인 리워드에 5명 동시 주문 → CAS(remainQty >= qty)에 의해 1명만 성공
         @Test
         void 재고_1개에_5명_동시_주문_시_CAS에_의해_1명만_성공한다() throws InterruptedException {
-            RewardJpaEntity rewardStock1 = createRewardWithStock(1);
+            RewardJpaEntity rewardStock1 = rewardJpaRepository.saveAndFlush(createRewardJpaEntityWithStock(savedFunding, 1));
 
             int threadCount = 5;
             List<Long> orderIds = new ArrayList<>();
 
             for (int i = 0; i < threadCount; i++) {
                 long memberId = 100L + i;
-                BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                        new RewardQuantityDto(rewardStock1.getId(), 1)
-                ));
-                BillingResponseDto billing = orderService.createBilling(memberId, billingReqDto);
-                orderIds.add(billing.orderId());
+                orderIds.add(createBillingWithMemberId(memberId, rq(rewardStock1.getId(), 1)).orderId());
             }
 
             ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -389,9 +338,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
                 Long orderId = orderIds.get(i);
                 executor.submit(() -> {
                     try {
-                        OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                                orderId, savedFunding.getId(), true
-                        );
+                        OrderCreateRequestDto reqDto = new OrderCreateRequestDto(orderId, savedFunding.getId(), true);
                         orderService.createOrder(memberId, reqDto);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
@@ -426,11 +373,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             List<Long> orderIds = new ArrayList<>();
             for (int i = 0; i < threadCount; i++) {
                 long memberId = 200L + i;
-                BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                        new RewardQuantityDto(rewardWithStock.getId(), 1)
-                ));
-                BillingResponseDto billing = orderService.createBilling(memberId, billingReqDto);
-                orderIds.add(billing.orderId());
+                orderIds.add(createBillingWithMemberId(memberId, rq(rewardWithStock.getId(), 1)).orderId());
             }
 
             ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -442,9 +385,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
                 Long orderId = orderIds.get(i);
                 executor.submit(() -> {
                     try {
-                        OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                                orderId, savedFunding.getId(), true
-                        );
+                        OrderCreateRequestDto reqDto = new OrderCreateRequestDto(orderId, savedFunding.getId(), true);
                         orderService.createOrder(memberId, reqDto);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
@@ -467,14 +408,8 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         // 주문 취소와 동일 주문 결제 요청 동시 진행 → Lock에 의해 하나만 성공
         @Test
         void 취소와_결제_동시_요청_시_하나만_성공한다() throws InterruptedException {
-            BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 2)
-            ));
-            BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
-
-            OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
-                    billing.orderId(), savedFunding.getId(), true
-            );
+            BillingResponseDto billing = createBilling(rq(savedReward.getId(), 2));
+            OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(billing.orderId(), savedFunding.getId(), true);
             orderService.createOrder(1L, createReqDto);
 
             ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -485,7 +420,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             // 취소 시도
             executor.submit(() -> {
                 try {
-                    orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L));
+                    orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(savedFunding.getId()));
                     cancelSuccess.incrementAndGet();
                 } catch (Exception ignored) {
                 } finally {
@@ -525,11 +460,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             List<Long> orderIds = new ArrayList<>();
             for (int i = 0; i < billingCount; i++) {
                 long memberId = 300L + i;
-                BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                        new RewardQuantityDto(rewardWithStock.getId(), 1)
-                ));
-                BillingResponseDto billing = orderService.createBilling(memberId, billingReqDto);
-                orderIds.add(billing.orderId());
+                orderIds.add(createBillingWithMemberId(memberId, rq(rewardWithStock.getId(), 1)).orderId());
             }
 
             // 동시 주문 생성
@@ -542,9 +473,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
                 Long orderId = orderIds.get(i);
                 executor.submit(() -> {
                     try {
-                        OrderCreateRequestDto reqDto = new OrderCreateRequestDto(
-                                orderId, savedFunding.getId(), true
-                        );
+                        OrderCreateRequestDto reqDto = new OrderCreateRequestDto(orderId, savedFunding.getId(), true);
                         orderService.createOrder(memberId, reqDto);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
@@ -573,11 +502,8 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         @Test
         void 빌링_생성부터_취소까지_전체_플로우가_정상_동작한다() {
             // 1. 빌링 생성 (PENDING)
-            BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 2)
-            ));
-            BillingResponseDto billingResult = orderService.createBilling(1L, billingReqDto);
-            assertThat(billingResult.rewardAmount()).isEqualTo(20000L);
+            BillingResponseDto billingResult = createBilling(rq(savedReward.getId(), 2));
+            assertThat(billingResult.rewardAmount()).isEqualTo(REWARD_PRICE * 2);
 
             // 2. 주문 생성 (PAYING), 재고 차감
             OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
@@ -590,7 +516,7 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
             assertThat(afterCreate.getRemainQty()).isEqualTo(8); // 10 - 2
 
             // 3. 주문 취소 (CANCELLED), 재고 복구
-            OrderCancelResponseDto cancelResult = orderService.cancelOrder(1L, billingResult.orderId(), new OrderCancelRequestDto(1L));
+            OrderCancelResponseDto cancelResult = orderService.cancelOrder(1L, billingResult.orderId(), new OrderCancelRequestDto(savedFunding.getId()));
             assertThat(cancelResult.status()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(cancelResult.cancelledAt()).isNotNull();
 
@@ -601,16 +527,12 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         // 취소된 주문에 다시 결제 시작 → 상태 전이 불가
         @Test
         void 취소된_주문은_다시_결제를_시작할_수_없다() {
-            BillingRequestDto billingReqDto = new BillingRequestDto(savedFunding.getId(), false, List.of(
-                    new RewardQuantityDto(savedReward.getId(), 1)
-            ));
-            BillingResponseDto billing = orderService.createBilling(1L, billingReqDto);
-
+            BillingResponseDto billing = createBilling(rq(savedReward.getId(), 1));
             OrderCreateRequestDto createReqDto = new OrderCreateRequestDto(
                     billing.orderId(), savedFunding.getId(), true
             );
             orderService.createOrder(1L, createReqDto);
-            orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(1L));
+            orderService.cancelOrder(1L, billing.orderId(), new OrderCancelRequestDto(savedFunding.getId()));
 
             // 취소 후 다시 결제 시도
             assertThrows(Exception.class, () ->
@@ -627,11 +549,10 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         @Transactional
         @Test
         void PAYING_주문을_PAID로_변경하면_DB에_반영된다() {
-            Order order = createOrderWithStatus(OrderStatus.PAYING);
+            Long orderId = createOrderWithStatus(OrderStatus.PAYING);
+            orderService.processStatusUpdate(orderId, OrderStatus.PAID);
 
-            orderService.processStatusUpdate(order.getId(), OrderStatus.PAID);
-
-            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            Order updated = orderRepository.findByIdForUpdate(orderId).orElseThrow();
             assertThat(updated.getStatus()).isEqualTo(OrderStatus.PAID);
         }
 
@@ -639,11 +560,10 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         @Transactional
         @Test
         void 전이_불가능하면_상태가_변경되지_않는다() {
-            Order order = createOrderWithStatus(OrderStatus.REFUNDED);
+            Long orderId = createOrderWithStatus(OrderStatus.REFUNDED);
+            orderService.processStatusUpdate(orderId, OrderStatus.PAID);
 
-            orderService.processStatusUpdate(order.getId(), OrderStatus.PAID);
-
-            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            Order updated = orderRepository.findByIdForUpdate(orderId).orElseThrow();
             assertThat(updated.getStatus()).isEqualTo(OrderStatus.REFUNDED);
         }
 
@@ -655,18 +575,17 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Nested
-    @DisplayName("processCancelledUpdate 통합테스트")
+    @DisplayName("processCancelledUpdate 통합테스트(예약 펀딩 실패/cancel 메시지 수신)")
     class ProcessCancelledUpdateIntegrationTest {
-
         // PAYING 주문 → CANCELLED + cancelReason 저장 확인
         @Transactional
         @Test
         void PAYING_주문을_CANCELLED로_변경하고_cancelReason이_저장된다() {
-            Order order = createOrderWithStatus(OrderStatus.PAYING);
+            Long orderId = createOrderWithStatus(OrderStatus.PAYING);
 
-            orderService.processCancelledUpdate(order.getId(), "PAYMENT_CANCELLED");
+            orderService.processCancelledUpdate(orderId, "PAYMENT_CANCELLED");
 
-            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            Order updated = orderRepository.findByIdForUpdate(orderId).orElseThrow();
             assertThat(updated.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(updated.getCancelReason()).isEqualTo("PAYMENT_CANCELLED");
         }
@@ -676,9 +595,9 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         @Test
         void 취소_시_재고가_복구된다() {
             int initialRemainQty = savedReward.getRemainQty();
-            Order order = createOrderWithStatus(OrderStatus.PAYING);
+            Long orderId = createOrderWithStatus(OrderStatus.REFUNDED);
 
-            orderService.processCancelledUpdate(order.getId(), "PAYMENT_CANCELLED");
+            orderService.processCancelledUpdate(orderId, "PAYMENT_CANCELLED");
 
             entityManager.flush();
             entityManager.clear();
@@ -689,35 +608,51 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Nested
-    @DisplayName("processReservedFundingConfirmed 통합테스트")
+    @DisplayName("createSettlementItem 통합테스트(즉시 펀딩 성공/즉시 펀딩 실패 배치/예약 펀딩 성공 배치)")
+    class CreateSettlementItemTest {
+
+        @Transactional
+        @Test
+        void orderId에_따른_SettlementItem을_생성해서_반환한다() {
+            Long orderId = createOrderWithStatus(OrderStatus.PAID);
+            SettlementItem settlementItem = orderService.createSettlementItem(orderId).orElse(null);
+
+            assertThat(settlementItem.orderId()).isEqualTo(orderId);
+            assertThat(settlementItem.memberId()).isEqualTo(1L);
+            assertThat(settlementItem.amount()).isEqualTo(REWARD_PRICE + REWARD_SHIPPING_CHARGE);
+        }
+    }
+
+    @Nested
+    @DisplayName("processReservedFundingConfirmed 통합테스트(예약 펀딩 성공 처리)")
     class ProcessPayingAndPublishSettlementIntegrationTest {
 
         // RESERVED 주문 → PAYING 상태 변경 → DB 반영 확인
         @Transactional
         @Test
         void RESERVED_주문을_PAYING으로_변경하면_DB에_반영된다() {
-            Order order = createOrderWithStatus(OrderStatus.RESERVED);
+            Long orderId = createOrderWithStatus(OrderStatus.RESERVED);
 
-            orderService.processReservedFundingConfirmed(order.getId());
+            orderService.processReservedFundingConfirmed(orderId);
 
-            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            Order updated = orderRepository.findByIdForUpdate(orderId).orElseThrow();
             assertThat(updated.getStatus()).isEqualTo(OrderStatus.PAYING);
         }
     }
 
     @Nested
-    @DisplayName("processFundingFailedRefund 통합테스트")
+    @DisplayName("processFundingFailedRefund 통합테스트(즉시 펀딩 실패 처리)")
     class processFundingFailedRefundIntegrationTest {
 
         // PAID 주문 → CANCELLED + FUNDING_FAILED reason 저장 확인
         @Transactional
         @Test
         void PAID_주문을_CANCELLED로_변경하고_FUNDING_FAILED가_저장된다() {
-            Order order = createOrderWithStatus(OrderStatus.PAID);
+            Long orderId = createOrderWithStatus(OrderStatus.PAID);
 
-            orderService.processFundingFailedRefund(order.getId());
+            orderService.processFundingFailedRefund(orderId);
 
-            Order updated = orderRepository.findByIdForUpdate(order.getId()).orElseThrow();
+            Order updated = orderRepository.findByIdForUpdate(orderId).orElseThrow();
             assertThat(updated.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(updated.getCancelReason()).isEqualTo("FUNDING_FAILED");
         }
@@ -727,9 +662,9 @@ class OrderServiceIntegrationTest extends AbstractIntegrationTest {
         @Test
         void 취소_시_재고가_복구된다() {
             int initialRemainQty = savedReward.getRemainQty();
-            Order order = createOrderWithStatus(OrderStatus.PAID);
+            Long orderId = createOrderWithStatus(OrderStatus.PAID);
 
-            orderService.processFundingFailedRefund(order.getId());
+            orderService.processFundingFailedRefund(orderId);
 
             entityManager.flush();
             entityManager.clear();
