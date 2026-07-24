@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -53,9 +54,16 @@ class FundingServiceUnitTest {
             Funding funding1 = FundingFixture.createActiveFunding(1L, 500000L, 1000000L);
             Funding funding2 = FundingFixture.createScheduledFunding(2L, now.plusDays(1), now.plusDays(30));
 
-            given(fundingRepository.findAll()).willReturn(List.of(funding1, funding2));
+            Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.ASC, "startAt"));
+            Page<Funding> fundingPage = new PageImpl<>(List.of(funding1, funding2), pageable, 2);
 
-            List<FundingListResponseDto> result = fundingService.getFundings(null);
+            given(fundingRepository.findByTypeAndStatusIn(
+                    FundingType.INSTANT,
+                    List.of(FundingStatus.SCHEDULED, FundingStatus.ACTIVE, FundingStatus.SUCCESS, FundingStatus.FAILED),
+                    pageable
+            )).willReturn(fundingPage);
+
+            List<FundingListResponseDto> result = fundingService.getFundings("INSTANT", "ALL", 0, 9).getContent();
 
             assertThat(result).hasSize(2);
         }
@@ -64,22 +72,22 @@ class FundingServiceUnitTest {
         void status_지정하면_해당_상태만_반환한다() {
             Funding funding = FundingFixture.createActiveFunding(1L, 500000L, 1000000L);
 
-            given(fundingRepository.findByStatus(FundingStatus.ACTIVE)).willReturn(List.of(funding));
+            Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.ASC, "holdTo"));
+            Page<Funding> fundingPage = new PageImpl<>(List.of(funding), pageable, 1);
 
-            List<FundingListResponseDto> result = fundingService.getFundings("ACTIVE");
+            given(fundingRepository.findByTypeAndStatusIn(
+                    FundingType.INSTANT,
+                    List.of(FundingStatus.ACTIVE),
+                    pageable
+            )).willReturn(fundingPage);
+
+            List<FundingListResponseDto> result = fundingService.getFundings("INSTANT", "ACTIVE", 0, 9).getContent();
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).status()).isEqualTo("ACTIVE");
         }
 
-        @Test
-        void 빈_문자열_status면_전체_목록을_반환한다() {
-            given(fundingRepository.findAll()).willReturn(List.of());
 
-            List<FundingListResponseDto> result = fundingService.getFundings("");
-
-            assertThat(result).isEmpty();
-        }
     }
 
     @Nested

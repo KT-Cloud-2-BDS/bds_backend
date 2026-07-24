@@ -51,23 +51,6 @@ class FundingControllerUnitExceptionTest extends MockMvcTestSupport {
     }
 
     @Nested
-    @DisplayName("펀딩 목록 조회 예외")
-    class GetFundingsExceptionTest {
-
-        @Test
-        void 유효하지_않은_status면_400을_반환한다() throws Exception {
-            given(fundingService.getFundings("INVALID"))
-                    .willThrow(new BusinessException(ErrorCode.INVALID_INPUT));
-
-            mockMvc.perform(get("/api/fundings")
-                            .header("X-User-Id", "1")
-                            .header("X-Internal-Secret", gatewaySecret)
-                            .param("status", "INVALID"))
-                    .andExpect(status().isBadRequest());
-        }
-    }
-
-    @Nested
     @DisplayName("펀딩 생성 예외")
     class CreateFundingExceptionTest {
 

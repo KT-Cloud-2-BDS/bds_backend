@@ -1,8 +1,11 @@
 package com.bds.order.infrastructure.funding;
 
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -44,4 +47,6 @@ public interface FundingJpaRepository extends JpaRepository<FundingJpaEntity, Lo
 
     @Query("SELECT f FROM FundingJpaEntity f WHERE f.status = :status AND f.updatedAt > :after")
     List<FundingJpaEntity> findByStatusAndUpdatedAfter(@Param("status") FundingStatus status, @Param("after") LocalDateTime after);
+
+    Page<FundingJpaEntity> findByTypeAndStatusIn(FundingType type, List<FundingStatus> statuses, Pageable pageable);
 }

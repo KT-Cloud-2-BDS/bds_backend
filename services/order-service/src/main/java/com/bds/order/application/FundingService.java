@@ -3,6 +3,7 @@ package com.bds.order.application;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.reward.Reward;
 import com.bds.order.domain.reward.RewardRepository;
 import com.bds.order.global.exception.BusinessException;
@@ -13,6 +14,10 @@ import com.bds.order.presentation.dto.FundingCreateResponseDto;
 import com.bds.order.presentation.dto.FundingDetailResponseDto;
 import com.bds.order.presentation.dto.FundingListResponseDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,19 +32,36 @@ public class FundingService {
     private final RewardRepository rewardRepository;
     private final FundingTaskScheduler fundingTaskScheduler;
 
-    public List<FundingListResponseDto> getFundings(String status) {
-        List<Funding> fundings;
-        if (status != null && !status.isBlank()) {
-            try {
-                fundings = fundingRepository.findByStatus(FundingStatus.valueOf(status.toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT);
+    public Page<FundingListResponseDto> getFundings(String type, String status, int page, int size) {
+        FundingType fundingType = switch (type) {
+            case "RESERVED" -> FundingType.RESERVED;
+            default -> FundingType.INSTANT;
+        };
+
+        Pageable pageable;
+        List<FundingStatus> statuses;
+
+        switch (status) {
+            case "SCHEDULED" -> {
+                statuses = List.of(FundingStatus.SCHEDULED);
+                pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "startAt"));
             }
-        } else {
-            fundings = fundingRepository.findAll();
+            case "ACTIVE" -> {
+                statuses = List.of(FundingStatus.ACTIVE);
+                pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "holdTo"));
+            }
+            case "CLOSED" -> {
+                statuses = List.of(FundingStatus.SUCCESS, FundingStatus.FAILED);
+                pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "holdTo"));
+            }
+            default -> {
+                statuses = List.of(FundingStatus.SCHEDULED, FundingStatus.ACTIVE, FundingStatus.SUCCESS, FundingStatus.FAILED);
+                pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "startAt"));
+            }
         }
 
-        return fundings.stream().map(FundingListResponseDto::from).toList();
+        Page<Funding> fundingPage = fundingRepository.findByTypeAndStatusIn(fundingType, statuses, pageable);
+        return fundingPage.map(FundingListResponseDto::from);
     }
 
     public FundingDetailResponseDto getFundingDetail(Long fundingId) {

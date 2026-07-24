@@ -3,11 +3,13 @@ package com.bds.order.infrastructure.funding;
 import com.bds.order.domain.funding.Funding;
 import com.bds.order.domain.funding.FundingRepository;
 import com.bds.order.domain.funding.FundingStatus;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.domain.reward.BadgeType;
 import com.bds.order.infrastructure.reward.RewardJpaEntity;
-import com.bds.order.infrastructure.reward.RewardJpaRepository;
 import com.bds.order.presentation.dto.FundingCreateRequestDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -19,7 +21,6 @@ import java.util.Optional;
 public class FundingPersistenceAdapter implements FundingRepository {
 
     private final FundingJpaRepository fundingJpaRepository;
-    private final RewardJpaRepository rewardJpaRepository;
     private final FundingMapper fundingMapper;
 
     @Override
@@ -115,4 +116,11 @@ public class FundingPersistenceAdapter implements FundingRepository {
                 .map(fundingMapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public Page<Funding> findByTypeAndStatusIn(FundingType type, List<FundingStatus> statuses, Pageable pageable) {
+        Page<FundingJpaEntity> entityPage = fundingJpaRepository.findByTypeAndStatusIn(type, statuses, pageable);
+        return entityPage.map(fundingMapper::toDomain);
+    }
+
 }

@@ -111,7 +111,7 @@ class OrderPersistenceAdapterUnitTest {
                     1L, "ORD-001", OrderStatus.PAID,
                     33000L, 3000L, now,
                     1L, "테스트 펀딩", 100L, now.plusDays(30), false,
-                    null, null, now
+                    null, null, now, null
             );
 
             given(orderJpaRepository.findOrderWithFunding(memberId, orderId))

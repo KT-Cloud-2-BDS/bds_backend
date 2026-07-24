@@ -10,8 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,20 +32,6 @@ class FundingServiceUnitExceptionTest {
     private FundingTaskScheduler fundingTaskScheduler;
     @InjectMocks
     private FundingService fundingService;
-
-    @Nested
-    @DisplayName("펀딩 목록 조회 예외")
-    class GetFundingsExceptionTest {
-
-        @ParameterizedTest(name = "유효하지 않은 status: {0}")
-        @ValueSource(strings = {"INVALID", "WRONG", "active_typo", "123"})
-        void 유효하지_않은_status면_예외를_던진다(String invalidStatus) {
-            assertThatThrownBy(() -> fundingService.getFundings(invalidStatus))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.INVALID_INPUT);
-        }
-    }
 
     @Nested
     @DisplayName("펀딩 상세 조회 예외")

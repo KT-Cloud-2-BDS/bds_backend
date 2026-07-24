@@ -1,6 +1,7 @@
 package com.bds.order.presentation;
 
 import com.bds.order.application.FundingService;
+import com.bds.order.domain.funding.FundingType;
 import com.bds.order.presentation.controller.FundingController;
 import com.bds.order.presentation.dto.FundingCreateRequestDto;
 import com.bds.order.presentation.dto.FundingCreateResponseDto;
@@ -12,6 +13,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -48,16 +52,24 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
                     NOW.minusDays(10), NOW.plusDays(30), false, NOW
             );
 
-            given(fundingService.getFundings(null)).willReturn(List.of(dto));
+            Page<FundingListResponseDto> page = new PageImpl<>(
+                    List.of(dto), PageRequest.of(0, 9), 1
+            );
+
+            given(fundingService.getFundings("INSTANT", "ALL", 0, 9)).willReturn(page);
 
             mockMvc.perform(get("/api/fundings")
                             .header("X-User-Id", "1")
                             .header("X-Internal-Secret", gatewaySecret))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$[0].id").value(1))
-                    .andExpect(jsonPath("$[0].title").value("테스트 펀딩"))
-                    .andExpect(jsonPath("$[0].status").value("ACTIVE"))
-                    .andExpect(jsonPath("$[0].goalAmount").value(1000000));
+                    .andExpect(jsonPath("$.content[0].id").value(1))
+                    .andExpect(jsonPath("$.content[0].title").value("테스트 펀딩"))
+                    .andExpect(jsonPath("$.content[0].status").value("ACTIVE"))
+                    .andExpect(jsonPath("$.content[0].goalAmount").value(1000000))
+                    .andExpect(jsonPath("$.totalElements").value(1))
+                    .andExpect(jsonPath("$.totalPages").value(1))
+                    .andExpect(jsonPath("$.number").value(0))
+                    .andExpect(jsonPath("$.size").value(9));
         }
 
         @Test
@@ -68,14 +80,18 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
                     NOW.plusDays(1), NOW.plusDays(30), false, NOW
             );
 
-            given(fundingService.getFundings("SCHEDULED")).willReturn(List.of(dto));
+            Page<FundingListResponseDto> page = new PageImpl<>(
+                    List.of(dto), PageRequest.of(0, 9), 1
+            );
+
+            given(fundingService.getFundings("INSTANT", "SCHEDULED", 0, 9)).willReturn(page);
 
             mockMvc.perform(get("/api/fundings")
                             .header("X-User-Id", "1")
                             .header("X-Internal-Secret", gatewaySecret)
                             .param("status", "SCHEDULED"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$[0].status").value("SCHEDULED"));
+                    .andExpect(jsonPath("$.content[0].status").value("SCHEDULED"));
         }
     }
 
@@ -90,7 +106,7 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
                     "EARLY_BIRD", 10000L, NOW.plusDays(60), 3000L
             );
             FundingDetailResponseDto dto = new FundingDetailResponseDto(
-                    1L, "테스트 펀딩", 100L, "ACTIVE",
+                    1L, "테스트 펀딩", 100L, "ACTIVE", FundingType.INSTANT,
                     1000000L, 500000L, 5,
                     NOW.minusDays(10), NOW.plusDays(30), NOW.plusDays(31),
                     false, NOW, NOW, List.of(rewardDto)
@@ -140,6 +156,5 @@ class FundingControllerUnitTest extends MockMvcTestSupport {
                     .andExpect(jsonPath("$.type").value("INSTANT"))
                     .andExpect(jsonPath("$.status").value("SCHEDULED"));
         }
-
     }
 }
