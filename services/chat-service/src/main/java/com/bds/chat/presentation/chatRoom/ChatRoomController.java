@@ -75,6 +75,6 @@ public class ChatRoomController {
     public ResponseEntity<ChatRoomResponseDto> getFundingRoom(
             @PathVariable Long productId
     ) {
-        return ResponseEntity.ok(chatRoomService.getFundingChatRoomById(productId));
+        return ResponseEntity.ok(chatRoomService.getFundingChatRoomByProductId(productId));
     }
 }
