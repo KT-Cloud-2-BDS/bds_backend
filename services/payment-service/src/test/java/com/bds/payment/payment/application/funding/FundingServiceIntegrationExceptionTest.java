@@ -121,9 +121,8 @@ class FundingServiceIntegrationExceptionTest {
 
             // when & then
             assertThatThrownBy(() -> fundingService.refund(dto))
-                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
-                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_NOT_FOUND);
-                    });
+                    .isInstanceOfSatisfying(BusinessException.class, ex ->
+                            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_NOT_FOUND));
         }
 
         @Test
@@ -141,9 +140,8 @@ class FundingServiceIntegrationExceptionTest {
                     UuidCreator.getTimeOrderedEpoch(), 1L, memberId, 1L, 10000L, "USER_CANCEL"
             );
             assertThatThrownBy(() -> fundingService.refund(secondRefund))
-                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
-                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_ALREADY_REFUNDED);
-                    });
+                    .isInstanceOfSatisfying(BusinessException.class, ex ->
+                            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_ALREADY_REFUNDED));
         }
 
         @Test
@@ -160,9 +158,8 @@ class FundingServiceIntegrationExceptionTest {
                     UuidCreator.getTimeOrderedEpoch(), 1L, otherId, 1L, 10000L, "USER_CANCEL"
             );
             assertThatThrownBy(() -> fundingService.refund(invalidRefund))
-                    .isInstanceOfSatisfying(BusinessException.class, ex -> {
-                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_ACCESS_DENIED);
-                    });
+                    .isInstanceOfSatisfying(BusinessException.class, ex ->
+                            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_ACCESS_DENIED));
         }
     }
 
@@ -206,8 +203,8 @@ class FundingServiceIntegrationExceptionTest {
         }
 
         @Test
-        void 창작자_지갑이_없으면_전체_배치가_실패한다() {
-            // given: 창작자 지갑은 없음
+        void 창작자_지갑이_없으면_크레딧_단계에서_예외가_발생하지만_개별_항목은_CONFIRMED로_남는다() {
+            // given
             Long creatorId = 999L;
             Long productId = 100L;
 
@@ -222,11 +219,17 @@ class FundingServiceIntegrationExceptionTest {
                     List.of(new SettlementItem(101L, 1L, 10000L))
             );
 
-            // when & then
+            // when: 크레딧 단계에서 예외 발생
             assertThatThrownBy(() -> fundingService.confirmSettlement(batchDto))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOfSatisfying(BusinessException.class, ex ->
+                            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND));
+
+            // then: 개별 항목은 이미 CONFIRMED
+            FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(101L).orElseThrow();
+            assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.CONFIRMED);
         }
     }
+
     @Nested
     @DisplayName("confirmReservedFunding() 예외")
     class ConfirmReservedFundingExceptionTest {
@@ -301,7 +304,7 @@ class FundingServiceIntegrationExceptionTest {
         }
 
         @Test
-        void 창작자_지갑이_없으면_전체_배치가_실패한다() {
+        void 창작자_지갑이_없으면_크레딧_단계에서_예외가_발생하지만_개별_항목은_CONFIRMED로_남는다() {
             // given: 창작자 지갑은 없음
             Long creatorId = 999L;
             Long productId = 100L;
@@ -315,8 +318,15 @@ class FundingServiceIntegrationExceptionTest {
                     List.of(new SettlementItem(201L, 1L, 10000L))
             );
 
-            // when & then
-            assertThatThrownBy(() -> fundingService.confirmReservedFunding(batchDto)).isInstanceOf(BusinessException.class);
+            // when: 크레딧 단계에서 예외 발생
+            assertThatThrownBy(() -> fundingService.confirmReservedFunding(batchDto))
+                    .isInstanceOfSatisfying(BusinessException.class, ex ->
+                            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND));
+
+            // then: 개별 항목은 REQUIRES_NEW로 이미 커밋됨
+            FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(201L).orElseThrow();
+            assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.CONFIRMED);
+            assertThat(fp.getCreditedAt()).isNotNull();  // updateCreditedAtBulk도 이미 완료
         }
     }
 }
