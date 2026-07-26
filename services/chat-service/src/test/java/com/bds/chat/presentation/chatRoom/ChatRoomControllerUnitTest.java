@@ -56,7 +56,7 @@ class ChatRoomControllerUnitTest {
 
     private InquiryChatRoomDetailResponseDto dummyInquiryDetail() {
         MembershipStatusDto membership = new MembershipStatusDto("ACTIVE", null, NOW);
-        return new InquiryChatRoomDetailResponseDto(10L, "INQUIRY", 1L, List.of(5L), 2L, NOW, "ACTIVE", membership, null);
+        return new InquiryChatRoomDetailResponseDto(10L, "INQUIRY", 1L, List.of(new ParticipantDto(5L, membership)), 2L, NOW, "ACTIVE", membership, null);
     }
 
     private ChatRoomDeleteResponseDto dummyDeleteResponse() {

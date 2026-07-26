@@ -9,14 +9,14 @@ public record InquiryChatRoomDetailResponseDto(
         Long roomId,
         String type,
         Long productId,
-        List<Long> participants,
+        List<ParticipantDto> participants,
         Long createdBy,
         LocalDateTime createdAt,
         String status,
         MembershipStatusDto myMembership,
         LastMessageDto lastMessage
 ) {
-    public static InquiryChatRoomDetailResponseDto from(ChatRoom room, List<Long> participants,
+    public static InquiryChatRoomDetailResponseDto from(ChatRoom room, List<ParticipantDto> participants,
                                                         MembershipStatusDto myMembership, LastMessageDto lastMessage) {
         return new InquiryChatRoomDetailResponseDto(
                 room.getId().value(),

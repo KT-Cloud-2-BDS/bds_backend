@@ -122,8 +122,8 @@ public class ChatRoomService {
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN, "Not a member of this room"));
 
-        List<Long> participants = members.stream()
-                .map(m -> m.getMemberId().value())
+        List<ParticipantDto> participants = members.stream()
+                .map(ParticipantDto::from)
                 .toList();
 
         ChatMessage latestMessage = chatMessageRepository.findLatestWithUnread(roomId, myMember.getLastReadMessageId()).latest();

@@ -134,7 +134,8 @@ class ChatRoomServiceIntegrationTest {
 
             assertThat(result.roomId()).isEqualTo(roomId);
             assertThat(result.type()).isEqualTo("INQUIRY");
-            assertThat(result.participants()).containsExactlyInAnyOrder(BUYER_ID, SELLER_ID);
+            assertThat(result.participants()).extracting(ParticipantDto::memberId)
+                    .containsExactlyInAnyOrder(BUYER_ID, SELLER_ID);
             assertThat(result.myMembership()).isNotNull();
         }
     }

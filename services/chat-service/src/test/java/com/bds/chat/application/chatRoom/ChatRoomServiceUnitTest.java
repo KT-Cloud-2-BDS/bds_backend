@@ -170,7 +170,7 @@ class ChatRoomServiceUnitTest {
 
             assertThat(result.roomId()).isEqualTo(ROOM_ID);
             assertThat(result.type()).isEqualTo("INQUIRY");
-            assertThat(result.participants()).contains(BUYER_ID);
+            assertThat(result.participants()).anyMatch(p -> p.memberId().equals(BUYER_ID));
             assertThat(result.lastMessage()).isNull();
         }
 
