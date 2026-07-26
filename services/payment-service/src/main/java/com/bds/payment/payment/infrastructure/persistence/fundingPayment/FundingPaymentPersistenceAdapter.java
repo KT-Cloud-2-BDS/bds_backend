@@ -6,6 +6,7 @@ import com.bds.payment.payment.domain.fundingPayment.FundingPaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,5 +41,10 @@ public class FundingPaymentPersistenceAdapter implements FundingPaymentRepositor
     public List<FundingPayment> saveAll(List<FundingPayment> fundingPayments) {
         List<FundingPaymentJpaEntity> entities = fundingPayments.stream().map(mapper::toEntity).toList();
         return jpaRepository.saveAll(entities).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public int updateCreditedAtBulk(List<Long> ids, LocalDateTime now) {
+        return jpaRepository.updateCreditedAtBulk(ids, now);
     }
 }

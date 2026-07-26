@@ -31,6 +31,6 @@ public class WalletPersistenceAdapter implements WalletRepository {
 
     @Override
     public Wallet save(Wallet wallet) {
-        return mapper.toDomain(jpaRepository.save(mapper.toJpaEntity(wallet)));
+        return mapper.toDomain(jpaRepository.saveAndFlush(mapper.toJpaEntity(wallet)));
     }
 }

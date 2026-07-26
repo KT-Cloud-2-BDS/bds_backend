@@ -53,16 +53,6 @@ public class FundingPayment {
         this.status = FundingPaymentStatus.CONFIRMED;
     }
 
-    public void confirmReserved() {
-        if (this.paymentType != PaymentType.RESERVED) {
-            throw new BusinessException(ErrorCode.FUNDING_INVALID_STATUS);
-        }
-        if (this.status != FundingPaymentStatus.RESERVED) {
-            throw new BusinessException(ErrorCode.FUNDING_INVALID_STATUS);
-        }
-        this.status = FundingPaymentStatus.CONFIRMED;
-    }
-
     public void markCredited(LocalDateTime now) {
         if (this.status != FundingPaymentStatus.CONFIRMED) {
             throw new BusinessException(ErrorCode.FUNDING_INVALID_STATUS);

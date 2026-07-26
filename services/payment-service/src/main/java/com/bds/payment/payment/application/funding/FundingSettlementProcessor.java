@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +29,7 @@ public class FundingSettlementProcessor {
     private final WalletService walletService;
 
     /**
-     * 즉시펀딩 단건 확정 (SUCCESS → CONFIRMED)
+     * 결제 로직 ( 기존 단건 결제 + 예약 결제 벌크 내부 단건 결제 담당 )
      * @return 확정된 금액
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -49,47 +48,6 @@ public class FundingSettlementProcessor {
         fp.confirm();
         fundingPaymentRepository.save(fp);
         return fp.getAmount();
-    }
-
-    /**
-     * 예약펀딩 단건 확정 (신규 생성 + 청구)
-     * @return 청구된 금액
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public long processReservedFundingItem(SettlementItem item, Long productId) {
-        if (fundingPaymentRepository.existsByOrderId(item.orderId())) {
-            return 0L;
-        }
-
-        Wallet buyerWallet = walletService.decrease(item.memberId(), item.amount());
-        Long buyerWalletId = buyerWallet.getId();
-        UUID tranSeqNo = UuidCreator.getTimeOrderedEpoch();
-
-        FundingPayment fp = FundingPayment.builder()
-                .orderId(item.orderId())
-                .walletId(buyerWalletId)
-                .productId(productId)
-                .tranSeqNo(tranSeqNo)
-                .amount(item.amount())
-                .paymentType(PaymentType.RESERVED)
-                .status(FundingPaymentStatus.CONFIRMED)
-                .build();
-        FundingPayment savedFp = fundingPaymentRepository.save(fp);
-
-        PaymentHistoryCommand buyerCommand = PaymentHistoryCommand.ofFunding(
-                buyerWalletId,
-                savedFp.getId(),
-                tranSeqNo,
-                TransactionType.WITHDRAWAL,
-                TransactionReason.FUNDING_PAYMENT,
-                "예약펀딩 청구",
-                item.amount(),
-                buyerWallet.getBalance(),
-                PaymentHistoryStatus.SUCCESS
-        );
-        paymentHistoryRepository.save(PaymentHistory.create(buyerCommand));
-
-        return item.amount();
     }
 
     /**
@@ -140,15 +98,17 @@ public class FundingSettlementProcessor {
                 .findUncreditedForUpdate(productId, FundingPaymentStatus.CONFIRMED);
 
         if (uncredited.isEmpty()) {
-            return;  // 이미 다 크레딧됨 (멱등)
+            return;
         }
 
         long total = uncredited.stream().mapToLong(FundingPayment::getAmount).sum();
         Wallet creatorWallet = walletService.charge(creatorMemberId, total);
 
         LocalDateTime now = LocalDateTime.now();
-        uncredited.forEach(fp -> fp.markCredited(now));
-        fundingPaymentRepository.saveAll(uncredited);
+        List<Long> ids = uncredited.stream()
+                .map(FundingPayment::getId)
+                .toList();
+        fundingPaymentRepository.updateCreditedAtBulk(ids, now);
 
         PaymentHistoryCommand command = PaymentHistoryCommand.ofSettlement(
                 creatorWallet,

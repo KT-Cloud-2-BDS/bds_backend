@@ -14,6 +14,8 @@ import com.bds.payment.payment.presentation.request.SettlementBatchRequestDto;
 import com.bds.payment.payment.presentation.response.FundingPaymentResponseDto;
 import com.bds.payment.payment.presentation.response.SettlementResultResponseDto;
 import com.github.f4b6a3.uuid.UuidCreator;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +40,9 @@ class FundingServiceIntegrationTest {
     @Autowired private WalletJpaRepository walletJpaRepository;
     @Autowired private PaymentHistoryJpaRepository paymentHistoryJpaRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @AfterEach
     void cleanUp() {
         paymentHistoryJpaRepository.deleteAll();
@@ -46,7 +51,7 @@ class FundingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("펀딩 결제")
+    @DisplayName("funding()")
     class FundingTest {
 
         @Test
@@ -60,7 +65,10 @@ class FundingServiceIntegrationTest {
 
             // then
             assertThat(result).isNotNull();
-            assertThat(fundingPaymentJpaRepository.findByOrderId(dto.orderId())).isPresent();
+
+            FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(dto.orderId()).orElseThrow();
+            assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.SUCCESS);
+            assertThat(fp.getRetryCnt()).isEqualTo(0);
 
             Long walletId = walletService.getWalletId(dto.memberId());
             WalletJpaEntity wallet = walletJpaRepository.findById(walletId).orElseThrow();
@@ -68,26 +76,91 @@ class FundingServiceIntegrationTest {
         }
 
         @Test
-        void RESERVED_결제는_지갑_차감_없이_처리한다() {
+        void 잔액_부족시_FAILED로_저장되고_retryCnt가_증가한다() {
             // given
-            walletJpaRepository.save(WalletJpaEntity.builder().memberId(1L).balance(0L).build());
-            FundingPaymentRequestDto dto = new FundingPaymentRequestDto(2L, 1L, 100L, 10000L, PaymentType.RESERVED);
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(1L).balance(5000L).build());
+            FundingPaymentRequestDto dto = new FundingPaymentRequestDto(1L, 1L, 100L, 10000L, PaymentType.INSTANT);
 
             // when
-            FundingPaymentResponseDto result = fundingService.funding(dto);
+            fundingService.funding(dto);
 
             // then
-            assertThat(result).isNotNull();
-            assertThat(fundingPaymentJpaRepository.findByOrderId(dto.orderId())).isPresent();
+            FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(dto.orderId()).orElseThrow();
+            assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.FAILED);
+            assertThat(fp.getRetryCnt()).isEqualTo(1);
 
             Long walletId = walletService.getWalletId(dto.memberId());
             WalletJpaEntity wallet = walletJpaRepository.findById(walletId).orElseThrow();
-            assertThat(wallet.getBalance()).isEqualTo(0L);
+            assertThat(wallet.getBalance()).isEqualTo(5000L);
+        }
+
+        @Test
+        void 재시도_결제_성공시_기존_record가_SUCCESS로_전이된다() {
+            // given: 1차 실패
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(1L).balance(5000L).build());
+            FundingPaymentRequestDto dto = new FundingPaymentRequestDto(1L, 1L, 100L, 10000L, PaymentType.INSTANT);
+            fundingService.funding(dto);
+
+            walletService.charge(1L, 20000L);
+
+            // when: 2차 재시도
+            fundingService.funding(dto);
+
+            // then
+            FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(dto.orderId()).orElseThrow();
+            assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.SUCCESS);
+            assertThat(fp.getRetryCnt()).isEqualTo(1);  // 1차 실패 카운트 유지
+
+            Long walletId = walletService.getWalletId(dto.memberId());
+            WalletJpaEntity wallet = walletJpaRepository.findById(walletId).orElseThrow();
+            assertThat(wallet.getBalance()).isEqualTo(15000L);
+        }
+
+        @Test
+        void 재시도_3회_초과시_MAX_RETRY_EXCEEDED로_처리된다() {
+            // given
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(1L).balance(5000L).build());
+            FundingPaymentRequestDto dto = new FundingPaymentRequestDto(1L, 1L, 100L, 10000L, PaymentType.INSTANT);
+
+            fundingService.funding(dto);  // retryCnt=1
+            fundingService.funding(dto);  // retryCnt=2
+            fundingService.funding(dto);  // retryCnt=3
+
+            // when: 4회차 시도
+            fundingService.funding(dto);
+
+            // then
+            FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(dto.orderId()).orElseThrow();
+            assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.FAILED);
+            assertThat(fp.getRetryCnt()).isEqualTo(3);  // 3에서 멈춤
+
+            Long walletId = walletService.getWalletId(dto.memberId());
+            WalletJpaEntity wallet = walletJpaRepository.findById(walletId).orElseThrow();
+            assertThat(wallet.getBalance()).isEqualTo(5000L);
+        }
+
+        @Test
+        void 이미_성공한_주문에_대한_재요청은_멱등_처리된다() {
+            // given
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(1L).balance(40000L).build());
+            FundingPaymentRequestDto dto = new FundingPaymentRequestDto(1L, 1L, 100L, 10000L, PaymentType.INSTANT);
+            fundingService.funding(dto);
+
+            // when: 같은 주문 재요청
+            fundingService.funding(dto);
+
+            // then
+            FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(dto.orderId()).orElseThrow();
+            assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.SUCCESS);
+
+            Long walletId = walletService.getWalletId(dto.memberId());
+            WalletJpaEntity wallet = walletJpaRepository.findById(walletId).orElseThrow();
+            assertThat(wallet.getBalance()).isEqualTo(30000L);
         }
     }
 
     @Nested
-    @DisplayName("환불")
+    @DisplayName("refund()")
     class RefundTest {
 
         @Test
@@ -112,7 +185,7 @@ class FundingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("정산확정 배치")
+    @DisplayName("confirmSettlement()")
     class ConfirmSettlementTest {
 
         @Test
@@ -190,6 +263,7 @@ class FundingServiceIntegrationTest {
             fundingService.confirmSettlement(batchDto);
 
             Long creatorWalletId = walletService.getWalletId(creatorId);
+            entityManager.clear();
             long balanceAfterFirst = walletJpaRepository.findById(creatorWalletId).orElseThrow().getBalance();
             assertThat(balanceAfterFirst).isEqualTo(20000L);
 
@@ -197,8 +271,7 @@ class FundingServiceIntegrationTest {
             SettlementResultResponseDto retryResult = fundingService.confirmSettlement(batchDto);
 
             // then
-            assertThat(retryResult.successItems())
-                    .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
+            assertThat(retryResult.successItems()).allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
 
             long balanceAfterRetry = walletJpaRepository.findById(creatorWalletId).orElseThrow().getBalance();
             assertThat(balanceAfterRetry).isEqualTo(20000L);
@@ -206,7 +279,7 @@ class FundingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("예약펀딩확정 배치")
+    @DisplayName("confirmReservedFunding()")
     class ConfirmReservedFundingTest {
 
         @Test
@@ -258,6 +331,50 @@ class FundingServiceIntegrationTest {
         }
 
         @Test
+        void 잔액_부족한_항목은_FAILED로_저장되고_나머지는_정상_처리된다() {
+            // given
+            Long creatorId = 999L;
+            Long productId = 100L;
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(creatorId).balance(0L).build());
+
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(1L).balance(30000L).build());
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(2L).balance(5000L).build());  // 잔액 부족
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(3L).balance(30000L).build());
+
+            SettlementBatchRequestDto batchDto = new SettlementBatchRequestDto(
+                    UuidCreator.getTimeOrderedEpoch(),
+                    null,
+                    creatorId,
+                    productId,
+                    List.of(
+                            new SettlementItem(201L, 1L, 10000L),
+                            new SettlementItem(202L, 2L, 10000L),
+                            new SettlementItem(203L, 3L, 10000L)
+                    )
+            );
+
+            // when
+            SettlementResultResponseDto result = fundingService.confirmReservedFunding(batchDto);
+
+            // then
+            assertThat(result.successItems()).hasSize(2);
+            assertThat(result.failedItems()).hasSize(1);
+
+            for (Long orderId : List.of(201L, 203L)) {
+                FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(orderId).orElseThrow();
+                assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.CONFIRMED);
+            }
+
+            FundingPaymentJpaEntity failedFp = fundingPaymentJpaRepository.findByOrderId(202L).orElseThrow();
+            assertThat(failedFp.getStatus()).isEqualTo(FundingPaymentStatus.FAILED);
+            assertThat(failedFp.getRetryCnt()).isEqualTo(1);
+
+            Long creatorWalletId = walletService.getWalletId(creatorId);
+            WalletJpaEntity creatorWallet = walletJpaRepository.findById(creatorWalletId).orElseThrow();
+            assertThat(creatorWallet.getBalance()).isEqualTo(20000L);
+        }
+
+        @Test
         void 재시도시_이미_생성된_항목은_ALREADY_CONFIRMED로_스킵된다() {
             // given
             Long creatorId = 999L;
@@ -280,7 +397,6 @@ class FundingServiceIntegrationTest {
                     )
             );
 
-            // 첫 배치 실행
             fundingService.confirmReservedFunding(batchDto);
 
             // when: 같은 배치 재시도
@@ -288,14 +404,43 @@ class FundingServiceIntegrationTest {
 
             // then
             assertThat(retryResult.successItems()).hasSize(2);
-            assertThat(retryResult.successItems())
-                    .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
+            assertThat(retryResult.successItems()).allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
             assertThat(retryResult.failedItems()).isEmpty();
+        }
+
+        @Test
+        void 실패한_예약펀딩_재시도시_기존_record가_재사용되어_retryCnt가_증가한다() {
+            // given: 잔액 부족으로 실패
+            Long creatorId = 999L;
+            Long productId = 100L;
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(creatorId).balance(0L).build());
+            walletJpaRepository.save(WalletJpaEntity.builder().memberId(1L).balance(5000L).build());
+
+            SettlementBatchRequestDto batchDto = new SettlementBatchRequestDto(
+                    UuidCreator.getTimeOrderedEpoch(),
+                    null,
+                    creatorId,
+                    productId,
+                    List.of(new SettlementItem(201L, 1L, 10000L))
+            );
+            fundingService.confirmReservedFunding(batchDto);
+
+            FundingPaymentJpaEntity fp1 = fundingPaymentJpaRepository.findByOrderId(201L).orElseThrow();
+            assertThat(fp1.getStatus()).isEqualTo(FundingPaymentStatus.FAILED);
+            assertThat(fp1.getRetryCnt()).isEqualTo(1);
+
+            // when: 잔액 여전히 부족한 상태로 재시도
+            fundingService.confirmReservedFunding(batchDto);
+
+            // then
+            FundingPaymentJpaEntity fp2 = fundingPaymentJpaRepository.findByOrderId(201L).orElseThrow();
+            assertThat(fp2.getStatus()).isEqualTo(FundingPaymentStatus.FAILED);
+            assertThat(fp2.getRetryCnt()).isEqualTo(2);
         }
     }
 
     @Nested
-    @DisplayName("펀딩실패 환불 배치")
+    @DisplayName("refundFailedFunding()")
     class RefundFailedFundingTest {
 
         @Test
@@ -351,7 +496,6 @@ class FundingServiceIntegrationTest {
                     orderId, memberId, 100L, 10000L, PaymentType.INSTANT
             ));
 
-            // 먼저 환불
             fundingService.refund(new RefundRequestDto(
                     UuidCreator.getTimeOrderedEpoch(), orderId, memberId, 1L, 10000L, "USER_CANCEL"
             ));

@@ -2,6 +2,7 @@ package com.bds.payment.payment.domain.fundingPayment;
 
 import com.bds.payment.payment.domain.common.FundingPaymentStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,4 +17,6 @@ public interface FundingPaymentRepository {
     List<FundingPayment> findUncreditedForUpdate(Long productId, FundingPaymentStatus status);
 
     List<FundingPayment> saveAll(List<FundingPayment> fundingPayments);
+
+    int updateCreditedAtBulk(List<Long> ids, LocalDateTime now);
 }

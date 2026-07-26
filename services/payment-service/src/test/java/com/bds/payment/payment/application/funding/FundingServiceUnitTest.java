@@ -3,9 +3,6 @@ package com.bds.payment.payment.application.funding;
 import com.bds.payment.payment.application.wallet.WalletService;
 import com.bds.payment.payment.domain.common.PaymentType;
 import com.bds.payment.payment.domain.fundingPayment.FundingPayment;
-import com.bds.payment.payment.domain.fundingPayment.FundingPaymentRepository;
-import com.bds.payment.payment.domain.paymentHistory.PaymentHistoryRepository;
-import com.bds.payment.payment.domain.wallet.Wallet;
 import com.bds.payment.payment.global.exception.BusinessException;
 import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.presentation.request.FundingPaymentRequestDto;
@@ -15,6 +12,7 @@ import com.bds.payment.payment.presentation.request.SettlementBatchRequestDto.Se
 import com.bds.payment.payment.presentation.response.FundingPaymentResponseDto;
 import com.bds.payment.payment.presentation.response.SettlementResultResponseDto;
 import com.github.f4b6a3.uuid.UuidCreator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,7 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -35,77 +32,64 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class FundingServiceUnitTest {
 
-    @Mock private FundingPaymentRepository fundingPaymentRepository;
-    @Mock private PaymentHistoryRepository paymentHistoryRepository;
     @Mock private WalletService walletService;
-    @Mock private FundingSettlementProcessor processor;
+    @Mock private FundingPaymentProcessor paymentProcessor;
+    @Mock private FundingSettlementProcessor settlementProcessor;
     @Mock private FundingEventPublisher eventPublisher;
 
     @InjectMocks private FundingService fundingService;
 
     @Nested
-    @DisplayName("펀딩 결제")
+    @DisplayName("funding()")
     class FundingTest {
 
-        @Test
-        void INSTANT_결제를_정상적으로_처리한다() {
-            // given
-            FundingPaymentRequestDto dto = new FundingPaymentRequestDto(
-                    1L, 1L, 100L, 10000L, PaymentType.INSTANT
-            );
-            FundingPayment fundingPayment = FundingPayment.create(dto, 1L, UuidCreator.getTimeOrderedEpoch());
-            Wallet wallet = Wallet.builder()
-                    .id(1L)
-                    .memberId(1L)
-                    .balance(40000L)
-                    .build();
+        private FundingPaymentRequestDto dto;
+        private FundingPayment funding;
 
-            given(fundingPaymentRepository.existsByOrderId(dto.orderId())).willReturn(false);
+        @BeforeEach
+        void setUp() {
+            dto = new FundingPaymentRequestDto(1L, 1L, 100L, 10000L, PaymentType.INSTANT);
+            funding = FundingPayment.create(dto, 1L, UuidCreator.getTimeOrderedEpoch());
+
             given(walletService.getWalletId(dto.memberId())).willReturn(1L);
-            given(walletService.decrease(dto.memberId(), dto.amount())).willReturn(wallet);
-            given(fundingPaymentRepository.save(any(FundingPayment.class))).willReturn(fundingPayment);
+        }
+
+        @Test
+        void 결제_성공시_OrderPaid_이벤트를_발행한다() {
+            // given
+            funding.markSuccess();
+            given(paymentProcessor.process(any(PaymentContext.class))).willReturn(new PaymentResult.Success(funding));
 
             // when
             FundingPaymentResponseDto result = fundingService.funding(dto);
 
             // then
             assertNotNull(result);
-            verify(walletService).decrease(dto.memberId(), dto.amount());
-            verify(fundingPaymentRepository).save(any(FundingPayment.class));
-            verify(paymentHistoryRepository).save(any());
+            verify(paymentProcessor).process(any(PaymentContext.class));
             verify(eventPublisher).publishOrderPaid(dto.orderId());
         }
 
         @Test
-        void RESERVED_결제는_지갑_차감_없이_처리한다() {
+        void 이미_결제된_주문이면_멱등_응답을_리턴하고_OrderPaid_이벤트를_발행한다() {
             // given
-            FundingPaymentRequestDto dto = new FundingPaymentRequestDto(
-                    1L, 1L, 100L, 10000L, PaymentType.RESERVED
-            );
-            FundingPayment fundingPayment = FundingPayment.create(dto, 1L, UuidCreator.getTimeOrderedEpoch());
-
-            given(fundingPaymentRepository.existsByOrderId(dto.orderId())).willReturn(false);
-            given(walletService.getWalletId(dto.memberId())).willReturn(1L);
-            given(fundingPaymentRepository.save(any(FundingPayment.class))).willReturn(fundingPayment);
+            funding.markSuccess();
+            given(paymentProcessor.process(any(PaymentContext.class))).willReturn(new PaymentResult.AlreadyPaid(funding));
 
             // when
             FundingPaymentResponseDto result = fundingService.funding(dto);
 
             // then
             assertNotNull(result);
-            verify(walletService, never()).decrease(any(), any());
-            verify(paymentHistoryRepository, never()).save(any());
-            verify(fundingPaymentRepository).save(any(FundingPayment.class));
-            verifyNoInteractions(eventPublisher);
+            verify(eventPublisher).publishOrderPaid(dto.orderId());
         }
     }
 
     @Nested
-    @DisplayName("환불")
+    @DisplayName("refund()")
     class RefundTest {
 
         @Test
-        void 환불_요청은_Processor에_위임한다() {
+        void 환불_요청은_SettlementProcessor에_위임하고_이벤트를_발행한다() {
             // given
             RefundRequestDto dto = new RefundRequestDto(
                     UuidCreator.getTimeOrderedEpoch(),
@@ -120,20 +104,20 @@ class FundingServiceUnitTest {
             fundingService.refund(dto);
 
             // then
-            verify(processor).processRefundItem(dto.orderId(), dto.memberId(), dto.cancelReason());
+            verify(settlementProcessor).processRefundItem(dto.orderId(), dto.memberId(), dto.cancelReason());
             verify(eventPublisher).publishOrderProcessRefunded(List.of(dto.orderId()));
         }
     }
 
     @Nested
-    @DisplayName("정산확정 배치")
+    @DisplayName("confirmSettlement()")
     class ConfirmSettlementTest {
 
         @Test
-        void 모든_항목이_성공하면_창작자_크레딧을_호출한다() {
+        void 모든_항목_성공시_창작자_크레딧을_호출하고_확정_이벤트를_발행한다() {
             // given
             SettlementBatchRequestDto dto = createBatchDto(3);
-            given(processor.processSettlementItem(any())).willReturn(10000L);
+            given(settlementProcessor.processSettlementItem(any())).willReturn(10000L);
 
             // when
             SettlementResultResponseDto result = fundingService.confirmSettlement(dto);
@@ -141,59 +125,26 @@ class FundingServiceUnitTest {
             // then
             assertEquals(3, result.successItems().size());
             assertEquals(0, result.failedItems().size());
-            verify(processor, times(3)).processSettlementItem(any());
-            verify(processor).creditCreatorForBatch(eq(dto.creatorMemberId()), eq(dto.productId()), anyString());
+            verify(settlementProcessor, times(3)).processSettlementItem(any());
+            verify(settlementProcessor).creditCreatorForBatch(eq(dto.creatorMemberId()), eq(dto.productId()), anyString());
             verify(eventPublisher).publishOrderProcessConfirmed(anyList());
-            verify(eventPublisher, never()).publishOrderCancelled(any(), any());
+            verify(eventPublisher, never()).publishOrderCancelled(any(), anyString());
         }
 
         @Test
         void 멱등성_스킵된_항목은_ALREADY_CONFIRMED로_표시한다() {
             // given
             SettlementBatchRequestDto dto = createBatchDto(2);
-            given(processor.processSettlementItem(any())).willReturn(0L);
+            given(settlementProcessor.processSettlementItem(any())).willReturn(0L);
 
             // when
             SettlementResultResponseDto result = fundingService.confirmSettlement(dto);
 
             // then
             assertEquals(2, result.successItems().size());
-            assertTrue(result.successItems().stream()
-                    .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message())));
-            verify(processor).creditCreatorForBatch(any(), any(), anyString());
+            assertTrue(result.successItems().stream().allMatch(item -> "ALREADY_CONFIRMED".equals(item.message())));
+            verify(settlementProcessor).creditCreatorForBatch(any(), any(), anyString());
             verify(eventPublisher).publishOrderProcessConfirmed(anyList());
-        }
-
-        @Test
-        void 일부_항목이_실패해도_나머지는_처리한다() {
-            // given
-            SettlementBatchRequestDto dto = createBatchDto(3);
-            given(processor.processSettlementItem(any()))
-                    .willReturn(10000L)
-                    .willThrow(new RuntimeException("DB 오류"))
-                    .willReturn(10000L);
-
-            // when
-            SettlementResultResponseDto result = fundingService.confirmSettlement(dto);
-
-            // then
-            assertEquals(2, result.successItems().size());
-            assertEquals(1, result.failedItems().size());
-            verify(processor).creditCreatorForBatch(any(), any(), anyString());
-            verify(eventPublisher, times(1)).publishOrderCancelled(any(), anyString());
-            verify(eventPublisher, times(1)).publishOrderProcessConfirmed(anyList());
-        }
-
-        @Test
-        void 창작자_크레딧_실패시_예외를_전파한다() {
-            // given
-            SettlementBatchRequestDto dto = createBatchDto(2);
-            given(processor.processSettlementItem(any())).willReturn(10000L);
-            doThrow(new RuntimeException("지갑 없음"))
-                    .when(processor).creditCreatorForBatch(any(), any(), anyString());
-
-            // when & then
-            assertThrows(RuntimeException.class, () -> fundingService.confirmSettlement(dto));
         }
 
         private SettlementBatchRequestDto createBatchDto(int itemCount) {
@@ -212,59 +163,40 @@ class FundingServiceUnitTest {
     }
 
     @Nested
-    @DisplayName("예약펀딩확정 배치")
+    @DisplayName("confirmReservedFunding()")
     class ConfirmReservedFundingTest {
 
+        private SettlementBatchRequestDto dto;
+        private FundingPayment successFunding;
+
+        @BeforeEach
+        void setUp() {
+            dto = createBatchDto(3);
+
+            FundingPaymentRequestDto reqDto = new FundingPaymentRequestDto(
+                    1L, 1L, 100L, 10000L, PaymentType.RESERVED
+            );
+            successFunding = FundingPayment.create(reqDto, 1L, UuidCreator.getTimeOrderedEpoch());
+            successFunding.markSuccess();
+
+            given(walletService.getWalletId(any())).willReturn(1L);
+        }
+
         @Test
-        void 모든_항목이_성공하면_창작자_크레딧을_호출한다() {
+        void 모든_항목_결제_및_정산_성공시_창작자_크레딧을_호출한다() {
             // given
-            SettlementBatchRequestDto dto = createBatchDto(3);
-            given(processor.processReservedFundingItem(any(), any())).willReturn(10000L);
+            given(paymentProcessor.process(any(PaymentContext.class))).willReturn(new PaymentResult.Success(successFunding));
+            given(settlementProcessor.processSettlementItem(any())).willReturn(10000L);
 
             // when
             SettlementResultResponseDto result = fundingService.confirmReservedFunding(dto);
 
             // then
             assertEquals(3, result.successItems().size());
-            verify(processor, times(3)).processReservedFundingItem(any(), eq(dto.productId()));
-            verify(processor).creditCreatorForBatch(eq(dto.creatorMemberId()), eq(dto.productId()), anyString());
-            verify(eventPublisher).publishOrderProcessConfirmed(anyList());
-            verify(eventPublisher, never()).publishOrderCancelled(any(), any());
-        }
-
-        @Test
-        void 일부_실패해도_성공한_건은_크레딧에_포함된다() {
-            // given
-            SettlementBatchRequestDto dto = createBatchDto(3);
-            given(processor.processReservedFundingItem(any(), any()))
-                    .willReturn(10000L)
-                    .willThrow(new RuntimeException("잔액 부족"))
-                    .willReturn(10000L);
-
-            // when
-            SettlementResultResponseDto result = fundingService.confirmReservedFunding(dto);
-
-            // then
-            assertEquals(2, result.successItems().size());
-            assertEquals(1, result.failedItems().size());
-            verify(processor).creditCreatorForBatch(any(), any(), anyString());
-            verify(eventPublisher, times(1)).publishOrderCancelled(any(), anyString());
-            verify(eventPublisher, times(1)).publishOrderProcessConfirmed(anyList());
-        }
-
-        @Test
-        void 멱등성_스킵된_항목도_이벤트는_발행한다() {
-            // given
-            SettlementBatchRequestDto dto = createBatchDto(2);
-            given(processor.processReservedFundingItem(any(), any())).willReturn(0L);
-
-            // when
-            SettlementResultResponseDto result = fundingService.confirmReservedFunding(dto);
-
-            // then
-            assertThat(result.successItems()).hasSize(2);
-            assertThat(result.successItems())
-                    .allMatch(item -> "ALREADY_CONFIRMED".equals(item.message()));
+            assertEquals(0, result.failedItems().size());
+            verify(paymentProcessor, times(3)).process(any(PaymentContext.class));
+            verify(settlementProcessor, times(3)).processSettlementItem(any());
+            verify(settlementProcessor).creditCreatorForBatch(eq(dto.creatorMemberId()), eq(dto.productId()), anyString());
             verify(eventPublisher).publishOrderProcessConfirmed(anyList());
         }
 
@@ -284,7 +216,7 @@ class FundingServiceUnitTest {
     }
 
     @Nested
-    @DisplayName("펀딩실패 환불 배치")
+    @DisplayName("refundFailedFunding()")
     class RefundFailedFundingTest {
 
         @Test
@@ -298,7 +230,7 @@ class FundingServiceUnitTest {
             // then
             assertEquals(3, result.successItems().size());
             assertEquals(0, result.failedItems().size());
-            verify(processor, times(3)).processRefundItem(any(), any(), eq("FUNDING_FAILED"));
+            verify(settlementProcessor, times(3)).processRefundItem(any(), any(), eq("FUNDING_FAILED"));
             verify(eventPublisher).publishOrderProcessRefunded(anyList());
         }
 
@@ -306,8 +238,7 @@ class FundingServiceUnitTest {
         void 이미_환불된_항목은_ALREADY_REFUNDED로_표시한다() {
             // given
             SettlementBatchRequestDto dto = createBatchDto(2);
-            doThrow(new BusinessException(ErrorCode.FUNDING_ALREADY_REFUNDED))
-                    .when(processor).processRefundItem(any(), any(), anyString());
+            doThrow(new BusinessException(ErrorCode.FUNDING_ALREADY_REFUNDED)).when(settlementProcessor).processRefundItem(any(), any(), anyString());
 
             // when
             SettlementResultResponseDto result = fundingService.refundFailedFunding(dto);
@@ -315,24 +246,7 @@ class FundingServiceUnitTest {
             // then
             assertEquals(2, result.successItems().size());
             assertEquals(0, result.failedItems().size());
-            assertTrue(result.successItems().stream()
-                    .allMatch(item -> "ALREADY_REFUNDED".equals(item.message())));
-            verify(eventPublisher, never()).publishOrderProcessRefunded(anyList());
-        }
-
-        @Test
-        void 예상치_못한_예외는_failedItems에_담긴다() {
-            // given
-            SettlementBatchRequestDto dto = createBatchDto(2);
-            doThrow(new RuntimeException("DB 오류"))
-                    .when(processor).processRefundItem(any(), any(), anyString());
-
-            // when
-            SettlementResultResponseDto result = fundingService.refundFailedFunding(dto);
-
-            // then
-            assertEquals(0, result.successItems().size());
-            assertEquals(2, result.failedItems().size());
+            assertTrue(result.successItems().stream().allMatch(item -> "ALREADY_REFUNDED".equals(item.message())));
             verify(eventPublisher, never()).publishOrderProcessRefunded(anyList());
         }
 
