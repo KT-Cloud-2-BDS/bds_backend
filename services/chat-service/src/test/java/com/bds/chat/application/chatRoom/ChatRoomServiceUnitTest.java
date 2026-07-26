@@ -222,9 +222,9 @@ class ChatRoomServiceUnitTest {
 
         @Test
         void 펀딩방_상세를_조회할_수_있다() {
-            given(chatRoomRepository.findActiveById(ROOM_ID)).willReturn(Optional.of(fundingRoom(SELLER_ID)));
+            given(chatRoomRepository.findFundingRoomByProduct(PRODUCT_ID)).willReturn(Optional.of(fundingRoom(SELLER_ID)));
 
-            ChatRoomResponseDto result = chatRoomService.getFundingChatRoomById(ROOM_ID);
+            ChatRoomResponseDto result = chatRoomService.getFundingChatRoomByProductId(PRODUCT_ID);
 
             assertThat(result.roomId()).isEqualTo(ROOM_ID);
             assertThat(result.type()).isEqualTo("FUNDING");

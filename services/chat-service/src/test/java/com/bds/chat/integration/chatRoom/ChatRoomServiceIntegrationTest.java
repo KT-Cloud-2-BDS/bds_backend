@@ -110,7 +110,7 @@ class ChatRoomServiceIntegrationTest {
         void 펀딩_채팅방_단건_조회에_성공한다() {
             ChatRoomResponseDto created = chatRoomService.createFundingRoom(PRODUCT_ID, new FundingRoomCreateRequestDto(SELLER_ID));
 
-            ChatRoomResponseDto result = chatRoomService.getFundingChatRoomById(created.roomId());
+            ChatRoomResponseDto result = chatRoomService.getFundingChatRoomByProductId(PRODUCT_ID);
 
             assertThat(result.roomId()).isEqualTo(created.roomId());
             assertThat(result.type()).isEqualTo("FUNDING");

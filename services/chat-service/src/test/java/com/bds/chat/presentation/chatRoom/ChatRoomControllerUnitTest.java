@@ -150,7 +150,7 @@ class ChatRoomControllerUnitTest {
 
         @Test
         void 펀딩방_조회가_200을_반환한다() throws Exception {
-            given(chatRoomService.getFundingChatRoomById(anyLong()))
+            given(chatRoomService.getFundingChatRoomByProductId(anyLong()))
                     .willReturn(dummyChatRoomResponse("FUNDING"));
 
             mockMvc.perform(get("/api/chat/fundings/1"))
