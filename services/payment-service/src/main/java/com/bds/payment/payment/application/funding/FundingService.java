@@ -146,6 +146,7 @@ public class FundingService {
             } catch (Exception e) {
                 log.error("Settlement failed. orderId={}", item.orderId(), e);
                 failedItems.add(new SettlementResultItem(item.orderId(), false, e.getMessage()));
+                eventPublisher.publishOrderCancelled(item.orderId(), CancelReason.PAYMENT_SERVER_ERROR.name());
             }
         }
 
