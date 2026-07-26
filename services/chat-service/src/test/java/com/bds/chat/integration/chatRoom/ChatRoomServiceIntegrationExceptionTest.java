@@ -97,23 +97,19 @@ class ChatRoomServiceIntegrationExceptionTest {
 
         // 존재하지 않는 방 조회 → NOT_FOUND
         @Test
-        @DisplayName("존재하지 않는 펀딩 채팅방을 조회하면 NOT_FOUND 예외가 발생한다")
-        void 존재하지_않는_방을_조회하면_NOT_FOUND_예외() {
+        @DisplayName("존재하지 않는 productId로 조회하면 NOT_FOUND 예외가 발생한다")
+        void 존재하지_않는_productId로_조회하면_NOT_FOUND_예외() {
             assertThatThrownBy(() ->
-                    chatRoomService.getFundingChatRoomById(UNKNOWN_ROOM_ID)
+                    chatRoomService.getFundingChatRoomByProductId(UNKNOWN_ROOM_ID)
             ).isInstanceOf(BusinessException.class)
              .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
         }
 
-        // INQUIRY 방을 펀딩방 API로 조회 → NOT_FOUND (타입 불일치)
         @Test
-        @DisplayName("INQUIRY 채팅방을 펀딩방 조회 API로 조회하면 NOT_FOUND 예외가 발생한다")
-        void INQUIRY_방을_펀딩방_API로_조회하면_NOT_FOUND_예외() {
-            chatRoomService.createFundingRoom(PRODUCT_ID, new FundingRoomCreateRequestDto(SELLER_ID));
-            ChatRoomResponseDto inquiryRoom = chatRoomService.createInquiryRoom(PRODUCT_ID, BUYER_ID);
-
+        @DisplayName("펀딩 채팅방이 없는 productId로 조회하면 NOT_FOUND 예외가 발생한다")
+        void 펀딩방이_없는_productId로_조회하면_NOT_FOUND_예외() {
             assertThatThrownBy(() ->
-                    chatRoomService.getFundingChatRoomById(inquiryRoom.roomId())
+                    chatRoomService.getFundingChatRoomByProductId(UNKNOWN_ROOM_ID)
             ).isInstanceOf(BusinessException.class)
              .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
         }

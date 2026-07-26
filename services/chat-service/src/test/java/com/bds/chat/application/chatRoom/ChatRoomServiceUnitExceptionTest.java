@@ -189,18 +189,18 @@ class ChatRoomServiceUnitExceptionTest {
 
         @Test
         void 방이_없으면_NOT_FOUND_예외() {
-            lenient().when(chatRoomRepository.findActiveById(ROOM_ID)).thenReturn(Optional.empty());
+            lenient().when(chatRoomRepository.findFundingRoomByProduct(PRODUCT_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> chatRoomService.getFundingChatRoomById(ROOM_ID))
+            assertThatThrownBy(() -> chatRoomService.getFundingChatRoomByProductId(PRODUCT_ID))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
         }
 
         @Test
-        void INQUIRY_방이면_NOT_FOUND_예외() {
-            lenient().when(chatRoomRepository.findActiveById(ROOM_ID)).thenReturn(Optional.of(inquiryRoom(SELLER_ID)));
+        void productId에_해당하는_펀딩방이_없으면_NOT_FOUND_예외() {
+            lenient().when(chatRoomRepository.findFundingRoomByProduct(PRODUCT_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> chatRoomService.getFundingChatRoomById(ROOM_ID))
+            assertThatThrownBy(() -> chatRoomService.getFundingChatRoomByProductId(PRODUCT_ID))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
         }
