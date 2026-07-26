@@ -7,28 +7,30 @@
 | POST   | `/api/chat/Inquiries`                        | O         | 1:1 문의 채팅방 생성                |
 | GET    | `/api/chat/Inquiries`                        | O         | 내 참여 문의 채팅방 목록 조회            |
 | GET    | `/api/chat/Inquiries/{roomId}`               | O         | 1:1 문의 채팅방 상세 조회             |
-| DELETE | `/api/chat/Inquiries/{roomId}/members/me`    | O       | 1:1 문의 채팅방 나가기               |
-| DELETE  | `/api/chat/rooms/{roomId}/close`             | O         | 공개 채팅방 삭제                    |
+| DELETE | `/api/chat/Inquiries/{roomId}/members/me`    | O         | 1:1 문의 채팅방 나가기               |
+| DELETE | `/api/chat/rooms/{roomId}/close`             | O         | 공개 채팅방 삭제                    |
 | POST   | `/internal/chat/fundings/{productId}`        | X         | 펀딩 제품 생성시 공개 채팅방 자동 생성 (시스템) |
 | GET    | `/api/chat/fundings/{productId}`             | X         | 공개 채팅방 조회                    |
 | POST   | `/api/chat/fundings/{roomId}/ban`            | O         | 공개 채팅방 사용자 BAN               |
-| DELETE | `/api/chat/fundings/{roomId}/ban/{targetId}` | O   | 공개 채팅방 사용자 BAN 해제            |
+| DELETE | `/api/chat/fundings/{roomId}/ban/{targetId}` | O         | 공개 채팅방 사용자 BAN 해제            |
 | GET    | `/api/chat/rooms/messages`                   | O         | 채팅 이력 조회                     |
 | GET    | `/api/chat/Inquiries/{roomId}/messages`      | O         | 1:1 문의 채팅방 메시지 조회            |
 | GET    | `/api/chat/fundings/{roomId}/messages`       | O         | 공개 채팅방 메시지 조회                |
 | DELETE | `/api/chat/messages/{messageId}`             | O         | 메시지 삭제(soft delete)          |
 | WS     | `/ws/chat`                                   | X         | Websocket 연결                 |
-| SUB    | `/topic/rooms/{roomId}`                      | O/X       | 채팅방 구독                       |
+| SUB    | `/topic/chat.room.{roomId}`                  | O/X       | 채팅방 구독 (메시지/이벤트)            |
+| SUB    | `/topic/chat.room.{roomId}.read`             | O/X       | 채팅방 읽음 이벤트 구독               |
 | UNSUB  | `subscription-id`                            | O/X       | 채팅방 구독 취소                    |
-| PUB    | `/app/chat.send`                             | O         | 메시지 전송                       |
-| PUB    | `/app/chat.read`                             | O         | 읽음 상태 갱신                     |
+| PUB    | `/app/chat/send/{roomId}`                    | O         | 메시지 전송                       |
+| PUB    | `/app/chat/read/{roomId}`                    | O         | 읽음 상태 갱신                     |
+| PUB    | `/app/auth/refresh`                          | O         | 액세스 토큰 갱신                    |
 
 ---
 
 ## 1:1 문의 채팅방 생성
 
 ```
-POST /api/chat/inquiry
+POST /api/chat/Inquiries
 ```
 
 Auth Required: **O**
@@ -67,7 +69,7 @@ Validation / Business Rules
 ## 내 참여 문의 채팅방 목록 조회
 
 ```
-GET /api/chat/inquiry
+GET /api/chat/Inquiries
 ```
 
 Auth Required: **O**
@@ -111,7 +113,7 @@ Validation / Business Rules
 ## 1:1 문의 채팅방 상세 조회
 
 ```
-GET /api/chat/inquiry/{roomId}
+GET /api/chat/Inquiries/{roomId}
 ```
 
 Auth Required: **O**
@@ -123,7 +125,24 @@ Response Body
     "roomId": 201,
     "type": "INQUIRY",
     "productId": 101,
-    "participants": [55],
+    "participants": [
+      {
+        "memberId": 55,
+        "membership": {
+          "status": "ACTIVE",
+          "lastReadMessageId": 880,
+          "joinedAt": "2026-04-21T09:00:00Z"
+        }
+      },
+      {
+        "memberId": 9,
+        "membership": {
+          "status": "ACTIVE",
+          "lastReadMessageId": 870,
+          "joinedAt": "2026-04-21T09:00:00Z"
+        }
+      }
+    ],
     "createdBy": 9,
     "createdAt": "2026-04-21T09:00:00Z",
     "lastMessage": {
@@ -145,13 +164,14 @@ Response Body
 Validation / Business Rules
 
 - 사용자는 자신이 참여중인 1:1 채팅방의 정보만 가져올 수 있다.
-- 사용자의 상태(ACTIVE, LEFT, BANNED)를 myMembership 필드를 통해 확인할 수 있다.
+- participants 배열에는 채팅방의 모든 활성 멤버의 id와 membership 상태가 포함된다.
+- 사용자 본인의 상태(ACTIVE, LEFT, BANNED)는 myMembership 필드를 통해 별도로 확인할 수 있다.
 ---
 
 ## 1:1 문의 채팅방 나가기
 
 ```
-DELETE /api/chat/inquiry/{roomId}/members/me
+DELETE /api/chat/Inquiries/{roomId}/members/me
 ```
 
 Auth Required: **O**
@@ -182,7 +202,7 @@ Validation / Business Rules
 ## 공개 채팅방 삭제
 
 ```
-PATCH /api/chat/rooms/{roomId}/close
+DELETE /api/chat/rooms/{roomId}/close
 ```
 
 Auth Required: **O**
@@ -214,7 +234,7 @@ Validation / Business Rules
 ## 펀딩 제품 생성시 공개 채팅방 자동 생성
 
 ```
-POST /internal/chat/funding/{productId}
+POST /internal/chat/fundings/{productId}
 ```
 
 Auth Required: **X**
@@ -255,7 +275,7 @@ Validation / Business Rules
 ## 공개 채팅방 조회
 
 ```
-GET /api/chat/funding/{productId}
+GET /api/chat/fundings/{productId}
 ```
 
 Auth Required: **X**
@@ -290,7 +310,7 @@ Validation / Business Rules
 ## 공개 채팅방 사용자 BAN
 
 ```
-POST /api/chat/funding/{roomId}/ban
+POST /api/chat/fundings/{roomId}/ban
 ```
 
 Auth Required: **O**
@@ -328,7 +348,7 @@ Validation / Business Rules
 ## 공개 채팅방 사용자 BAN 해제
 
 ```
-DELETE /api/chat/funding/{roomId}/ban/{targetId}
+DELETE /api/chat/fundings/{roomId}/ban/{targetId}
 ```
 
 Auth Required: **O**
@@ -401,7 +421,7 @@ Validation / Business Rules
 ## 1:1 문의 채팅방 메시지 조회
 
 ```
-GET /api/chat/inquiry/{roomId}/messages
+GET /api/chat/Inquiries/{roomId}/messages
 ```
 
 Auth Required: **O**
@@ -452,7 +472,7 @@ Validation / Business Rules
 ## 공개 채팅방 메시지 조회
 
 ```
-GET /api/chat/funding/{roomId}/messages
+GET /api/chat/fundings/{roomId}/messages
 ```
 
 Auth Required: **O**
@@ -536,28 +556,20 @@ Validation / Business Rules
 ### 연결(CONNECT)
 
 ```
-WS  /ws/chat   (STOMP over WebSocket, SockJS fallback 지원)
+WS  /ws/chat   (STOMP over WebSocket)
 ```
 
 #### CONNECT 헤더
 
 | 헤더       | 필수   | 설명     |
 |----------|------|--------|
-|Authorization | 	N 	 | Bearer {accessToken} |
-|accept-version | 	Y 	 |1.1,1.2|
-|heart-beat |	N |	10000,10000 |
+|Authorization | N | Bearer {accessToken} |
+|accept-version | Y |1.1,1.2|
+|heart-beat | N |	10000,10000 |
 
 
 - 인증 실패 시 STOMP ERROR 프레임 후 연결 종료.
 - 동일 사용자의 다중 디바이스 접속 허용 (sessionId 별로 분리 관리).
-- 연결 성공 시 /user/queue/system 으로 다음 페이로드를 푸시
-```json
-{
-    "event": "CONNECTED",
-    "userId": 9,
-    "sessionId": "ws-3f1a..."
-}
-```
 
 ---
 
@@ -565,23 +577,24 @@ WS  /ws/chat   (STOMP over WebSocket, SockJS fallback 지원)
 
 #### 구독 Destination
 
-| 목적지 |  설명     |
+| 목적지 | 설명 |
 |-----|--------|
-|/topic/rooms/{roomId}|해당 방의 모든 이벤트 (메시지/퇴장/수정/읽음 등)|
+| `/topic/chat.room.{roomId}` | 해당 방의 메시지 이벤트 |
+| `/topic/chat.room.{roomId}.read` | 해당 방의 읽음 이벤트 |
 
 
 #### SUBSCRIBE 헤더 명세
 
 | 헤더       | 필수   | 설명     |
 |----------|------|--------|
-| id |	Y 	|subscription id| 
-|lastMessageId |	N| 	lastMessageId {MessageId} |
+| id | Y | subscription id |
+| lastMessageId | N | lastMessageId {MessageId} |
 
 #### 구독 요청 예시 (Client -> Server)
 ```stomp
 SUBSCRIBE
 id:sub-room-10
-destination:/topic/rooms/10
+destination:/topic/chat.room.10
 lastMessageId:532^@
 ```
 
@@ -593,7 +606,7 @@ destination:<destination값>
 content-type:application/json
 content-length:56
 
-{"type":"SUBSCRIBED","destination":"/topic/rooms/201"}^@
+{"type":"SUBSCRIBED","destination":"/topic/chat.room.10"}^@
 ```
 Validation / Business Rules
 - 공개 채팅방의 경우 회원, 비회원 모두 구독이 가능하다.
@@ -611,7 +624,7 @@ Validation / Business Rules
 
 | 헤더       | 필수   | 설명     |
 |----------|------|--------|
-| id |	Y 	|subscription id| 
+| id | Y | subscription id |
 
 #### 구독 요청 예시 (Client -> Server)
 ```stomp
@@ -632,75 +645,64 @@ id:sub-room-10^@
 
 | Destination | Auth | 설명 |
 | :--- | :---: | :--- |
-| `/app/chat.send` | O | 메시지 전송 요청 (PUB) |
+| `/app/chat/send/{roomId}` | O | 메시지 전송 요청 (PUB) |
 
 #### Payload 명세
 | 필드명 | 타입 | 필수 여부 | 설명 |
 | :--- | :---: | :---: | :--- |
 | `clientMessageId` | String | **Y** | 클라이언트가 발급한 임시 고유 ID (재전송 시 중복 저장 방지용) |
-| `roomId` | Long | **Y** | 대상 채팅방 ID |
-| `type` | String | **Y** | 메시지 타입 (`TEXT` / `IMAGE` / `FILE`) |
-| `content` | String | **Y** | 메시지 본문 또는 업로드된 파일의 결과 URL |
+| `content` | String | **Y** | 메시지 본문 |
 
 #### 메시지 전송 요청 예시 (Client -> Server)
 
 ```stomp
 SEND
-destination:/app/chat.send
+destination:/app/chat/send/201
 content-type:application/json
 
 {
   "clientMessageId": "cm-9b2f-1234",
-  "roomId": 201,
-  "type": "TEXT",
   "content": "방금 홈런!!"
 }^@
 ```
 
 #### 서버 브로드캐스트 응답 예시 (Server -> 해당 방의 전체 구독자)
-- Destination: `/topic/rooms/{roomId}`
+- Destination: `/topic/chat.room.{roomId}`
 
 ```stomp
 MESSAGE
 subscription-id:sub-room-10
-destination:/topic/rooms/201
+destination:/topic/chat.room.201
 content-type:application/json
 
 {
-  "event": "MESSAGE_SENT",
+  "messageId": "cm-9b2f-1234",
+  "seq": 9982,
   "roomId": 201,
-  "occurredAt": "2026-04-27T14:22:30Z",
-  "messageId": null,
-  "payload": {
-    "messageId": 9982,
-    "clientMessageId": "cm-9b2f-1234",
-    "senderId": 9,
-    "type": "TEXT",
-    "content": "방금 홈런!!"
-  }
+  "senderId": "9",
+  "content": "방금 홈런!!",
+  "sentAt": "2026-04-27T14:22:30Z"
 }^@
 ```
 
 #### 서버 에러 응답 예시 (Server -> 송신자 본인 1:1 채널)
-- Destination: `/user/queue/system`
+- Destination: `/user/queue/error`
 ```stomp
 MESSAGE
-subscription-id:sub-system-personal
-destination:/user/queue/system
+subscription-id:sub-error-personal
+destination:/user/queue/error
 content-type:application/json
 
 {
-  "event": "MESSAGE_FAILED",
   "clientMessageId": "cm-9b2f-1234",
-  "errorCode": "INVALID_INPUT",
-  "message": "MessageContent must be <= 500 characters but 600"
+  "reason": "SAVE_FAILED"
 }^@
 ```
 
 #### Validation / Business Rules
 - 인증된 사용자여야 하며, 비공개(1:1 문의) 채팅방의 경우 해당 방의 활성 멤버(참여자)만 메시지를 발송할 수 있습니다. 권한이 없을 시 요청은 거부됩니다.
 - clientMessageId가 동일한 요청이 중복으로 들어올 경우, 서버는 이전에 이미 저장된 messageId 정보를 그대로 다시 반환(멱등 처리)하여 메시지 중복 적재를 방지합니다.
-- 동일한 채팅방 내부의 메시지는 데이터베이스의 messageId (BIGSERIAL 등 자동 증가 PK) 컬럼의 단조 증가 성질을 이용하여 클라이언트 렌더링 시 완벽한 순서를 보장합니다.
+- 동일한 채팅방 내부의 메시지는 데이터베이스의 seq (BIGSERIAL 등 자동 증가 PK) 컬럼의 단조 증가 성질을 이용하여 클라이언트 렌더링 시 완벽한 순서를 보장합니다.
 
 ---
 
@@ -709,43 +711,37 @@ content-type:application/json
 #### 읽음 상태 갱신 Destination
 | Destination | Auth | 설명 |
 | :--- | :---: | :--- |
-| `/app/chat.read` | O | 읽음 상태 갱신 요청 (PUB) |
+| `/app/chat/read/{roomId}` | O | 읽음 상태 갱신 요청 (PUB) |
 
 #### Payload 명세
 | 필드명 | 타입 | 필수 여부 | 설명 |
 | :--- | :---: | :---: | :--- |
-| `roomId` | Long | **Y** | 대상 채팅방 ID |
 | `lastReadMessageId` | Long | **Y** | 사용자가 마지막으로 읽은 메시지 ID |
 
 #### 읽음 상태 갱신 요청 예시 (Client -> Server)
 ```stomp
 SEND
-destination:/app/chat.send
+destination:/app/chat/read/201
 content-type:application/json
 
 {
-  "roomId": 201,
   "lastReadMessageId": 9982
 }^@
 ```
 
-#### 서버 브로드캐스트 응답 예시 (Server -> 같은 방의 다른 멤버)
-- Destination: `/topic/rooms/{roomId}`
+#### 서버 브로드캐스트 응답 예시 (Server -> 같은 방의 전체 구독자)
+- Destination: `/topic/chat.room.{roomId}.read`
 ```stomp
- MESSAGE
-subscription-id:sub-room-10
-destination:/topic/rooms/201
+MESSAGE
+subscription-id:sub-read-10
+destination:/topic/chat.room.201.read
 content-type:application/json
 
 {
-  "event": "READ_UPDATED",
   "roomId": 201,
-  "messageId": null,
-  "occurredAt": "2026-04-27T14:22:35Z",
-  "payload" : {
-    "memberId": 9,
-    "lastReadMessageId": 9982
-  }
+  "userId": 9,
+  "lastReadMessageId": 9982,
+  "readAt": "2026-04-27T14:22:35Z"
 }^@
 ```
 
@@ -757,31 +753,42 @@ content-type:application/json
 
 ---
 
+### 액세스 토큰 갱신
+
+#### Destination
+| Destination | Auth | 설명 |
+| :--- | :---: | :--- |
+| `/app/auth/refresh` | O | 세션 내 액세스 토큰 갱신 (PUB) |
+
+#### Payload 명세
+| 필드명 | 타입 | 필수 여부 | 설명 |
+| :--- | :---: | :---: | :--- |
+| `token` | String | **Y** | 새로 발급받은 액세스 토큰 |
+
+#### Validation / Business Rules
+- 토큰의 subject(userId)가 현재 세션의 principal과 일치해야 한다. 불일치 시 무시된다.
+- 검증 실패 시 갱신되지 않으며, grace 시간 초과 후 서버가 세션을 종료한다.
+
+---
+
 ### 서버 발신 실시간 이벤트 종류
-서버가 /topic/rooms/{roomId} 경로의 구독자들에게 푸시하는 모든 실시간 이벤트 정보와 Payload 핵심 필드 목록입니다. 모든 이벤트는 통일된 공통 Envelope 구조를 따릅니다.
 
-#### 공통 Envelope 구조
-```json
-{
-  "event": "MESSAGE_SENT",
-  "roomId": 201,
-  "messageId": null,
-  "occurredAt": "2026-04-27T14:22:30Z",
-  "payload": { 
-    "..." : "이벤트별 특화 필드 포맷 적용" 
-  }
-}
-```
+#### 메시지 이벤트 — `/topic/chat.room.{roomId}`
 
-#### Payload 명세 (이벤트별 필드 목록)
+| 필드 | 타입 | 설명 |
+| :--- | :---: | :--- |
+| `messageId` | String | 클라이언트 발급 임시 ID (clientMessageId) |
+| `seq` | Long | DB 저장 후 발급되는 메시지 PK (정렬 기준) |
+| `roomId` | Long | 채팅방 ID |
+| `senderId` | String | 발신자 ID |
+| `content` | String | 메시지 본문 |
+| `sentAt` | Instant | 서버 수신 시각 (UTC) |
 
-각 실시간 `event` 타입에 따라 공통 Envelope의 `payload` 객체 내부에 포함되는 상세 필드 명세입니다.
+#### 읽음 이벤트 — `/topic/chat.room.{roomId}.read`
 
-| EVENT | 발생시점 | 페이로드 핵심 필드 |
-| :--- | :--- | :--- |
-| **`MESSAGE_SENT`** | 새 메시지 발송 성공 시 | `messageId` (Long, 필수) : 서버 발급 고유 메시지 ID<br>`clientMessageId` (String, 필수) : 클라이언트 임시 ID<br>`senderId` (Long, 필수) : 발신자 고유 ID<br>`type` (String, 필수) : 메시지 포맷 구분 (`TEXT`/`IMAGE`/`FILE`)<br>`content` (String, 필수) : 대화 본문 또는 파일 URL |
-| **`MESSAGE_DELETED`** | 메시지 삭제(Soft Delete) 성공 시 | `messageId` (Long, 필수) : 삭제 처리된 대상 메시지 ID |
-| **`MEMBER_BANNED`** | 특정 사용자를 방출 및 차단(BAN)했을 시 | `memberId` (Long, 필수) : 해당 채팅방에서 방출 및 차단된 유저 ID |
-| **`ROOM_DELETED`** | 채팅방이 완전히 삭제되었을 시 | 하위 페이로드 없음 (공통 Envelope의 `roomId`로 식별) |
-| **`READ_RECEIPT`** | 특정 멤버가 메시지를 읽어 상태가 갱신될 시 | `memberId` (Long, 필수) : 읽음 상태를 최근에 갱신한 멤버 ID<br>`lastReadMessageId` (Long, 필수) : 유저가 어디까지 읽었는지 기준이 되는 최신 메시지 ID |
-| **`TYPING`** | 특정 멤버의 타이핑 상태가 변화했을 시 | `userId` (Long, 필수) : 현재 타이핑을 조작 중인 유저 ID<br>`typing` (Boolean, 필수) : 타이핑 작동 상태 (`true`: 입력 중, `false`: 입력 멈춤) |
+| 필드 | 타입 | 설명 |
+| :--- | :---: | :--- |
+| `roomId` | Long | 채팅방 ID |
+| `userId` | Long | 읽음 처리한 사용자 ID |
+| `lastReadMessageId` | Long | 마지막으로 읽은 메시지 ID |
+| `readAt` | Instant | 읽음 처리 시각 (UTC) |
