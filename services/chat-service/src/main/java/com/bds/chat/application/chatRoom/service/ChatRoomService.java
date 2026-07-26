@@ -139,6 +139,13 @@ public class ChatRoomService {
     }
 
     @Transactional(readOnly = true)
+    public ChatRoomResponseDto getFundingChatRoomByProductId(Long productId){
+        ChatRoom room = chatRoomRepository.findFundingRoomByProduct(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "productId=" + productId));
+        return ChatRoomResponseDto.from(room, List.of());
+    }
+
+    @Transactional(readOnly = true)
     public InquiryRoomListResponseDto getMyInquiryRooms(Long memberId, Long cursor, int limit) {
         List<InquiryChatMember> memberships = memberRepository.findByMemberId(memberId);
         List<Long> roomIds = memberships.stream()
