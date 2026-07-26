@@ -323,10 +323,10 @@ class FundingServiceIntegrationExceptionTest {
                     .isInstanceOfSatisfying(BusinessException.class, ex ->
                             assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND));
 
-            // then: 개별 항목은 REQUIRES_NEW로 이미 커밋됨
+            // then: 개별 항목은 CONFIRMED로 남지만 creditedAt은 null (크레딧 실패)
             FundingPaymentJpaEntity fp = fundingPaymentJpaRepository.findByOrderId(201L).orElseThrow();
             assertThat(fp.getStatus()).isEqualTo(FundingPaymentStatus.CONFIRMED);
-            assertThat(fp.getCreditedAt()).isNotNull();  // updateCreditedAtBulk도 이미 완료
+            assertThat(fp.getCreditedAt()).isNull();
         }
     }
 }
