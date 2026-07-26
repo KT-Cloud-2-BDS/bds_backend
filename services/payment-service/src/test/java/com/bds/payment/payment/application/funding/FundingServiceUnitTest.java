@@ -70,7 +70,7 @@ class FundingServiceUnitTest {
         }
 
         @Test
-        void 이미_결제된_주문이면_멱등_응답을_리턴하고_OrderPaid_이벤트를_발행한다() {
+        void 이미_결제된_주문이면_멱등_응답만_리턴하고_OrderPaid_이벤트는_발행하지_않는다() {
             // given
             funding.markSuccess();
             given(paymentProcessor.process(any(PaymentContext.class))).willReturn(new PaymentResult.AlreadyPaid(funding));
@@ -80,7 +80,7 @@ class FundingServiceUnitTest {
 
             // then
             assertNotNull(result);
-            verify(eventPublisher).publishOrderPaid(dto.orderId());
+            verify(eventPublisher, never()).publishOrderPaid(any());
         }
     }
 

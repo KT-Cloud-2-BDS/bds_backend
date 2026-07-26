@@ -25,8 +25,4 @@ public sealed interface PaymentResult {
      * 재시도 초과 (최종 실패)
      */
     record MaxRetryExceeded(FundingPayment funding) implements PaymentResult {}
-
-    default boolean isSuccess() {
-        return this instanceof Success || this instanceof AlreadyPaid;
-    }
 }

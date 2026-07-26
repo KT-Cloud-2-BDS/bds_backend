@@ -39,7 +39,7 @@ public class FundingService {
         try {
             PaymentResult result = paymentProcessor.process(ctx);
 
-            if (result.isSuccess()) {
+            if (result instanceof PaymentResult.Success) {  // ← 명시적
                 eventPublisher.publishOrderPaid(dto.orderId());
             }
 
