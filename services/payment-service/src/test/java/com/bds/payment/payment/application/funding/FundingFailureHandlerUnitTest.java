@@ -1,5 +1,6 @@
 package com.bds.payment.payment.application.funding;
 
+import com.bds.payment.payment.application.wallet.WalletService;
 import com.bds.payment.payment.domain.common.CancelReason;
 import com.bds.payment.payment.domain.common.FundingPaymentStatus;
 import com.bds.payment.payment.domain.common.PaymentType;
@@ -35,6 +36,7 @@ class FundingFailureHandlerUnitTest {
 
     @Mock private FundingPaymentRepository fundingPaymentRepository;
     @Mock private PaymentHistoryRepository paymentHistoryRepository;
+    @Mock private WalletService walletService;
     @Mock private FundingEventPublisher eventPublisher;
 
     @InjectMocks
@@ -53,6 +55,7 @@ class FundingFailureHandlerUnitTest {
             PaymentContext ctx = PaymentContext.forInstant(dto, 1L);
             BusinessException e = new BusinessException(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
 
+            given(walletService.getBalance(ctx.memberId())).willReturn(5000L);
             given(fundingPaymentRepository.findByOrderId(ctx.orderId())).willReturn(Optional.empty());
             given(fundingPaymentRepository.save(any(FundingPayment.class))).willAnswer(inv -> inv.getArgument(0));
 
@@ -85,6 +88,7 @@ class FundingFailureHandlerUnitTest {
             FundingPayment existing = FundingPayment.create(dto, 1L, UuidCreator.getTimeOrderedEpoch());
             existing.markFailed();  // retryCnt=1
 
+            given(walletService.getBalance(ctx.memberId())).willReturn(5000L);
             given(fundingPaymentRepository.findByOrderId(ctx.orderId())).willReturn(Optional.of(existing));
             given(fundingPaymentRepository.save(any(FundingPayment.class))).willAnswer(inv -> inv.getArgument(0));
 
@@ -113,6 +117,7 @@ class FundingFailureHandlerUnitTest {
             existing.markFailed();  // retryCnt=1
             existing.markFailed();  // retryCnt=2
 
+            given(walletService.getBalance(ctx.memberId())).willReturn(5000L);
             given(fundingPaymentRepository.findByOrderId(ctx.orderId())).willReturn(Optional.of(existing));
             given(fundingPaymentRepository.save(any(FundingPayment.class))).willAnswer(inv -> inv.getArgument(0));
 
@@ -137,6 +142,7 @@ class FundingFailureHandlerUnitTest {
             PaymentContext ctx = PaymentContext.forInstant(dto, 1L);
             BusinessException e = new BusinessException(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
 
+            given(walletService.getBalance(ctx.memberId())).willReturn(5000L);
             given(fundingPaymentRepository.findByOrderId(ctx.orderId())).willReturn(Optional.empty());
             given(fundingPaymentRepository.save(any(FundingPayment.class)))
                     .willAnswer(inv -> inv.getArgument(0));
@@ -156,6 +162,7 @@ class FundingFailureHandlerUnitTest {
             PaymentContext ctx = PaymentContext.forReserved(item, 100L, 1L);
             BusinessException e = new BusinessException(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
 
+            given(walletService.getBalance(ctx.memberId())).willReturn(5000L);
             given(fundingPaymentRepository.findByOrderId(ctx.orderId())).willReturn(Optional.empty());
             given(fundingPaymentRepository.save(any(FundingPayment.class))).willAnswer(inv -> inv.getArgument(0));
 

@@ -1,6 +1,7 @@
 package com.bds.payment.payment.application.funding;
 
 import com.bds.payment.payment.application.payment.PaymentHistoryCommand;
+import com.bds.payment.payment.application.wallet.WalletService;
 import com.bds.payment.payment.domain.common.CancelReason;
 import com.bds.payment.payment.domain.common.PaymentHistoryStatus;
 import com.bds.payment.payment.domain.common.TransactionReason;
@@ -23,6 +24,7 @@ public class FundingFailureHandler {
 
     private final FundingPaymentRepository fundingPaymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
+    private final WalletService walletService;
     private final FundingEventPublisher eventPublisher;
 
     /**
@@ -40,6 +42,8 @@ public class FundingFailureHandler {
         funding.markFailed();
         FundingPayment saved = fundingPaymentRepository.save(funding);
 
+        Long currentBalance = walletService.getBalance(ctx.memberId());
+
         // 실패 이력 저장
         PaymentHistoryCommand command = PaymentHistoryCommand.ofFunding(
                 saved.getWalletId(),
@@ -49,7 +53,7 @@ public class FundingFailureHandler {
                 TransactionReason.FUNDING_PAYMENT,
                 "결제 실패: " + e.getErrorCode().name(),
                 ctx.amount(),
-                0L,
+                currentBalance,
                 PaymentHistoryStatus.FAILED
         );
         paymentHistoryRepository.save(PaymentHistory.create(command));
