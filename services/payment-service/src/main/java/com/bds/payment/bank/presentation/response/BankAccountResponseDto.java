@@ -4,9 +4,10 @@ import com.bds.payment.bank.domain.bankVerifyCode.BankVerifyCode;
 
 public record BankAccountResponseDto(
         String accountNumber,
-        String holderName
+        String holderName,
+        String code
 ) {
     public static BankAccountResponseDto from(BankVerifyCode bankVerifyCode) {
-        return new BankAccountResponseDto(bankVerifyCode.getAccountNumber(), bankVerifyCode.getHolderName());
+        return new BankAccountResponseDto(bankVerifyCode.getAccountNumber(), bankVerifyCode.getHolderName(), bankVerifyCode.getVerifyCode());
     }
 }

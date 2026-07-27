@@ -48,7 +48,7 @@ class AccountServiceIntegrationTest {
         walletRepository.save(Wallet.builder().memberId(memberId).balance(0L).build());
         AccountRegisterRequestDto dto = new AccountRegisterRequestDto("004", "1234567890", "홍길동");
 
-        given(client.requestVerification(any(BankAccountRequestDto.class))).willReturn(new BankAccountResponseDto(dto.accountNumber(), dto.holderName()));
+        given(client.requestVerification(any(BankAccountRequestDto.class))).willReturn(new BankAccountResponseDto(dto.accountNumber(), dto.holderName(), any()));
 
         String result = accountService.registerAccount(memberId, dto).message();
 

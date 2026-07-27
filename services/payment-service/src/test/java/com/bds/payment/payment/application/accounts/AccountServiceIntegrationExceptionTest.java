@@ -7,6 +7,7 @@ import com.bds.payment.payment.domain.wallet.WalletRepository;
 import com.bds.payment.payment.global.exception.BusinessException;
 import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.external.BankClient;
+import com.bds.payment.payment.infrastructure.external.response.BankAccountResponseDto;
 import com.bds.payment.payment.presentation.request.AccountRegisterRequestDto;
 import com.bds.payment.payment.presentation.request.AccountVerifyRequestDto;
 import org.junit.jupiter.api.Test;
@@ -20,8 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -42,6 +42,7 @@ class AccountServiceIntegrationExceptionTest {
 
     @Test
     void 미인증_계좌가_이미_있으면_계좌_정보를_갱신하고_외부_인증_요청을_다시_보낸다() {
+        // given
         Long memberId = 1L;
         Long walletId = walletRepository.save(Wallet.create(memberId)).getId();
 
@@ -57,8 +58,14 @@ class AccountServiceIntegrationExceptionTest {
         AccountRegisterRequestDto dto =
                 new AccountRegisterRequestDto("088", "9999999999", "홍길동");
 
+        // 🆕 Mock 반환값 설정
+        when(client.requestVerification(any()))
+                .thenReturn(new BankAccountResponseDto(dto.accountNumber(),dto.holderName(), any()));
+
+        // when
         accountService.registerAccount(memberId, dto);
 
+        // then
         verify(client).requestVerification(any());
     }
 
