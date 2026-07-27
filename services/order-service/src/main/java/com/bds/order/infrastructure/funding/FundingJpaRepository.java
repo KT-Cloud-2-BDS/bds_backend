@@ -6,10 +6,7 @@ import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.QueryHints;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
@@ -49,4 +46,12 @@ public interface FundingJpaRepository extends JpaRepository<FundingJpaEntity, Lo
     List<FundingJpaEntity> findByStatusAndUpdatedAfter(@Param("status") FundingStatus status, @Param("after") LocalDateTime after);
 
     Page<FundingJpaEntity> findByTypeAndStatusIn(FundingType type, List<FundingStatus> statuses, Pageable pageable);
+
+    @Modifying
+    @Query("UPDATE FundingJpaEntity f SET f.currentAmount = f.currentAmount + :amount WHERE f.id = :fundingId")
+    void increaseCurrentAmount(@Param("fundingId") Long fundingId, @Param("amount") Long amount);
+
+    @Modifying
+    @Query("UPDATE FundingJpaEntity f SET f.currentAmount = f.currentAmount - :amount WHERE f.id = :fundingId")
+    void decreaseCurrentAmount(@Param("fundingId") Long fundingId, @Param("amount") Long amount);
 }

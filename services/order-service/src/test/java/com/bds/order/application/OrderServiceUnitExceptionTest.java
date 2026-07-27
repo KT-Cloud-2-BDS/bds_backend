@@ -285,8 +285,6 @@ class OrderServiceUnitExceptionTest {
             doNothing().when(mockOrder).updateStatus(any(OrderStatus.class));
             when(orderRepository.save(mockOrder)).thenReturn(mockOrder);
 
-            when(orderRepository.findFundingTitleByOrderId(1L)).thenReturn(Optional.empty());
-
             orderService.processStatusUpdate(1L, status);
 
             verify(notificationEventPublisher, never()).publishStatusChanged(any(OrderStatusChangedEvent.class));

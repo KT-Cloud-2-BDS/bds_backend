@@ -123,4 +123,14 @@ public class FundingPersistenceAdapter implements FundingRepository {
         return entityPage.map(fundingMapper::toDomain);
     }
 
+    @Override
+    public void increaseCurrentAmount(Long fundingId, Long amount) {
+        fundingJpaRepository.increaseCurrentAmount(fundingId, amount);
+    }
+
+    @Override
+    public void decreaseCurrentAmount(Long fundingId, Long amount) {
+        fundingJpaRepository.decreaseCurrentAmount(fundingId, amount);
+    }
+
 }

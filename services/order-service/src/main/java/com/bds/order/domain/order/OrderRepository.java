@@ -23,4 +23,6 @@ public interface OrderRepository {
     List<Long> findOrderIdsByFundingIdAndStatus(Long fundingId, OrderStatus status, Long lastOrderId, int size);
 
     Optional<String> findFundingTitleByOrderId(Long orderId);
+    
+    Optional<Long> findFundingIdByOrderId(Long orderId);
 }

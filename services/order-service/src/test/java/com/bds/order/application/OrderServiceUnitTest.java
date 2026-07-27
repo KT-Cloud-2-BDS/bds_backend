@@ -329,10 +329,18 @@ class OrderServiceUnitTest {
             when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
             when(orderRepository.findFundingTitleByOrderId(orderId)).thenReturn(Optional.of("title"));
 
+            if (to == OrderStatus.PAID) {
+                when(orderRepository.findFundingIdByOrderId(orderId)).thenReturn(Optional.of(1L));
+            }
+
             orderService.processStatusUpdate(orderId, to);
 
             verify(orderRepository).findFundingTitleByOrderId(anyLong());
             verify(notificationEventPublisher).publishStatusChanged(any(OrderStatusChangedEvent.class));
+
+            if (to == OrderStatus.PAID) {
+                verify(fundingRepository).increaseCurrentAmount(eq(1L), eq(order.getTotalAmount()));
+            }
         }
 
 
