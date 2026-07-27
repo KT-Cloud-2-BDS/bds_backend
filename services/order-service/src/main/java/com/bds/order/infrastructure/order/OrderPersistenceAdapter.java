@@ -59,4 +59,9 @@ public class OrderPersistenceAdapter implements OrderRepository {
     public Optional<String> findFundingTitleByOrderId(Long orderId) {
         return orderJpaRepository.findFundingTitleByOrderId(orderId);
     }
+
+    @Override
+    public Optional<Long> findFundingIdByOrderId(Long orderId) {
+        return orderJpaRepository.findFundingIdByOrderId(orderId);
+    }
 }

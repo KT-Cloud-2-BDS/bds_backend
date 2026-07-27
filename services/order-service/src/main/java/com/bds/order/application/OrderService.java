@@ -129,6 +129,10 @@ public class OrderService {
             paymentEventPublisher.publishPay(OrderProcessPayEvent.of(order.getId(), order.getMemberId(), reqDto.fundingId(), order.getTotalAmount()));
         }
 
+        if (fundingtype == FundingType.RESERVED) {
+            fundingRepository.increaseCurrentAmount(reqDto.fundingId(), order.getTotalAmount());
+        }
+
         orderRepository.save(order);
         return new OrderCreateResponseDto(memberId, order.getOrderNo(), order.getTotalAmount(), order.getStatus(), LocalDateTime.now());
     }
@@ -144,6 +148,7 @@ public class OrderService {
 
         boolean shouldRestock = order.canRestock();
         boolean shouldRefund = order.canRefund();
+        boolean shouldDecreaseAmount = order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.RESERVED;
 
         try {
             order.cancelOrder(CancelReason.USER_CANCEL.name());
@@ -154,6 +159,14 @@ public class OrderService {
         if (shouldRestock) {
             order.getOrderRewards().forEach(orw -> {
                 rewardRepository.increaseRemainQty(orw.getRewardId(), orw.getQty());
+            });
+        }
+
+        if (shouldDecreaseAmount) {
+            fundingRepository.findById(reqDto.fundingId()).ifPresent(funding -> {
+                if (funding.isFundingPeriod(LocalDateTime.now())) {
+                    fundingRepository.decreaseCurrentAmount(reqDto.fundingId(), order.getTotalAmount());
+                }
             });
         }
 
@@ -203,6 +216,13 @@ public class OrderService {
             try {
                 order.updateStatus(targetStatus);
                 orderRepository.save(order);
+
+                if (targetStatus == PAID) {
+                    Long fundingId = orderRepository.findFundingIdByOrderId(orderId)
+                            .orElseThrow(() -> new IllegalStateException(
+                                    "[OrderService] FundingId not found: orderId=" + orderId));
+                    fundingRepository.increaseCurrentAmount(fundingId, order.getTotalAmount());
+                }
 
                 if (targetStatus == PAID || targetStatus == OrderStatus.REFUNDED) {
                     String fundingTitle = orderRepository.findFundingTitleByOrderId(orderId)

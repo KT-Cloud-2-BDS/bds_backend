@@ -32,4 +32,8 @@ public interface FundingRepository {
     List<Funding> findByStatusAndUpdatedAfter(FundingStatus status, LocalDateTime after);
 
     Page<Funding> findByTypeAndStatusIn(FundingType type, List<FundingStatus> statuses, Pageable pageable);
+
+    void increaseCurrentAmount(Long fundingId, Long amount);
+
+    void decreaseCurrentAmount(Long fundingId, Long amount);
 }
