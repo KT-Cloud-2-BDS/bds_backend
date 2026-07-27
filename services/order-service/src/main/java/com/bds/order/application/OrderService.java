@@ -163,11 +163,15 @@ public class OrderService {
         }
 
         if (shouldDecreaseAmount) {
-            fundingRepository.findById(reqDto.fundingId()).ifPresent(funding -> {
-                if (funding.isFundingPeriod(LocalDateTime.now())) {
-                    fundingRepository.decreaseCurrentAmount(reqDto.fundingId(), order.getTotalAmount());
-                }
-            });
+            Long fundingId = orderRepository.findFundingIdByOrderId(orderId)
+                    .orElse(null);
+            if (fundingId != null) {
+                fundingRepository.findById(fundingId).ifPresent(funding -> {
+                    if (funding.isFundingPeriod(LocalDateTime.now())) {
+                        fundingRepository.decreaseCurrentAmount(fundingId, order.getTotalAmount());
+                    }
+                });
+            }
         }
 
         if (shouldRefund) {
