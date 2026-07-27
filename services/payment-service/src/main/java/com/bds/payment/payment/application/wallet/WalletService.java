@@ -65,6 +65,11 @@ public class WalletService {
         return walletRepository.save(wallet);
     }
 
+    public Long getBalance(Long memberId) {
+        return walletRepository.findByMemberId(memberId).map(Wallet::getBalance)
+                .orElseThrow(() -> new BusinessException(ErrorCode.WALLET_NOT_FOUND));
+    }
+
     private void validateAmount(Long amount) {
         if (amount == null) {
             throw new BusinessException(ErrorCode.WALLET_AMOUNT_REQUIRED);

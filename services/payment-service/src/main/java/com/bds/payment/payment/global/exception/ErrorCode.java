@@ -16,6 +16,7 @@ public enum ErrorCode {
     DEPENDENCY_FAILURE(HttpStatus.SERVICE_UNAVAILABLE, "DEPENDENCY_FAILURE","외부 서비스 호출 실패"),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED,"UNAUTHORIZED","인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "권한이 없습니다."),
+    PAYMENT_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT_SERVER_ERROR", "결제 서버 오류가 발생했습니다."),
     // 지갑 도메인
     WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "WALLET_NOT_FOUND", "지갑을 찾을 수 없습니다."),
     WALLET_ALREADY_EXISTS(HttpStatus.CONFLICT, "WALLET_ALREADY_EXISTS", "이미 지갑이 존재합니다."),
@@ -45,6 +46,7 @@ public enum ErrorCode {
     FUNDING_ACCESS_DENIED(HttpStatus.FORBIDDEN, "FUNDING_ACCESS_DENIED", "해당 거래에 접근할 권한이 없습니다."),
     FUNDING_INVALID_STATUS(HttpStatus.valueOf(422), "FUNDING_INVALID_STATUS", "처리할 수 없는 펀딩 상태입니다."),
     SETTLEMENT_AMOUNT_MISMATCH(HttpStatus.valueOf(422), "SETTLEMENT_AMOUNT_MISMATCH", "정산 금액이 원 결제 금액과 일치하지 않습니다."),
+    FUNDING_MAX_RETRY_EXCEEDED(HttpStatus.valueOf(422), "FUNDING_MAX_RETRY_EXCEEDED", "재시도 가능 횟수를 초과했습니다."),
     ;
 
     private final HttpStatus httpStatus;

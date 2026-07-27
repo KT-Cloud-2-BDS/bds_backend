@@ -38,7 +38,7 @@ class FundingSettlementProcessorUnitExceptionTest {
     @InjectMocks private FundingSettlementProcessor processor;
 
     @Nested
-    @DisplayName("정산확정 단건 예외")
+    @DisplayName("processSettlementItem() 예외")
     class ProcessSettlementItemExceptionTest {
 
         @Test
@@ -73,32 +73,29 @@ class FundingSettlementProcessorUnitExceptionTest {
                     });
             verify(fundingPaymentRepository, never()).save(any());
         }
-    }
-
-    @Nested
-    @DisplayName("예약펀딩확정 단건 예외")
-    class ProcessReservedFundingItemExceptionTest {
 
         @Test
-        void 잔액이_부족하면_예외를_던진다() {
+        void FAILED_상태에서_정산확정_시도시_예외를_던진다() {
             // given
             SettlementItem item = new SettlementItem(1L, 1L, 10000L);
-            given(fundingPaymentRepository.existsByOrderId(item.orderId())).willReturn(false);
-            given(walletService.decrease(item.memberId(), item.amount()))
-                    .willThrow(new BusinessException(ErrorCode.WALLET_INSUFFICIENT_BALANCE));
+            FundingPayment fp = FundingPayment.builder()
+                    .orderId(1L)
+                    .amount(10000L)
+                    .status(FundingPaymentStatus.FAILED)  // SUCCESS가 아님
+                    .build();
+            given(fundingPaymentRepository.findByOrderId(item.orderId())).willReturn(Optional.of(fp));
 
             // when & then
-            assertThatThrownBy(() -> processor.processReservedFundingItem(item, 100L))
+            assertThatThrownBy(() -> processor.processSettlementItem(item))
                     .isInstanceOfSatisfying(BusinessException.class, ex -> {
-                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
+                        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.FUNDING_INVALID_STATUS);
                     });
-            verify(fundingPaymentRepository, never()).save(any(FundingPayment.class));
-            verify(paymentHistoryRepository, never()).save(any());
+            verify(fundingPaymentRepository, never()).save(any());
         }
     }
 
     @Nested
-    @DisplayName("환불 단건 예외")
+    @DisplayName("processRefundItem() 예외")
     class ProcessRefundItemExceptionTest {
 
         @Test
@@ -182,7 +179,7 @@ class FundingSettlementProcessorUnitExceptionTest {
                     .walletId(walletId)
                     .amount(10000L)
                     .paymentType(PaymentType.INSTANT)
-                    .status(FundingPaymentStatus.FAILED)  // SUCCESS/CONFIRMED가 아님
+                    .status(FundingPaymentStatus.FAILED)
                     .build();
 
             given(fundingPaymentRepository.findByOrderId(orderId)).willReturn(Optional.of(fp));
@@ -199,7 +196,7 @@ class FundingSettlementProcessorUnitExceptionTest {
     }
 
     @Nested
-    @DisplayName("창작자 크레딧 예외")
+    @DisplayName("creditCreatorForBatch() 예외")
     class CreditCreatorForBatchExceptionTest {
 
         @Test
@@ -211,16 +208,15 @@ class FundingSettlementProcessorUnitExceptionTest {
                     FundingPayment.builder().id(1L).amount(10000L).status(FundingPaymentStatus.CONFIRMED).build()
             );
 
-            given(fundingPaymentRepository.findUncreditedForUpdate(productId, FundingPaymentStatus.CONFIRMED))
-                    .willReturn(uncredited);
-            given(walletService.charge(creatorId, 10000L))
-                    .willThrow(new BusinessException(ErrorCode.WALLET_NOT_FOUND));
+            given(fundingPaymentRepository.findUncreditedForUpdate(productId, FundingPaymentStatus.CONFIRMED)).willReturn(uncredited);
+            given(walletService.charge(creatorId, 10000L)).willThrow(new BusinessException(ErrorCode.WALLET_NOT_FOUND));
 
             // when & then
             assertThatThrownBy(() -> processor.creditCreatorForBatch(creatorId, productId, "정산 확정"))
                     .isInstanceOfSatisfying(BusinessException.class, ex -> {
                         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.WALLET_NOT_FOUND);
                     });
+            verify(fundingPaymentRepository, never()).updateCreditedAtBulk(any(), any());
             verify(fundingPaymentRepository, never()).saveAll(any());
             verify(paymentHistoryRepository, never()).save(any());
         }
