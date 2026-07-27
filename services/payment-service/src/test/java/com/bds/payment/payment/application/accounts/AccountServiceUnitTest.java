@@ -47,7 +47,7 @@ class AccountServiceUnitTest {
             Long memberId = 1L;
             Long walletId = 1L;
             AccountRegisterRequestDto dto = new AccountRegisterRequestDto("004", "1234567890", "홍길동");
-            BankAccountResponseDto bankAccountResponseDto = new BankAccountResponseDto("1234567890", "홍길동");
+            BankAccountResponseDto bankAccountResponseDto = new BankAccountResponseDto("1234567890", "홍길동",any());
             given(walletService.getWalletId(memberId)).willReturn(walletId);
             given(accountRepository.findById(walletId)).willReturn(Optional.empty());
             given(client.requestVerification(any(BankAccountRequestDto.class))).willReturn(bankAccountResponseDto);
@@ -82,7 +82,7 @@ class AccountServiceUnitTest {
                     .given(accountRepository)
                     .save(any(Account.class));
             given(client.requestVerification(any(BankAccountRequestDto.class)))
-                    .willReturn(new BankAccountResponseDto("9999999999", "홍길동"));
+                    .willReturn(new BankAccountResponseDto("9999999999", "홍길동", any()));
 
             String result = accountService.registerAccount(memberId, dto).message();
 

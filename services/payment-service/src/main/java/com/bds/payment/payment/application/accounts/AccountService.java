@@ -8,6 +8,7 @@ import com.bds.payment.payment.global.exception.ErrorCode;
 import com.bds.payment.payment.infrastructure.external.BankClient;
 import com.bds.payment.payment.infrastructure.external.request.BankAccountRequestDto;
 import com.bds.payment.payment.infrastructure.external.request.BankVerifyRequestDto;
+import com.bds.payment.payment.infrastructure.external.response.BankAccountResponseDto;
 import com.bds.payment.payment.presentation.request.AccountRegisterRequestDto;
 import com.bds.payment.payment.presentation.request.AccountVerifyRequestDto;
 import com.bds.payment.payment.presentation.response.AccountVerifyResponseDto;
@@ -45,14 +46,14 @@ public class AccountService {
             account.updateAccount(dto);
             accountRepository.save(account);
 
-            client.requestVerification(BankAccountRequestDto.to(dto));
-            return AccountVerifyResponseDto.init("인증 요청을 재전송했습니다.");
+            BankAccountResponseDto resultDto = client.requestVerification(BankAccountRequestDto.to(dto));
+            return AccountVerifyResponseDto.init("인증 요청을 재전송했습니다.", resultDto.code());
         }
 
         accountRepository.save(Account.create(walletId, dto));
-        client.requestVerification(BankAccountRequestDto.to(dto));
+        BankAccountResponseDto resultDto = client.requestVerification(BankAccountRequestDto.to(dto));
 
-        return AccountVerifyResponseDto.init("정상 처리되었습니다.");
+        return AccountVerifyResponseDto.init("정상 처리되었습니다.", resultDto.code());
     }
 
     public AccountVerifyResponseDto verifyAccount(Long memberId, AccountVerifyRequestDto dto) {
@@ -61,7 +62,7 @@ public class AccountService {
         if (!isOk) throw new BusinessException(ErrorCode.ACCOUNT_VERIFICATION_FAILED);
         account.markVerified();
         accountRepository.save(account);
-        return AccountVerifyResponseDto.init("정상 처리되었습니다.");
+        return AccountVerifyResponseDto.init("정상 처리되었습니다.", "정상처리");
     }
 
     public Account getAccount(Long memberId) {
