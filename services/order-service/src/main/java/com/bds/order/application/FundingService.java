@@ -114,6 +114,7 @@ public class FundingService {
         Funding savedFunding = fundingRepository.saveWithRewards(funding, request.rewards());
 
         fundingTaskScheduler.scheduleHoldToJudgment(savedFunding.getId(), savedFunding.getHoldTo());
+        fundingTaskScheduler.scheduleActivation(savedFunding.getId(), savedFunding.getStartAt());
 
         return FundingCreateResponseDto.from(savedFunding);
     }
