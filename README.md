@@ -56,9 +56,11 @@
 | **아키텍처 & 언어** | MSA (Microservices Architecture), Java 25 |
 | **프레임워크** | Spring Boot 4.1.0, Spring Cloud 2025.1.2 (Oakwood) |
 | **인증 및 실시간** | Spring Security, JWT, WebSocket, STOMP |
-| **MSA 통신 & 라우팅** | RabbitMQ:4, Spring Cloud Gateway, Eureka (Service Discovery) |
+| **MSA 통신 & 라우팅** | RabbitMQ:4, Spring Cloud Gateway, Eureka (Service Discovery), OpenFeign |
 | **테스트 & 인프라** | JUnit 5, Mockito, Testcontainers, Docker, Docker Compose |
 | **데이터베이스 & ORM** | Postgresql:17, Mysql:8.4, Spring Data JPA, Redis |
+| **클라우드 & 배포** | AWS (EC2, ALB, NAT Gateway, S3, CloudFront, Route 53, ECR), GitHub Actions, CodeDeploy / ASG |
+| **모니터링** | Prometheus, Grafana, CloudWatch, SSM Parameter Store |
 
 <br>
 
