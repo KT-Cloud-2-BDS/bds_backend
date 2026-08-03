@@ -25,6 +25,11 @@
 | **💬 실시간 채팅**                   | 프로젝트 ID 기반의 '펀딩 상품 공개 토론방' 및 메이커-서포터 간 '1:1 문의 채팅'을 제공합니다.                          |
 | **🔔 실시간 스마트 알림 (SSE / Email)** | 펀딩의 시작·종료, 성공·실패 등 핵심 생명주기 알림 및 맞춤형 프로모션 정보를 발송합니다.                                 |
 
+## _Demo. _
+[![시연 영상](https://img.youtube.com/vi/TGAEXLWAOfU/0.jpg)](https://www.youtube.com/watch?v=TGAEXLWAOfU)
+
+---
+
 ## _Documents._
 
 ---
@@ -33,20 +38,16 @@
 
 ## _Stack._
 
+| 분류 | 상세 기술 스택 |
+|---|---|
+| 아키텍처 & 언어 | MSA (Microservices Architecture), Java 25 |
+| 프레임워크 | Spring Boot 4.1.0, Spring Cloud 2025.1.2 (Oakwood) |
+| 인증 및 실시간 | Spring Security, JWT, WebSocket, STOMP |
+| MSA 통신 & 라우팅 | RabbitMQ:4, Spring Cloud Gateway, Eureka (Service Discovery) |
+| 테스트 & 인프라 | JUnit 5, Mockito, Testcontainers, Docker, Docker Compose |
+| 데이터베이스 & ORM | Postgresql:17, Mysql:8.4, Spring Data JPA, redis |
+
 ---
-
-> backend
-
-Java25,Spring Boot 4.0.3,
-JWT,Spring Security,Oauth2
-JPA/QueryDSL,
-PostgreSQL18,Redis8
-JUnit5,Mock
-Prometheus, Grafana, JMeter
-
-> Collaboration
-
-Slack, Notion, Github
 
 ## _Member._
 
@@ -55,10 +56,11 @@ Slack, Notion, Github
 | **주병규 (팀장)** | **조형욱** | **손하영** | **김재성** | **노여진** |
 | :---: | :---: | :---: | :---: | :---: |
 | <a href="https://github.com/jnj3j3"><img src="https://avatars.githubusercontent.com/u/70316489?v=4" width="130" height="130"><br>@jnj3j3</a> | <a href="https://github.com/HyoungUkJo"><img src="https://avatars.githubusercontent.com/u/173615995?v=4" width="130" height="130"><br>@HyoungUkJo</a> | <a href="https://github.com/glosona"><img src="https://avatars.githubusercontent.com/u/80742177?v=4" width="130" height="130"><br>@glosona</a> | <a href="https://github.com/semolu99"><img src="https://avatars.githubusercontent.com/u/143804563?v=4" width="130" height="130"><br>@semolu99</a> | <a href="https://github.com/jinjinjala-ish"><img src="https://avatars.githubusercontent.com/u/180264124?v=4" width="130" height="130"><br>@jinjinjala-ish</a> |
-| 채팅 | 알림 | 주문 | 결제 | 인증 |
+| 채팅 | 알림 | 주문 | 결제 | 인증, 멤버 |
 
 
 ## _SW Architecture._
+<img width="1791" height="1407" alt="image" src="https://github.com/user-attachments/assets/07edf259-3c1d-4e5d-a67d-12eceeb2f6cc" />
 
 ---
 
