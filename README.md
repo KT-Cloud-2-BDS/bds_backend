@@ -1,7 +1,5 @@
 # 빵디즈 (BDS)
 
----
-
 > **"펀딩에 소통을 더하다, 우리들의 펀딩 놀이터 빵디즈"**
 
 개발 기간: 2026.06.25 ~ 2026.07.27 (약 1달)<br>
@@ -9,7 +7,6 @@
 
 ## _Intro._
 
----
 > 빵디즈는 사용자 간의 자유로운 펀딩을 지원하며, 펀딩 기간 동안 열리는 실시간 공개방을 통해 상품에 대한 토론과 소통을 이어가는 혁신적인 참여형 크라우드 펀딩 플랫폼입니다.
 
 - **커뮤니티형 펀딩**: 단순한 구매를 넘어, 관심사가 같은 사용자들이 모여 자유롭게 의견을 나누고 상품의 가치를 함께 발전시킵니다.
@@ -25,6 +22,8 @@
 | **💬 실시간 채팅**                   | 프로젝트 ID 기반의 '펀딩 상품 공개 토론방' 및 메이커-서포터 간 '1:1 문의 채팅'을 제공합니다.                          |
 | **🔔 실시간 스마트 알림 (SSE / Email)** | 펀딩의 시작·종료, 성공·실패 등 핵심 생명주기 알림 및 맞춤형 프로모션 정보를 발송합니다.                                 |
 
+---
+
 ## _Demo. _
 [![시연 영상](https://img.youtube.com/vi/TGAEXLWAOfU/0.jpg)](https://www.youtube.com/watch?v=TGAEXLWAOfU)
 
@@ -32,9 +31,11 @@
 
 ## _Documents._
 
----
+
 - [API 명세서](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/docs/api-spec.md)
 - [프로젝트 개요](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/docs/project-overview.md)
+
+---
 
 ## _Stack._
 
@@ -51,13 +52,13 @@
 
 ## _Member._
 
----
 
 | **주병규 (팀장)** | **조형욱** | **손하영** | **김재성** | **노여진** |
 | :---: | :---: | :---: | :---: | :---: |
 | <a href="https://github.com/jnj3j3"><img src="https://avatars.githubusercontent.com/u/70316489?v=4" width="130" height="130"><br>@jnj3j3</a> | <a href="https://github.com/HyoungUkJo"><img src="https://avatars.githubusercontent.com/u/173615995?v=4" width="130" height="130"><br>@HyoungUkJo</a> | <a href="https://github.com/glosona"><img src="https://avatars.githubusercontent.com/u/80742177?v=4" width="130" height="130"><br>@glosona</a> | <a href="https://github.com/semolu99"><img src="https://avatars.githubusercontent.com/u/143804563?v=4" width="130" height="130"><br>@semolu99</a> | <a href="https://github.com/jinjinjala-ish"><img src="https://avatars.githubusercontent.com/u/180264124?v=4" width="130" height="130"><br>@jinjinjala-ish</a> |
 | 채팅 | 알림 | 주문 | 결제 | 인증, 멤버 |
 
+---
 
 ## _SW Architecture._
 <img width="1791" height="1407" alt="image" src="https://github.com/user-attachments/assets/07edf259-3c1d-4e5d-a67d-12eceeb2f6cc" />
@@ -65,13 +66,15 @@
 ---
 
 ## _ERD._
-[erd cloud team](https://www.erdcloud.com/team/kW5wm7MoS6XACbo7T)
+
+<img width="4400" height="2292" alt="kt-cloud-bds-erd" src="https://github.com/user-attachments/assets/95dda908-ec4f-4e05-802d-4e7742040705" />
+
+
+[erd cloud 바로가기](https://www.erdcloud.com/team/kW5wm7MoS6XACbo7T)
 
 ---
 
 ## _License._
-
----
 
 This product is for educational purpose. <br/>
 Copyright (c) 2026 팀 빵빠레 (BDS). All rights reserved.
