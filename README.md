@@ -46,6 +46,8 @@
 
 - 📘 [API 명세서](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/docs/api-spec.md)
 - 📗 [프로젝트 개요](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/main/docs/project-overview.md)
+- 🎤 [중간 발표 자료](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/develop/docs/%EB%B9%B5%EB%94%94%EC%A6%88%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EC%A4%91%EA%B0%84%20%EB%B3%B4%EA%B3%A0%20ppt.pdf)
+- 🎤 [최종 발표 자료](https://github.com/KT-Cloud-2-BDS/bds_backend/blob/develop/docs/%EB%B9%B5%EB%94%94%EC%A6%88%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EC%B5%9C%EC%A2%85%20%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf)
 
 <br>
 
